@@ -1,6 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
-    image = ee.Image("users/DavidTheobald8/TWS/currentProject_2"),
     geometry = 
     /* color: #d63000 */
     /* shown: false */
@@ -52,8 +51,7 @@ var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
     imageVisParam29 = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["9bbaff","446cda","0d0589"]},
     imageVisHT = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["f4ffb6","77da75","08257a"]},
     imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]},
-    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]},
-    image2 = ee.Image("users/DavidTheobald8/USGS/Biomass/ChangeCheatgrassBiomassRCP45_2030-2060");
+    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]};
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 /********************************************************
  * Calculate the CLIMATE CHANGE Sagebrush Ecosystem Integrity model 
@@ -61,6 +59,8 @@ var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
  * Written by David Theobald, EXP, dmt@davidmtheobald.com
  * 
 */
+
+// notes made by me Martin Holdrege start with MH
 
 // User-defined variables.
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
@@ -80,14 +80,28 @@ var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','f
 var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
+
+// MH H not found
 var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
+
+var explore = true // MH whether to run exploratory code chunks
+
 
 /// from USGS GAP land cover	
 var LC = ee.Image("USGS/GAP/CONUS/2011")	
-Map.addLayer(LC.randomVisualizer(),{},'LC cover',false)
+
+// MH randomVisualizer just applies a random color to each of the unique values of the first layer 
+Map.addLayer(LC.randomVisualizer(),{},'LC cover',false) //MH--here false means not showing map (unless you select the layer)
+
+// MH--remap converts selected values (which are turndra landcover) to 1, everything else becomes masked
+// MH--unmask(0) replaces all masked values with 0.
+// MH--eq(0), returning 1 for all cell values that are 0 (i.e. not tundra), 0 otherwise (i.e. flipping the 0 to 1 and 1 to 0)
 var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1]).unmask(0).eq(0)	
 
+// MH--I don't understand this layer
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas') // mask from Maestas, Matt Jones
+
+// MH--continue here
 var rangeMaskx = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask().clip(biome)
@@ -96,6 +110,15 @@ Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playa
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2')
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
 print(ic)
+
+// MH explore
+if (explore) {
+// Map.addLayer(WAFWAecoregions, {}, "ecoregions") // polygons of the ecoregions
+
+//Map.addLayer(LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1]), {})
+Map.addLayer(rangeMask, {}, 'rangeMask');
+}
+// end MH explore
 
 /**
 * Model overview with steps: 
@@ -109,8 +132,11 @@ print(ic)
 * 7. export image with data layers as bands in an image asset
 */
 
+
 ///////////////////////////////////////
 // 0. Generate climate change ratio
+
+if (false) { // MH for not running code below
 
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
@@ -213,6 +239,8 @@ for (var i=0; i<lstScenarios.length; i++) {
 /**
  * Step 2. smooth raw data
  */
+ 
+
 var nlcdSage560m = nlcdSage.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0)
   .unmask(0.0);
@@ -232,6 +260,8 @@ var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussia
  * Step 3. convert smoothed % cover to quality using HSI curves
  * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
  */
+ 
+
 var lstSage2Q = [
   [0,0,0,0.33],
   [0.02,0.05,0.05,0.50],
@@ -431,3 +461,4 @@ Map.addLayer(imageBiome,{},'Biome boundary')
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
 
+} //MH
