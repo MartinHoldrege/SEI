@@ -101,7 +101,7 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
 // MH--I don't understand this layer
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas') // mask from Maestas, Matt Jones
 
-// MH--continue here
+// MH--CONTINUE HERE
 var rangeMaskx = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask().clip(biome)
