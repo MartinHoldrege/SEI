@@ -116,7 +116,7 @@ if (explore) {
 // Map.addLayer(WAFWAecoregions, {}, "ecoregions") // polygons of the ecoregions
 
 //Map.addLayer(LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1]), {})
-Map.addLayer(rangeMask, {}, 'rangeMask');
+//Map.addLayer(rangeMask, {}, 'rangeMask');
 }
 // end MH explore
 
@@ -136,6 +136,7 @@ Map.addLayer(rangeMask, {}, 'rangeMask');
 ///////////////////////////////////////
 // 0. Generate climate change ratio
 
+// MH--the stepwat2 rasters below are not available to read in. 
 if (false) { // MH for not running code below
 
 var RCP = 'RCP85'
@@ -152,6 +153,7 @@ for (var i=0; i<lstScenarios.length; i++) {
   print(i)
   var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   var x = futureCheatgrass.add(1.0).rename('Cheatgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
+  // MH--looks like the file being read in is already the ratio
   var ratioCheatgrass = ratioCheatgrass.addBands(x)
 
   var futurePgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Pgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
@@ -240,7 +242,8 @@ for (var i=0; i<lstScenarios.length; i++) {
  * Step 2. smooth raw data
  */
  
-
+// MH--I think this works by averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
+//the weights are derived from a normal distribution with a sd of 560. 
 var nlcdSage560m = nlcdSage.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0)
   .unmask(0.0);
@@ -261,7 +264,7 @@ var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussia
  * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
  */
  
-
+// MH--i don't get how these lists work. (HSI = habitat suitability index). I think columns 2-4, correspond to the 3 ecoregiions
 var lstSage2Q = [
   [0,0,0,0.33],
   [0.02,0.05,0.05,0.50],
@@ -328,6 +331,7 @@ var lstTree2Q = [
   [1.00,0.00,0.00,0.00],
   ]
 
+//MH I don't understand this function
 var raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
   var HSI0 = ee.Image(0.0).float()
   for (var i=0; i<lst.length-1; i++) {
