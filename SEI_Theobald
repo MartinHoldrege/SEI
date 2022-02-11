@@ -116,16 +116,8 @@ Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playa
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') // MH--this loads
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
-print(ic)
 
-// MH explore
-if (explore) {
-// Map.addLayer(WAFWAecoregions, {}, "ecoregions") // polygons of the ecoregions
 
-//Map.addLayer(LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1]), {})
-//Map.addLayer(rangeMask, {}, 'rangeMask');
-print('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
-}
 // end MH explore
 
 /**
@@ -145,7 +137,7 @@ print('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 // 0. Generate climate change ratio
 
 // MH--the stepwat2 rasters below are not available to read in. 
-if (false) { // MH for not running code below
+if (false) { //MH this chunk of code doesn't run b/ none of of the stepwat rasters are available
 
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
@@ -157,9 +149,11 @@ var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
 var ratioSagebrush = ee.Image().float()
 
+// MH--none of the files read in in this list are available to load
 for (var i=0; i<lstScenarios.length; i++) {
   print(i)
   var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
+  print('fcheat', futureCheatgrass)
   var x = futureCheatgrass.add(1.0).rename('Cheatgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   // MH--looks like the file being read in is already the ratio
   var ratioCheatgrass = ratioCheatgrass.addBands(x)
@@ -178,13 +172,13 @@ Map.addLayer(ratioCheatgrass,{},'Cheatgrass'+ '_' + RCP + '_' + epoch ,false)
 Map.addLayer(ratioPgrass,{},'Pgrass'+ '_' + RCP + '_' + epoch ,false)
 Map.addLayer(ratioSagebrush,{},'Sagebrush'+ '_' + RCP + '_' + epoch ,false)
 
-
+}
 ///////////////////////////////////////
 // 1. step 1 - 
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-var mtbs = ee.FeatureCollection('users/DavidTheobald8/MTBS/mtbs_perims_DD_2018')
-var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History')
+var mtbs = ee.FeatureCollection('users/DavidTheobald8/MTBS/mtbs_perims_DD_2018') // MH--this loads
+var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History') // MH--this loads
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
 var lstRap = ee.List([])
@@ -196,16 +190,20 @@ for (var y=yearEnd; y>=yearStart; y--) {
   Map.addLayer(rap1, {}, 'rap1 ' + y, false)
   var lstRap = lstRap.add(rap1)
 }
+
+
 var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with wildfire filtered images
 Map.addLayer(rap,{},'rap all 4 years',false)
 
+if (false) {// MH--code below doesnt run
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
-  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
+  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // MH this isn't available
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
 Map.addLayer(rcmapSage)
+
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
 var rapAnnualG = rap.select('AFGC') // AFG
