@@ -87,8 +87,8 @@ var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
 
-// MH-- H not found
-var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
+
+var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')// MH-- this loads
 
 var explore = true // MH whether to run exploratory code chunks
 
@@ -107,7 +107,6 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
 // MH--I don't understand this layer, but it is loading
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas') // mask from Maestas, Matt Jones
 
-// MH--CONTINUE HERE
 var rangeMaskx = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask().clip(biome)
@@ -118,7 +117,6 @@ var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cov
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
 
 
-// end MH explore
 
 /**
 * Model overview with steps: 
@@ -137,23 +135,29 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 // 0. Generate climate change ratio
 
 // MH--the stepwat2 rasters below are not available to read in. 
-if (false) { //MH this chunk of code doesn't run b/ none of of the stepwat rasters are available
+
 
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
+//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+//  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
+  
+// mh--for testing same list but without miroc-esm (that one is missing for sagebrush)
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
+'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
 
 var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
 var ratioSagebrush = ee.Image().float()
 
+
+
 // MH--none of the files read in in this list are available to load
 for (var i=0; i<lstScenarios.length; i++) {
   print(i)
   var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  print('fcheat', futureCheatgrass)
+
   var x = futureCheatgrass.add(1.0).rename('Cheatgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   // MH--looks like the file being read in is already the ratio
   var ratioCheatgrass = ratioCheatgrass.addBands(x)
@@ -167,12 +171,21 @@ for (var i=0; i<lstScenarios.length; i++) {
   var ratioSagebrush = ratioSagebrush.addBands(x)
 
 }
+
+if (false) { //MH
+print('cheat', ratioCheatgrass)
+print('sage', ratioSagebrush)
+print('Pgras', ratioPgrass)
+}
+
+if (false) { //mh to avoid running the code below
+//print(futureCheatgrass);
 var visParamRatio = {"opacity":1,"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]}
 Map.addLayer(ratioCheatgrass,{},'Cheatgrass'+ '_' + RCP + '_' + epoch ,false)
 Map.addLayer(ratioPgrass,{},'Pgrass'+ '_' + RCP + '_' + epoch ,false)
 Map.addLayer(ratioSagebrush,{},'Sagebrush'+ '_' + RCP + '_' + epoch ,false)
 
-}
+
 ///////////////////////////////////////
 // 1. step 1 - 
 // changed logic of years to incorporate fires
@@ -195,15 +208,14 @@ for (var y=yearEnd; y>=yearStart; y--) {
 var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with wildfire filtered images
 Map.addLayer(rap,{},'rap all 4 years',false)
 
-if (false) {// MH--code below doesnt run
+
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
-  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // MH this isn't available
+  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // this loads
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
 Map.addLayer(rcmapSage)
-
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
 var rapAnnualG = rap.select('AFGC') // AFG
@@ -470,5 +482,4 @@ var imageBiome = empty.paint(biome,1,2)
 Map.addLayer(imageBiome,{},'Biome boundary')
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
-
-} //MH
+}
