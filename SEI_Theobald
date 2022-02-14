@@ -1,6 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
-    image = ee.Image("users/DavidTheobald8/TWS/currentProject_2"),
     geometry = 
     /* color: #d63000 */
     /* shown: false */
@@ -52,8 +51,7 @@ var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
     imageVisParam29 = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["9bbaff","446cda","0d0589"]},
     imageVisHT = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["f4ffb6","77da75","08257a"]},
     imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]},
-    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]},
-    image2 = ee.Image("users/DavidTheobald8/USGS/Biomass/ChangeCheatgrassBiomassRCP45_2030-2060");
+    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]};
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 
 
@@ -141,12 +139,12 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
-var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
+//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+//  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
   
 // mh--for testing same list but without miroc-esm (that one is missing for sagebrush)
-//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-//'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
+var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
 
 var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
@@ -179,7 +177,7 @@ print('sage', ratioSagebrush)
 print('Pgras', ratioPgrass)
 }
 
-if (false) { //mh to avoid running the code below
+
 //print(futureCheatgrass);
 var visParamRatio = {"opacity":1,"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]}
 Map.addLayer(ratioCheatgrass,{},'Cheatgrass'+ '_' + RCP + '_' + epoch ,false)
@@ -470,7 +468,7 @@ var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
 
 Export.image.toAsset({ 
   image: WAFWAoutputs, //single image with multiple bands
-  assetId: 'users/DavidTheobald8/WAFWA/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20211216',
+  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20211216',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
@@ -483,4 +481,4 @@ var imageBiome = empty.paint(biome,1,2)
 Map.addLayer(imageBiome,{},'Biome boundary')
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
-}
+
