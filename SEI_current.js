@@ -86,6 +86,8 @@ var RAP = true // 'true= rap, false = NLCD', remnant from past decision/work
 // MH--this feature is present
 var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019") // defines the study region
 var region = biome.geometry()
+
+// polygons outlining the 3 regions
 var WAFWAecoregions = ee.FeatureCollection("users/DavidTheobald8/WAFWA/WAFWAecoregionsFinal") // MH this loads
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']}
 
@@ -93,10 +95,8 @@ var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
 
-var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')// MH-- this loads
-
-var explore = true // MH whether to run exploratory code chunks
-
+// MH_-I think this is a sagebrush cover dataset
+var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 
 /// from USGS GAP land cover	
 var LC = ee.Image("USGS/GAP/CONUS/2011")	
@@ -112,16 +112,17 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
 // MH--I don't understand this layer, but it is loading
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas') // mask from Maestas, Matt Jones
 
-var rangeMaskx = rangeMask.eq(0)
-  .multiply(tundra)
-  .selfMask().clip(biome)
+// MH -- here 1's are rangelands, and everything else is masked out
+var rangeMaskx = rangeMask.eq(0) // MH returns 1 for ranglelands (ie pixels  that are not water bodies, forests etc._
+  .multiply(tundra) // MH here 0 is tundra, so turning tundra cells to 0 by multiplications
+  .selfMask() // MH uses the raster values as the mask. i.e. all 0s (not rangelands), are masked out
+  .clip(biome)
 Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false)
 
 // MH--this currently loads v2, there is now a v3 that came out that we may want to use. 
-var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') // MH--this loads
+var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') //
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
-
 
 
 /**
@@ -142,6 +143,7 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 // MH--the stepwat2 rasters below are not available to read in. 
 
+if (false) { // this should be cut
 
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
@@ -159,8 +161,6 @@ var ratioPgrass = ee.Image().float()
 var ratioSagebrush = ee.Image().float()
 
 
-
-// MH--none of the files read in in this list are available to load
 for (var i=0; i<lstScenarios.length; i++) {
   print(i)
   var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
@@ -178,38 +178,45 @@ for (var i=0; i<lstScenarios.length; i++) {
   var ratioSagebrush = ratioSagebrush.addBands(x)
 
 }
-
+}
 
 ///////////////////////////////////////
 // 1. step 1 - 
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-var mtbs = ee.FeatureCollection('users/DavidTheobald8/MTBS/mtbs_perims_DD_2018') // MH--this loads
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History') // MH--this loads
+
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
 var lstRap = ee.List([])
 for (var y=yearEnd; y>=yearStart; y--) {
   var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd))
+  
+  // MH creates a raster where 0 is area of fire, 1 is no fire (that year)
   var imageWildfire = ones.paint(wildfiresF, 0) // if a fire occurs, then remove 
   Map.addLayer(imageWildfire, {min:0, max:1}, 'imageWildfire ' + y, false)
+  
+  // MH mean across layers of ic. then multiply to remove areas that are fire
   var rap1 = ic.filterDate(y + '-01-01',  y + '-12-31').mean().multiply(imageWildfire.selfMask()) // remove,  
-  Map.addLayer(rap1, {}, 'rap1 ' + y, false)
+  Map.addLayer(rap1, {}, 'rap1 ' + y, false) // the rap layer now has 'holes' in it. 
   var lstRap = lstRap.add(rap1)
 }
 
 
-var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with wildfire filtered images
+var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with mean of wildfire filtered images
 Map.addLayer(rap,{},'rap all 4 years',false)
+
 
 
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
+  // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
   var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // this loads
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
-var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
-Map.addLayer(rcmapSage)
+
+var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage') // MH average sagebrush cover across 4 years
+
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
 var rapAnnualG = rap.select('AFGC') // AFG
@@ -223,20 +230,21 @@ var nlcdSage = rcmapSage
 Map.addLayer(rapAnnualG.selfMask(),{},'rapAnnualG',false)
 Map.addLayer(rapPerennialG.selfMask(),{},'rapPerennialG',false)
 Map.addLayer(nlcdSage.selfMask(),{},'nlcdSage',false)
-
+if (false) {
 var rapAnnualGscenarios = ee.Image().float()
 var rapPerennialGscenarios = ee.Image().float()
 var nlcdSageScenarios = ee.Image().float()
 
 // apply biomass ratios to RAP data
 for (var i=0; i<lstScenarios.length; i++) {
-//var j = 0
-//for (var i=j; i<j+1; i++) {
+
   print(i)
   var s = '_' + RCP + '_' + epoch + '_' + lstScenarios[i]
+  
   // apply ratio to rap & nlcd data
   var rapAnnualG = rap.select('AFGC')
     .multiply(ratioCheatgrass.select('Cheatgrass' + s))
+
   var rapAnnualGscenarios = rapAnnualGscenarios.addBands(rapAnnualG.rename('Cheatgrass' + s))
   
   var rapPerennialG = rap.select('PFGC')
@@ -248,7 +256,7 @@ for (var i=0; i<lstScenarios.length; i++) {
   Map.addLayer(rapAnnualG,imageVisQ,'rapAnnualG'+s, false)
   Map.addLayer(rapPerennialG,imageVisQ,'rapPerenniallG'+s, false)
   Map.addLayer(nlcdSage,imageVisQ,'nlcdSage'+s, false)
-//}
+
 
 /**
  * Step 2. smooth raw data
@@ -257,8 +265,8 @@ for (var i=0; i<lstScenarios.length; i++) {
 // MH--I think this works by averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
 //the weights are derived from a normal distribution with a sd of 560. 
 var nlcdSage560m = nlcdSage.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
-  .divide(100.0)
-  .unmask(0.0);
+  .divide(100.0) // MH convert from % cover to proportion
+  .unmask(0.0); // MH masked pixels converted to 0
 var rapAnnualG560m = rapAnnualG.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0)
   .unmask(0.0);
@@ -476,4 +484,4 @@ var imageBiome = empty.paint(biome,1,2)
 Map.addLayer(imageBiome,{},'Biome boundary')
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
-
+}
