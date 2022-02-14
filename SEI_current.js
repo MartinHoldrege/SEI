@@ -51,22 +51,29 @@ var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
     imageVisParam29 = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["9bbaff","446cda","0d0589"]},
     imageVisHT = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["f4ffb6","77da75","08257a"]},
     imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]},
-    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]},
-    image = ee.Image("users/MartinHoldrege/SEI2");
+    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]};
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 
 
 
 /********************************************************
- * Calculate the CLIMATE CHANGE Sagebrush Ecosystem Integrity model 
- * for the WAFWA Landscape Conservation Design project
- * Written by David Theobald, EXP, dmt@davidmtheobald.com
  * 
+ * Calculate the Sagebrush Ecosystem Integrity model 
+ * under current conditions
+ * 
+ * This code was modified by Martin Holdrege but is almost 
+ * entirley based on the code David Theobald (dmt@davidmtheobald.com)
+ * wrote
+ * 
+ * The purspose is to calculate SEI, this is done by removing
+ * step 0, of the Climate change script where the rasters
+ * where multiplied by the climate change ratios
 */
 
 // notes made by me Martin Holdrege start with MH
 
 // User-defined variables.
+
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
@@ -85,7 +92,6 @@ var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','f
 var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
-
 
 var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')// MH-- this loads
 
@@ -140,6 +146,7 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
+
 //var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
 //  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
   
@@ -171,19 +178,6 @@ for (var i=0; i<lstScenarios.length; i++) {
   var ratioSagebrush = ratioSagebrush.addBands(x)
 
 }
-
-if (true) { //MH
-print('cheat', ratioCheatgrass)
-print('sage', ratioSagebrush)
-print('Pgras', ratioPgrass)
-}
-
-
-//print(futureCheatgrass);
-var visParamRatio = {"opacity":1,"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]}
-Map.addLayer(ratioCheatgrass,{},'Cheatgrass'+ '_' + RCP + '_' + epoch ,false)
-Map.addLayer(ratioPgrass,{},'Pgrass'+ '_' + RCP + '_' + epoch ,false)
-Map.addLayer(ratioSagebrush,{},'Sagebrush'+ '_' + RCP + '_' + epoch ,false)
 
 
 ///////////////////////////////////////
