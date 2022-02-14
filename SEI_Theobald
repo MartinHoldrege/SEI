@@ -112,6 +112,7 @@ var rangeMaskx = rangeMask.eq(0)
   .selfMask().clip(biome)
 Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false)
 
+// MH--this currently loads v2, there is now a v3 that came out that we may want to use. 
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') // MH--this loads
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
@@ -140,12 +141,12 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
-//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-//  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
+var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
   
 // mh--for testing same list but without miroc-esm (that one is missing for sagebrush)
-var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
+//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+//'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
 
 var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
@@ -172,7 +173,7 @@ for (var i=0; i<lstScenarios.length; i++) {
 
 }
 
-if (false) { //MH
+if (true) { //MH
 print('cheat', ratioCheatgrass)
 print('sage', ratioSagebrush)
 print('Pgras', ratioPgrass)
