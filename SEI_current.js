@@ -95,7 +95,7 @@ var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
 
-// MH_-I think this is a sagebrush cover dataset
+// MH this is the human modification dataset
 var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 
 /// from USGS GAP land cover	
@@ -127,7 +127,6 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 /**
 * Model overview with steps: 
-* 0. calculate ratio of forecast to current biomass predictions
 * 1. get 4 year average of % cover from RAP, adjusted by fire perimeters
 * 2. smooth % cover from RAP by "ecological" context using Gaussian kernel radius
 * 3. convert smoothed % cover to "quality" through HSI curves
@@ -139,52 +138,10 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 
 ///////////////////////////////////////
-// 0. Generate climate change ratio
-
-// MH--the stepwat2 rasters below are not available to read in. 
-
-if (false) { // this should be cut
-
-var RCP = 'RCP85'
-var epoch = '2030-2060'  //'2070-2100' // //
-var root = 'ClimateOnly_' // 'ClimateOnly_'
-
-//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-//  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
-  
-// mh--for testing same list but without miroc-esm (that one is missing for sagebrush)
-var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
-
-var ratioCheatgrass = ee.Image().float()
-var ratioPgrass = ee.Image().float()
-var ratioSagebrush = ee.Image().float()
-
-
-for (var i=0; i<lstScenarios.length; i++) {
-  print(i)
-  var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-
-  var x = futureCheatgrass.add(1.0).rename('Cheatgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  // MH--looks like the file being read in is already the ratio
-  var ratioCheatgrass = ratioCheatgrass.addBands(x)
-
-  var futurePgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Pgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  var x = futurePgrass.add(1.0).rename('Pgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  var ratioPgrass = ratioPgrass.addBands(x)
-
-  var futureSagebrush = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Sagebrush_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  var x = futureSagebrush.add(1.0).rename('Sagebrush'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
-  var ratioSagebrush = ratioSagebrush.addBands(x)
-
-}
-}
-
-///////////////////////////////////////
 // 1. step 1 - 
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History') // MH--this loads
+var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); // MH--this loads
 
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
@@ -230,28 +187,19 @@ var nlcdSage = rcmapSage
 Map.addLayer(rapAnnualG.selfMask(),{},'rapAnnualG',false)
 Map.addLayer(rapPerennialG.selfMask(),{},'rapPerennialG',false)
 Map.addLayer(nlcdSage.selfMask(),{},'nlcdSage',false)
-if (false) {
+if (true) {
 var rapAnnualGscenarios = ee.Image().float()
 var rapPerennialGscenarios = ee.Image().float()
 var nlcdSageScenarios = ee.Image().float()
 
-// apply biomass ratios to RAP data
-for (var i=0; i<lstScenarios.length; i++) {
-
-  print(i)
-  var s = '_' + RCP + '_' + epoch + '_' + lstScenarios[i]
+  var s = '_' + yearEnd + "_" + yearStart; // the current GCMS
   
   // apply ratio to rap & nlcd data
   var rapAnnualG = rap.select('AFGC')
-    .multiply(ratioCheatgrass.select('Cheatgrass' + s))
 
-  var rapAnnualGscenarios = rapAnnualGscenarios.addBands(rapAnnualG.rename('Cheatgrass' + s))
-  
   var rapPerennialG = rap.select('PFGC')
-    .multiply(ratioPgrass.select('Pgrass' + s))
 
   var nlcdSage = nlcdSage.select('nlcdSage')
-    .multiply(ratioSagebrush.select('Sagebrush' + s))
 
   Map.addLayer(rapAnnualG,imageVisQ,'rapAnnualG'+s, false)
   Map.addLayer(rapPerennialG,imageVisQ,'rapPerenniallG'+s, false)
@@ -274,7 +222,7 @@ var rapPerennialG560m = rapPerennialG.reduceNeighborhood(ee.Reducer.mean(),ee.Ke
   .divide(100.0)
   .unmask(0.0);
 var H560m = H.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
-  .unmask(0.0);
+  .unmask(0.0); // MH this is human modification
 var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0)
   .unmask(0.0);
@@ -284,7 +232,8 @@ var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussia
  * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
  */
  
-// MH--i don't get how these lists work. (HSI = habitat suitability index). I think columns 2-4, correspond to the 3 ecoregiions
+// MH--(HSI = habitat suitability index). 
+// MH--Column 1 is the break point (i.e x coordinate) columns 2-4, correspond to the 3 ecoregiions
 var lstSage2Q = [
   [0,0,0,0.33],
   [0.02,0.05,0.05,0.50],
@@ -360,9 +309,9 @@ var raw2HSI = function( image, lst, e) { // generate a linear interpolated recla
     var outMin = ee.Image(lst[i][e])
     var outMax = ee.Image(lst[i+1][e])
     var mask = image.gte(inMin).multiply(image.lt(inMax)) // 0/1 mask
-    var y = mask.multiply(image).unitScale(lst[i][0],lst[i+1][0]) // 0 to 1 values
-    var y = y.multiply(outMax.subtract(outMin)).add(outMin).multiply(mask)
-    var HSI0 = HSI0.add(y)
+    var y = mask.multiply(image).unitScale(lst[i][0],lst[i+1][0]); // 0 to 1 values
+    var y = y.multiply(outMax.subtract(outMin)).add(outMin).multiply(mask);
+    var HSI0 = HSI0.add(y);
   }
   return HSI0
 }
@@ -399,16 +348,16 @@ for (var e=1; e<=lstEcoregionIds.length; e++) {
 }
 
 // Display Q images
-Map.addLayer(Q1,imageVisQ,'Q1',false)
-var Q2y = Q1.multiply(Q2).clip(biome)
-Map.addLayer(Q2y,imageVisQ,'Q2y',false)
-var Q3y = Q2y.multiply(Q3).clip(biome)
-Map.addLayer(Q3y,imageVisQ,'Q3y',false)
-var Q4y = Q3y.multiply(Q4).clip(biome)
-Map.addLayer(Q4y,imageVisQ,'Q4y',false)
-var Q5y = Q4y.multiply(Q5).clip(biome)
-Map.addLayer(Q5y,imageVisQ,'Q5y',false)
-Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false)
+Map.addLayer(Q1,imageVisQ,'Q1',false);
+var Q2y = Q1.multiply(Q2).clip(biome);
+Map.addLayer(Q2y,imageVisQ,'Q2y',false);
+var Q3y = Q2y.multiply(Q3).clip(biome);
+Map.addLayer(Q3y,imageVisQ,'Q3y',false);
+var Q4y = Q3y.multiply(Q4).clip(biome);
+Map.addLayer(Q4y,imageVisQ,'Q4y',false);
+var Q5y = Q4y.multiply(Q5).clip(biome);
+Map.addLayer(Q5y,imageVisQ,'Q5y',false);
+Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
 
 /**
  * Step 5. Smooth quality values to reflect "management" scale
@@ -416,9 +365,9 @@ Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false)
 var Q5s = Q5y
   .unmask(0)
   .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
-  .multiply(rangeMaskx)
+  .multiply(rangeMaskx);
 
-Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s rangeMaskx',false)
+Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s rangeMaskx',false);
   
 /**
  * Step 6. Classify
@@ -469,6 +418,7 @@ var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
   imageEcoregions.byte().rename('SEIecoregions')
   ])
 
+/*
 Export.image.toAsset({ 
   image: WAFWAoutputs, //single image with multiple bands
   assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20211216',
@@ -476,8 +426,8 @@ Export.image.toAsset({
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
 })
+*/
 
-}
 /////////////////////////////////////////
 // Display additional overlay layers.
 var imageBiome = empty.paint(biome,1,2)
