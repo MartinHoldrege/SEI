@@ -12,7 +12,7 @@ var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
 var resolution = 90     // output resolution, 90 initially, 30 m eventually
-var resolutionMed = 90 // resolution for median output, for now do low resolution to increase speed of computation
+
 var sampleResolution = 270
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
@@ -370,8 +370,8 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
   assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolutionMed + '_'  + root + '_' +  RCP + '_' + epoch + '_median_20220215',
-  description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolutionMed + '_' +  RCP + '_' + epoch + '_median',
-  maxPixels: 1e13, scale: resolutionMed, region: region,
+  description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
+  maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
 });
 
