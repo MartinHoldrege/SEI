@@ -21,7 +21,7 @@ var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
 var resolution = 90     // output resolution, 90 initially, 30 m eventually
-var sampleResolution = 270
+var sampleResolution = 270 // MH--this is only used in one place, with no downstream affects
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
 var version = '11'
@@ -35,7 +35,7 @@ var WAFWAecoregions = ee.FeatureCollection("users/DavidTheobald8/WAFWA/WAFWAecor
 
 // image visualization params
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
-var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]};
+var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"palette":["e7ed8b","23b608","107a0e","082b08"]};
 var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
@@ -137,18 +137,19 @@ var rapAnnualGscenarios = ee.Image().float()
 var rapPerennialGscenarios = ee.Image().float()
 var nlcdSageScenarios = ee.Image().float()
 
-  var s = '_' + yearEnd + "_" + yearStart; // the current GCMS
-  
-  // apply ratio to rap & nlcd data
-  var rapAnnualG = rap.select('AFGC')
 
-  var rapPerennialG = rap.select('PFGC')
+var s = '_Current'; // this string contains the GCM when running for future scenarios
 
-  var nlcdSage = nlcdSage.select('nlcdSage')
+// apply ratio to rap & nlcd data
+var rapAnnualG = rap.select('AFGC')
 
-  Map.addLayer(rapAnnualG,imageVisQ,'rapAnnualG'+s, false)
-  Map.addLayer(rapPerennialG,imageVisQ,'rapPerenniallG'+s, false)
-  Map.addLayer(nlcdSage,imageVisQ,'nlcdSage'+s, false)
+var rapPerennialG = rap.select('PFGC')
+
+var nlcdSage = nlcdSage.select('nlcdSage')
+
+Map.addLayer(rapAnnualG,imageVisQ,'rapAnnualG'+s, false)
+Map.addLayer(rapPerennialG,imageVisQ,'rapPerenniallG'+s, false)
+Map.addLayer(nlcdSage,imageVisQ,'nlcdSage'+s, false)
 
 
 /**
@@ -347,13 +348,11 @@ var Q5scdeciles = Q5s.gt(0.002)
   .add(Q5s.gt(0.431))
   .add(Q5s.gt(0.565)).add(1) // so range is 1-10
   
-Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false)
-// CONTINUE HERE
 // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
 // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
 var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
-Map.addLayer(Q5scdeciles.selfMask(),imageVisQ,'Q5s decile classes',false)
-Map.addLayer(Q5sc3.selfMask(),{},'Q5s 3 classes',false)
+Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false);
+Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes',false)
 
 /**
  * Step 7. Export stack of images into bands sent to GEE asset.
@@ -363,7 +362,7 @@ Map.addLayer(Q5sc3.selfMask(),{},'Q5s 3 classes',false)
 var empty = ee.Image().byte()
 var imageEcoregions = empty.paint(WAFWAecoregions,1)
 
-var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
+var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
   Q2.float().rename('Q2raw'),
   Q3.float().rename('Q3raw'),
   Q4.float().rename('Q4raw'),
@@ -378,15 +377,15 @@ var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
   imageEcoregions.byte().rename('SEIecoregions')
   ])
 
-/*
+
 Export.image.toAsset({ 
-  image: WAFWAoutputs, //single image with multiple bands
-  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20211216',
+  image: WAFWAoutputsCurrent, //single image with multiple bands
+  assetId: 'users/MartinHoldrege/SEI/v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
 })
-*/
+
 
 /////////////////////////////////////////
 // Display additional overlay layers.
