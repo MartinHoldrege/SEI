@@ -25,7 +25,7 @@ var sampleResolution = 270 // MH--this is only used in one place, with no downst
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
 var version = '11'
-var RAP = true // 'true= rap, false = NLCD', remnant from past decision/work
+
 // MH--this feature is present
 var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019") // defines the study region
 var region = biome.geometry()
@@ -69,6 +69,9 @@ var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cov
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
 
+// Load module with functions and HSI curves used below
+// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
 
 /**
 * Model overview with steps: 
@@ -178,94 +181,6 @@ var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussia
  * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
  */
  
-// MH--(HSI = habitat suitability index). 
-// MH--Column 1 is the break point (i.e x coordinate) columns 2-4, correspond to the 3 ecoregiions
-var lstSage2Q = [
-  [0,0,0,0.33],
-  [0.02,0.05,0.05,0.50],
-  [0.03,0.10,0.1,0.70],
-  [0.05,0.50,0.5,0.90],
-  [0.1,1.00,0.75,0.95],
-  [0.15,1.00,0.9,1,0],
-  [0.2,1.0,0.95,1.0],
-  [0.25,1.0,1.0,1.0],
-  [0.50,1.00,1.00,1.00],
-  [0.75,0.00,1.00,1.00],
-  [1.00,1.00,1.00,1.00],
-  ]
-var lstPerennialG2Q = [
-  [0.00,0.00,0.00,0.00],
-  [0.02,0.02,0.02,0.0],
-  [0.03,0.05,0.05,0.0],
-  [0.05,0.45,0.45,0.2],
-  [0.10,1.0,0.70,0.70],
-  [0.15,1.0,0.88,0.88],
-  [0.20,1.0,0.94,0.94],
-  [0.25,1.00,1.00,0.95],
-  [0.50,1.00,1.00,1.00],
-  [0.75,1.00,1.00,1.00],
-  [1.00,1.00,1.00,1.00],
-  ]
-var lstAnnualG2Q = [
-  [0.00,1.00,1.00,1.00],
-  [0.02,0.98,0.98,1.0],
-  [0.03,0.95,0.95,1.0],
-  [0.05,0.90,0.90,1.0],
-  [0.10,0.5,0.50,1.0],
-  [0.15,0.25,0.25,0.75],
-  [0.20,0.1,0.1,0.55],
-  [0.25,0.0,0.0,0.40],
-  [0.50,0.00,0.00,0.20],
-  [0.75,0.00,0.00,0.00],
-  [1.00,0.00,0.00,0.00],
-  ]
-var lstH2Q = [
-  [0.00,1.00,1.00,1.00],
-  [0.02,0.95,0.95,0.95],
-  [0.03,0.85,0.85,0.85],
-  [0.05,0.52,0.52,0.52],
-  [0.10,0.10,0.10,0.10],
-  [0.15,0.00,0.00,0.00],
-  [0.20,0.00,0.00,0.00],
-  [0.25,0.00,0.00,0.00],
-  [0.50,0.00,0.00,0.00],
-  [0.75,0.00,0.00,0.00],
-  [1.00,0.00,0.00,0.00],
-  ]
-var lstTree2Q = [
-  [0.00,1.00,1.00,1.00],
-  [0.02,0.90,0.90,0.90],
-  [0.03,0.75,0.75,0.75],
-  [0.05,0.50,0.50,0.50],
-  [0.10,0.05,0.05,0.05],
-  [0.15,0.00,0.00,0.00],
-  [0.20,0.00,0.00,0.00],
-  [0.25,0.00,0.00,0.00],
-  [0.50,0.00,0.00,0.00],
-  [0.75,0.00,0.00,0.00],
-  [1.00,0.00,0.00,0.00],
-  ]
-
-//MH I don't understand this function
-var raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
-  var HSI0 = ee.Image(0.0).float()
-  for (var i=0; i<lst.length-1; i++) {
-    
-    var inMin = ee.Image(lst[i][0]);// 1st column, left side of bin
-    var inMax = ee.Image(lst[i+1][0]) // 1st column, right side of bin
-    var outMin = ee.Image(lst[i][e]) // Q value 
-    var outMax = ee.Image(lst[i+1][e]) // Q value
-    var mask = image.gte(inMin).multiply(image.lt(inMax)) // 0/1 mask, 1 if between that range
-    var y = mask.multiply(image).unitScale(lst[i][0],lst[i+1][0]); // 0 to 1 values
-    var y = y.multiply(outMax.subtract(outMin)).add(outMin).multiply(mask);
-    // this addition works because everything not in the cover range, is zero, so subsequent
-    // additions (iterations in the loop)
-    // are adding to different areas of the raster
-    var HSI0 = HSI0.add(y);
-  }
-  return HSI0
-}
-
 var Q1 = ee.Image(0.0).float()
 var Q2 = ee.Image(0.0).float()
 var Q3 = ee.Image(0.0).float()
@@ -275,7 +190,7 @@ var Q5 = ee.Image(0.0).float()
 var lstEcoregionIds = ['00000000000000000000','00000000000000000001','00000000000000000002'] // GB, IM, Pl
 for (var e=1; e<=lstEcoregionIds.length; e++) {
   var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])) //
-  var Q1x = raw2HSI(nlcdSage560m, lstSage2Q, e)
+  var Q1x = SEI.raw2HSI(nlcdSage560m, SEI.lstSage2Q, e)
     .max(0.001) // MH replaces values less than 0.001 with 0.001
     .multiply(rangeMaskx) // MH values that are not rangeland become zero, 
     .clip(ecoregion) // MH clip to the ecoregion being looped through
@@ -283,19 +198,19 @@ for (var e=1; e<=lstEcoregionIds.length; e++) {
      
   var Q1 = Q1.max(Q1x) // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
 
-  var Q2x = raw2HSI(rapPerennialG560m, lstPerennialG2Q, e)
+  var Q2x = SEI.raw2HSI(rapPerennialG560m, SEI.lstPerennialG2Q, e)
     .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
   var Q2 = Q2.max(Q2x)
 
-  var Q3x = raw2HSI(rapAnnualG560m, lstAnnualG2Q, e)
+  var Q3x = SEI.raw2HSI(rapAnnualG560m, SEI.lstAnnualG2Q, e)
     .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
   var Q3 = Q3.max(Q3x)
 
-  var Q4x = raw2HSI(H560m, lstH2Q, e)
+  var Q4x = SEI.raw2HSI(H560m, SEI.lstH2Q, e)
     .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
   var Q4 = Q4.max(Q4x)
 
-  var Q5x = raw2HSI(rapTree560m, lstTree2Q, e)
+  var Q5x = SEI.raw2HSI(rapTree560m, SEI.lstTree2Q, e)
     .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
   var Q5 = Q5.max(Q5x)
 }
@@ -338,19 +253,11 @@ var Q5s_deciles = Q5s.reduceRegion({reducer: ee.Reducer.percentile([1,10,20,30,4
  print('Percentiles for Q5s',Q5s_deciles)
 
 // decile-based classes, derived and hard-coded from Q5s_deciles
-var Q5scdeciles = Q5s.gt(0.002)
-  .add(Q5s.gte(0.009))
-  .add(Q5s.gt(0.068))
-  .add(Q5s.gt(0.115))
-  .add(Q5s.gt(0.173))
-  .add(Q5s.gt(0.244))
-  .add(Q5s.gt(0.326))
-  .add(Q5s.gt(0.431))
-  .add(Q5s.gt(0.565)).add(1) // so range is 1-10
+var Q5scdeciles = SEI.decileFixedClasses(Q5s);
   
 // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
 // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
-var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
 Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false);
 Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes',false)
 
@@ -377,7 +284,7 @@ var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
   imageEcoregions.byte().rename('SEIecoregions')
   ])
 
-
+// This tod ~ 33 minutes when the task was run in the task bar
 Export.image.toAsset({ 
   image: WAFWAoutputsCurrent, //single image with multiple bands
   assetId: 'users/MartinHoldrege/SEI/v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
