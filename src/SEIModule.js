@@ -130,7 +130,7 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
  * @return {ee.Image} values from 1 to 10, denoting the decile class
  */
 exports.decileFixedClasses = function(Q5s) {
-  Q5s.gt(0.002)
+  var out = Q5s.gt(0.002)
   .add(Q5s.gte(0.009))
   .add(Q5s.gt(0.068))
   .add(Q5s.gt(0.115))
@@ -139,4 +139,5 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.326))
   .add(Q5s.gt(0.431))
   .add(Q5s.gt(0.565)).add(1) // so range is 1-10
-}
+  return(out)
+};
