@@ -103,6 +103,8 @@ exports.lstTree2Q = [
  */
 exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
   var HSI0 = ee.Image(0.0).float();
+  // Note: it may be possible to re-write this as a function applied via map,
+  // which could be faster due to parallelization.
   for (var i=0; i<lst.length-1; i++) {
     
     var inMin = ee.Image(lst[i][0]);// 1st column, left side of bin
@@ -119,4 +121,22 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
   }
   return HSI0;
 };
- 
+
+/**
+ * Calculated fixed (hard coded decile classes), these are expert derived, and
+ * are based on the observed decile classes.
+ * @param {ee.Image} Q5sThis is the smoothed sagebrush ecological integrity score
+ * (i.e. described as SEI2000 in the manuscript draft)
+ * @return {ee.Image} values from 1 to 10, denoting the decile class
+ */
+exports.decileFixedClasses = function(Q5s) {
+  Q5s.gt(0.002)
+  .add(Q5s.gte(0.009))
+  .add(Q5s.gt(0.068))
+  .add(Q5s.gt(0.115))
+  .add(Q5s.gt(0.173))
+  .add(Q5s.gt(0.244))
+  .add(Q5s.gt(0.326))
+  .add(Q5s.gt(0.431))
+  .add(Q5s.gt(0.565)).add(1) // so range is 1-10
+}
