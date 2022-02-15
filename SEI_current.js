@@ -1,60 +1,3 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
-    geometry = 
-    /* color: #d63000 */
-    /* shown: false */
-    /* displayProperties: [
-      {
-        "type": "rectangle"
-      }
-    ] */
-    ee.Geometry.Polygon(
-        [[[-117.42866715670063, 46.72327480678781],
-          [-117.42866715670063, 42.53525218838522],
-          [-111.29829606295063, 42.53525218838522],
-          [-111.29829606295063, 46.72327480678781]]], null, false),
-    table = ee.FeatureCollection("users/DavidTheobald8/WBDHUC12_201602_30m_mp"),
-    imageVisParam5 = {"opacity":1,"bands":["constant"],"min":-0.25,"max":0.25,"palette":["2208ff","bebebe","ff0000"]},
-    imageVisParam6 = {"opacity":1,"bands":["constant"],"min":-0.5,"max":0.5,"palette":["2208ff","bebebe","ff0000"]},
-    imageVisShrub = {"opacity":1,"bands":["SHR"],"max":40,"palette":["ededed","818729"]},
-    imageVisParam8 = {"opacity":1,"bands":["AFGC"],"max":5,"palette":["ededed","ad08b8"]},
-    imageVisTree = {"opacity":1,"bands":["TREE"],"max":10,"palette":["e7e7e7","7d9302"]},
-    ecoregionalGeometry = 
-    /* color: #d63000 */
-    /* shown: false */
-    ee.Geometry.Polygon(
-        [[[-119.95152547822688, 46.11285630205455],
-          [-121.46763875947688, 43.12665463152686],
-          [-121.20396688447688, 40.507125047485125],
-          [-119.62193563447688, 37.937274439684195],
-          [-117.88609579072688, 37.815867951835216],
-          [-113.62340047822688, 37.850575936339744],
-          [-112.65660360322688, 37.065706124849214],
-          [-109.11293513752128, 37.02833272242481],
-          [-105.14195516572688, 36.819847746228],
-          [-105.97691610322688, 39.76802237981562],
-          [-105.22435262666438, 42.71635441680955],
-          [-105.44957235322688, 45.70004865717727],
-          [-109.18492391572688, 46.264969086535615],
-          [-110.83287313447688, 46.85418817680895],
-          [-114.98570516572688, 45.530987540977804],
-          [-117.60045125947688, 45.592523282039366]]]),
-    imageVisParam12 = {"opacity":1,"bands":["PFGC"],"min":-1,"palette":["ff7804","fbff00","dee0db","65ff52","004e02"]},
-    imageVisParam13 = {"opacity":1,"bands":["remapped_mean"],"min":0.05000000074505806,"max":0.75,"palette":["ff5606","03ba1a"]},
-    imageVisParam14 = {"opacity":1,"bands":["remapped_mean"],"min":0,"max":0.75,"palette":["f3ef81","029114"]},
-    imageVisGrass = {"opacity":1,"bands":["PFGC"],"min":-0.9245283018867925,"palette":["ff0000","feffab","00852f"]},
-    imageVisParam24 = {"opacity":1,"bands":["remapped_mean_mean"],"min":1,"palette":["000004","180f3e","721f81","cd4071","fd9567","fcfdbf"]},
-    imageVisParam25 = {"opacity":1,"bands":["PFGC"],"palette":["e4e6d4","f7ff7c","00852f","004519"]},
-    imageVisParam26 = {"opacity":1,"bands":["constant"],"palette":["f3ffe9","0832ff"]},
-    imageVisParam27 = {"opacity":1,"bands":["PFGC"],"max":0.2,"palette":["ff0000","feffab","00852f"]},
-    imageVisParam28 = {"opacity":1,"bands":["constant"],"min":0,"palette":["f3f1e0","f1eb38","ff7412","d01515","521203"]},
-    imageVisParam29 = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["9bbaff","446cda","0d0589"]},
-    imageVisHT = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["f4ffb6","77da75","08257a"]},
-    imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]},
-    imageVisParam = {"opacity":1,"bands":["Cheatgrass_RCP85_2030-2060_CESM1-CAM5"],"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]};
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
-
-
 
 /********************************************************
  * 
@@ -62,7 +5,7 @@ var AIM = ee.FeatureCollection("BLM/AIM/v1/TerrADat/TerrestrialAIM"),
  * under current conditions
  * 
  * This code was modified by Martin Holdrege but is almost 
- * entirley based on the code David Theobald (dmt@davidmtheobald.com)
+ * entirely based on the code David Theobald (dmt@davidmtheobald.com)
  * wrote
  * 
  * The purspose is to calculate SEI, this is done by removing
@@ -89,8 +32,10 @@ var region = biome.geometry()
 
 // polygons outlining the 3 regions
 var WAFWAecoregions = ee.FeatureCollection("users/DavidTheobald8/WAFWA/WAFWAecoregionsFinal") // MH this loads
-var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']}
 
+// image visualization params
+var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
+var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1,"palette":["e7ed8b","23b608","107a0e","082b08"]};
 var yearNLCD = '2019'  // needs to be a string
 
 Map.addLayer(ee.Image(1),{},'background',false)
@@ -304,13 +249,17 @@ var lstTree2Q = [
 var raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
   var HSI0 = ee.Image(0.0).float()
   for (var i=0; i<lst.length-1; i++) {
-    var inMin = ee.Image(lst[i][0])
-    var inMax = ee.Image(lst[i+1][0])
-    var outMin = ee.Image(lst[i][e])
-    var outMax = ee.Image(lst[i+1][e])
-    var mask = image.gte(inMin).multiply(image.lt(inMax)) // 0/1 mask
+    
+    var inMin = ee.Image(lst[i][0]);// 1st column, left side of bin
+    var inMax = ee.Image(lst[i+1][0]) // 1st column, right side of bin
+    var outMin = ee.Image(lst[i][e]) // Q value 
+    var outMax = ee.Image(lst[i+1][e]) // Q value
+    var mask = image.gte(inMin).multiply(image.lt(inMax)) // 0/1 mask, 1 if between that range
     var y = mask.multiply(image).unitScale(lst[i][0],lst[i+1][0]); // 0 to 1 values
     var y = y.multiply(outMax.subtract(outMin)).add(outMin).multiply(mask);
+    // this addition works because everything not in the cover range, is zero, so subsequent
+    // additions (iterations in the loop)
+    // are adding to different areas of the raster
     var HSI0 = HSI0.add(y);
   }
   return HSI0
@@ -326,9 +275,12 @@ var lstEcoregionIds = ['00000000000000000000','00000000000000000001','0000000000
 for (var e=1; e<=lstEcoregionIds.length; e++) {
   var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])) //
   var Q1x = raw2HSI(nlcdSage560m, lstSage2Q, e)
-    .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
-  // Step 4. is integrated here, multiplying each factor by the earlier one
-  var Q1 = Q1.max(Q1x)
+    .max(0.001) // MH replaces values less than 0.001 with 0.001
+    .multiply(rangeMaskx) // MH values that are not rangeland become zero, 
+    .clip(ecoregion) // MH clip to the ecoregion being looped through
+    .unmask(0.0) // MH convert masked values to 0.
+     
+  var Q1 = Q1.max(Q1x) // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
 
   var Q2x = raw2HSI(rapPerennialG560m, lstPerennialG2Q, e)
     .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
@@ -348,31 +300,38 @@ for (var e=1; e<=lstEcoregionIds.length; e++) {
 }
 
 // Display Q images
+// Step 4. is integrated here, multiplying each factor by the earlier one
+// MH--this multiplication is calculating the SEI (continuous), variable
 Map.addLayer(Q1,imageVisQ,'Q1',false);
-var Q2y = Q1.multiply(Q2).clip(biome);
+var Q2y = Q1.multiply(Q2).clip(biome); 
 Map.addLayer(Q2y,imageVisQ,'Q2y',false);
 var Q3y = Q2y.multiply(Q3).clip(biome);
 Map.addLayer(Q3y,imageVisQ,'Q3y',false);
 var Q4y = Q3y.multiply(Q4).clip(biome);
 Map.addLayer(Q4y,imageVisQ,'Q4y',false);
-var Q5y = Q4y.multiply(Q5).clip(biome);
-Map.addLayer(Q5y,imageVisQ,'Q5y',false);
+var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
+Map.addLayer(Q5y,imageVisQ,'Q5y',false); 
 Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
 
 /**
  * Step 5. Smooth quality values to reflect "management" scale
  */
-var Q5s = Q5y
+ 
+var Q5s = Q5y // MH this is SEI2000
   .unmask(0)
   .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
   .multiply(rangeMaskx);
 
+// MH here the updateMask call dictates that 0 SEI values aren't shown 
 Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s rangeMaskx',false);
   
 /**
  * Step 6. Classify
  * Calculate and classify Q5s into decile classes.
  */
+ 
+// MH-- the actually calculated deciles were not used, instead the derived/hard coded ones (below)
+// are used. 
 var Q5s_deciles = Q5s.reduceRegion({reducer: ee.Reducer.percentile([1,10,20,30,40,50,60,70,80,90,100]),
     maxPixels: 1e13, geometry: biome.geometry(), scale: sampleResolution});
  print('Percentiles for Q5s',Q5s_deciles)
