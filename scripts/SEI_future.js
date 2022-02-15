@@ -12,6 +12,7 @@ var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
 var resolution = 90     // output resolution, 90 initially, 30 m eventually
+var resolutionMed = 500 // resolution for median output, for now do low resolution to increase speed of computation
 var sampleResolution = 270
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
@@ -70,6 +71,7 @@ var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
 * 5. smooth quality by "management" level context using Gaussian kernel radius
 * 6. find deciles and then reclass to 3-classes: core, grow, treat
 * 7. export image with data layers as bands in an image asset
+* 8. repeat steps 5-7 but for the median value across GCMs
 */
 
 
@@ -144,7 +146,6 @@ for (var i=yearStart; i<=yearEnd; i++) {
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
-Map.addLayer(rcmapSage)
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
 var rapAnnualG = rap.select('AFGC') // AFG
@@ -327,6 +328,53 @@ for (var i=0; i<lstScenarios.length; i++) {
   */
 
 }
+
+
+/**
+ * Step 8:
+ * 8a: Calculate the median of SEI 560 (Q5y), across GCMs
+ * 8b: Then smooth that data (to create SEI2000), 
+ * 8c: Classify to 3 SEI classes (core, growth, impacted)
+ * 8d: Export the median data
+*/
+
+
+// Step 8a (median across GCMs)
+var Q5yAll = ee.ImageCollection(Q5yAllList)
+var Q5yMed = Q5yAll.median()
+Map.addLayer(Q5yMed, imageVisQ, "median Q5y across GCMs")
+
+// Step 8b (smoothing)
+
+var Q5sMed = Q5yMed
+    .unmask(0)
+    .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
+    .multiply(rangeMaskx)
+  
+Map.addLayer(Q5sMed.updateMask(Q5sMed.gt(0.0)),imageVisQ,'Q5s rangeMaskx',false)
+    
+// Step 8c Classify to 3 SEI classes
+  
+// decile-based classes, hard coded
+var Q5scdecilesMed = SEI.decileFixedClasses(Q5sMed);
+  
+// Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
+// Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
+var Q5sc3Med = Q5scdecilesMed.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+Map.addLayer(Q5scdecilesMed.selfMask(),imageVisQ5sc,'Q5sMed decile classes',false)
+Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
+
+
+// Step 8d save raster
+
+Export.image.toAsset({ 
+  image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
+  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolutionMed + '_'  + root + '_' +  RCP + '_' + epoch + '_median_20220215',
+  description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolutionMed + '_' +  RCP + '_' + epoch + '_median',
+  maxPixels: 1e13, scale: resolutionMed, region: region,
+  crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+});
+
 /////////////////////////////////////////
 // Display additional overlay layers.
 var imageBiome = empty.paint(biome,1,2)
@@ -334,5 +382,3 @@ Map.addLayer(imageBiome,{},'Biome boundary')
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
 
-var Q5yAll = ee.ImageCollection(Q5yAllList)
-Map.addLayer(Q5yAll.median(), imageVisQ, "median")
