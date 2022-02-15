@@ -101,7 +101,7 @@ exports.lstTree2Q = [
  * @return {ee.Image} The image with the HSI (Q) values calculated for each pixel,
  * for the given ecoregion and index of choice (e.g. sagebrush cover)
  */
-var raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
+exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
   var HSI0 = ee.Image(0.0).float();
   for (var i=0; i<lst.length-1; i++) {
     
