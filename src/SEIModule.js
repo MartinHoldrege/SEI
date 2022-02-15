@@ -96,10 +96,10 @@ exports.lstTree2Q = [
  * generate a linear interpolated reclass for HSI
  * @param {ee.Image} image The image of cover for one of the 5 quality endices 
  * @param {list} lst The list of values that form the HSI curve. These lists are
- * defined above (e.g. lstSage2Q)
+ *     defined above (e.g. lstSage2Q)
  * @param {Number} e The ecoregion for which HSI is calculated (1, 2, or 3)
  * @return {ee.Image} The image with the HSI (Q) values calculated for each pixel,
- * for the given ecoregion and index of choice (e.g. sagebrush cover)
+ *     for the given ecoregion and index of choice (e.g. sagebrush cover)
  */
 exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated reclass for HSI
   var HSI0 = ee.Image(0.0).float();
@@ -124,9 +124,9 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
 
 /**
  * Calculated fixed (hard coded decile classes), these are expert derived, and
- * are based on the observed decile classes.
+ *    are based on the observed decile classes.
  * @param {ee.Image} Q5sThis is the smoothed sagebrush ecological integrity score
- * (i.e. described as SEI2000 in the manuscript draft)
+ *     (i.e. described as SEI2000 in the manuscript draft)
  * @return {ee.Image} values from 1 to 10, denoting the decile class
  */
 exports.decileFixedClasses = function(Q5s) {
