@@ -346,6 +346,7 @@ var Q5scdeciles = Q5s.gt(0.002)
   .add(Q5s.gt(0.326))
   .add(Q5s.gt(0.431))
   .add(Q5s.gt(0.565)).add(1) // so range is 1-10
+  
 Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false)
 
 // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
