@@ -348,7 +348,7 @@ var Q5scdeciles = Q5s.gt(0.002)
   .add(Q5s.gt(0.565)).add(1) // so range is 1-10
   
 Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false)
-
+// CONTINUE HERE
 // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
 // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
 var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
