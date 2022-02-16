@@ -81,13 +81,9 @@ var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
 var RCP = 'RCP85'
 var epoch = '2030-2060'  //'2070-2100' // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
-//var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-//  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
-  
-// mh--for testing same list but without miroc-esm (that one is missing for sagebrush)
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC5','MRI-CGCM3','inmcm4']
-
+  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
+  
 var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
 var ratioSagebrush = ee.Image().float()
@@ -369,7 +365,7 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
-  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolutionMed + '_'  + root + '_' +  RCP + '_' + epoch + '_median_20220215',
+  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' +  RCP + '_' + epoch + '_median_20220215',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
