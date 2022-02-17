@@ -9,8 +9,8 @@ because I couldn't get GEE to work with the repository. It doesn't seem like
 you can (at least easily), change branches within the GEE code editor. 
 
 To push and pull from GEE, using:
-`git push origin_gee master`
+`git push usgs_gee master`
 or
-`git pull origin_gee master`
+`git pull usgs_gee master`
 
 This is after the origin_gee alias has been created. 
