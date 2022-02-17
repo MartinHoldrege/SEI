@@ -49,6 +49,10 @@ commands <- paste0("earthengine upload image --asset_id=",
 # (https://developers.google.com/earth-engine/guides/python_install-conda#install_api)
 # and the earth engine API, and connected that to git bash. as a result the
 # earthengine command line tool works. 
+
+system("conda activate") # this code isn't working at the moment. 
+system('earthengine') # test that working
+system("ls")
 for (com in commands) {
   system(com)
 }
