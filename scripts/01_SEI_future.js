@@ -365,7 +365,7 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
-  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' +  RCP + '_' + epoch + '_median_20220215',
+  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + root + '_' +  RCP + '_' + epoch + '_median_20220215',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
