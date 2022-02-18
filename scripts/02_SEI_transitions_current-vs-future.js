@@ -1,8 +1,3 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var image = ee.Image("users/MartinHoldrege/SEI/v11/current/SEIv11_2017_2020_90_Current_20220215"),
-    image2 = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/SEIv11_2017_2020_500_ClimateOnly__RCP85_2030-2060_median_20220215"),
-    image3 = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/SEIv11_2017_2020_500_ClimateOnly__RCP85_2030-2060_median_20220215");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
 /**
  * The purpose of this script is to identify transitions
  * in SEI between current and future conditions.
