@@ -49,16 +49,28 @@ var c9Names = [
   ];
 var imageVisc9 = {"opacity":1,"min":1,"max":9, "palette":c9Palette};
 
+// parameters for which images to read in
+var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
+var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
+
+var resolution = 90     // output resolution, 90 initially, 30 m eventually
+var epoch = '2030-2060'  //'2070-2100' // //
+var root = 'ClimateOnly_' // 'ClimateOnly_'
+
+
 // Read in data -------------------------------------------------------
 
 // Current SEI classification
-var current = ee.Image("users/MartinHoldrege/SEI/v11/current/SEIv11_2017_2020_90_Current_20220215");
+var currentString = "SEIv11" + "_" + yearStart + '_' + yearEnd + "_" + resolution + "_Current_20220215";
+var current = ee.Image("users/MartinHoldrege/SEI/v11/current/" + currentString);
+
 print(current.bandNames());
 var c3Current = current.select('Q5sc3'); // band with 3 category classification
 // Future SEI classification
 
-var c3Future = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/SEIv11_2017_2020_90_ClimateOnly__RCP85_2030-2060_median_20220215");
-
+var futerString = "SEV11_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + epoch + "_median_20220215";
+var c3Future = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/" + futerString);
+//"users/MartinHoldrege/SEI/v11/forecasts/SEIv11_2017_2020_90_ClimateOnly__RCP85_2030-2060_median_20220215"
 Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 Map.addLayer(c3Future, imageVisQc3, "Q5c3 Future", false);
 
@@ -77,6 +89,9 @@ var c9a = c3Current10.add(c3Future);
 
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+// Saving the layer
+
 
 // creating a map -------------------------------------------------------------
 var empty = ee.Image().byte();
