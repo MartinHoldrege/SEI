@@ -50,15 +50,20 @@ var c9Names = [
 var imageVisc9 = {"opacity":1,"min":1,"max":9, "palette":c9Palette};
 
 // parameters for which images to read in
-var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
-var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
+var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
+var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 90     // output resolution, 90 initially, 30 m eventually
-var epoch = '2030-2060'  //'2070-2100' // //
-var root = 'ClimateOnly_' // 'ClimateOnly_'
-
+var resolution = 90;    // output resolution, 90 initially, 30 m eventually
+var epoch = '2030-2060';  //'2070-2100' // //
+var root = 'ClimateOnly_'; // 'ClimateOnly_'
+var RCP = 'RCP85';
+var s = "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + RCP + "_" + epoch + "_";
 
 // Read in data -------------------------------------------------------
+
+// region of interest
+var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019"); // defines the study region
+var region = biome.geometry();
 
 // Current SEI classification
 var currentString = "SEIv11" + "_" + yearStart + '_' + yearEnd + "_" + resolution + "_Current_20220215";
@@ -68,9 +73,8 @@ print(current.bandNames());
 var c3Current = current.select('Q5sc3'); // band with 3 category classification
 // Future SEI classification
 
-var futerString = "SEV11_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + epoch + "_median_20220215";
-var c3Future = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/" + futerString);
-//"users/MartinHoldrege/SEI/v11/forecasts/SEIv11_2017_2020_90_ClimateOnly__RCP85_2030-2060_median_20220215"
+var futureString = "SEIv11" + s + "median_20220215";
+var c3Future = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/" + futureString);
 Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 Map.addLayer(c3Future, imageVisQc3, "Q5c3 Future", false);
 
@@ -90,8 +94,19 @@ var c9a = c3Current10.add(c3Future);
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-// Saving the layer
+// Saving the layer ----------------------------------------------------------
+// for later use by others
 
+Export.image.toDrive({
+  image: c9b,
+  description: 'SEIv11_9ClassTransition' + s + "median",
+  folder: 'USGS',
+  maxPixels: 1e13, 
+  crs: 'EPSG:4326',    // set to WGS84, decimal degrees
+  scale: resolution,
+  region: region,
+  fileFormat: 'GeoTIFF'
+});
 
 // creating a map -------------------------------------------------------------
 var empty = ee.Image().byte();
