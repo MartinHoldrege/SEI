@@ -10,7 +10,8 @@
  * This script can only be run if these assets have been shared
  * (i.e. it works with the MartinHoldrege gee account)
  * Note missing from this script ar the fire perimiters which
- * I also exported (but forgot to save the code)
+ * I also exported (but forgot to save the code). Those I had 
+ * to save to CSV
 */
 
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
