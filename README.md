@@ -13,4 +13,4 @@ To push and pull from GEE, using:
 or
 `git pull usgs_gee master`
 
-This is after the origin_gee alias has been created. 
+This is after the usgs_gee alias has been created. 
