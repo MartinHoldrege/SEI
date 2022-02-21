@@ -13,14 +13,17 @@
 
 conda activate ee # so earthengine commandline program will work
 
+# may also need to run, to re-authenticate:
+#earthengine authenticate
+
 # Where the assets should go
 asset_folder="projects/gee-guest/assets/SEI/stepwat_change_rasters/"
 
 # where assets are located (needs to be a google cloud storage bucket)
-gs_folder="gs://mholdrege/"
+gs_folder="gs://mholdrege/stepwat_change_rasters/"
 
 # example name of file for code testing
-file="CheatgrassFire_Cheatgrass_ChangePropHistoricalMax_RCP45_2030-2060_CanESM2.tif"
+file="CheatgrassFireC4off_Cheatgrass_ChangePropHistoricalMax_RCP85_2030-2060_CESM1-C"
 
 # this prints what the command will look like
 # double check that this is correct
@@ -33,9 +36,11 @@ cd ./data_raw/stepwat_change_rasters;
 
 # echo *.tif # printing all files in the folder of interest (check this looks right)
 
-# loop through each file name, to upload the images
-for file in echo *.tif;
+# loop through each file name (using name expansion
+# to get names of interest), to upload the images
+for file in echo CheatgrassFireC4off*.tif;
 do 
+    echo $file;
     earthengine upload image --asset_id=${asset_folder}${file::-4} ${gs_folder}${file}; 
 done
 cd ../..; # reset wd (not sure if necessary)

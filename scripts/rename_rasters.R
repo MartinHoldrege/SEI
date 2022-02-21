@@ -3,7 +3,7 @@
 # script started 2/14/2022
 
 # Purpose--rename rasters that have '.' in them (e.g RCP8.5), so that,
-# they can be injested into google earth engine. GEE does not allow periods
+# they can be ingested into google earth engine. GEE does not allow periods
 # names.
 
 
@@ -18,7 +18,6 @@ library(stringr)
 # fp stands for 'file paths'
 fp <- list.files("data_raw/stepwat_change_rasters/",
                  full.names = TRUE)
-
 
 # rename ------------------------------------------------------------------
 
