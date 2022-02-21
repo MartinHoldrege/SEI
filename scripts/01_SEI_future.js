@@ -31,8 +31,8 @@ var region = biome.geometry()
 var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal") 
 
 // Climate change variables
-var RCP = 'RCP45' // 'RCP85' //
-var epoch = '2070-2100' // '2030-2060'  // 
+var RCP = 'RCP85' // 'RCP45' // 
+var epoch = '2030-2060'  // '2070-2100' // 
 // Note that the CheatgrassFire change rasters will need to be updated one simulations have re-run
 var root = 'CheatgrassFire_' // 'ClimateOnly_' // 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
@@ -323,7 +323,7 @@ for (var i=0; i<lstScenarios.length; i++) {
     imageEcoregions.byte().rename('SEIecoregions')
     ])
   
-  /** Currently not exporting these, run this when have all the 
+  /** Currently not exporting these, 
   Export.image.toAsset({ 
     image: WAFWAoutputs, //single image with multiple bands
     assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20220215',
