@@ -31,7 +31,7 @@ var region = biome.geometry()
 var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal") 
 
 // Climate change variables
-var RCP = 'RCP85' 
+var RCP = 'RCP45' 
 var epoch = '2070-2100' // '2030-2060'  // //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
