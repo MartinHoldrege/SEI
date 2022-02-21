@@ -3,6 +3,13 @@
  * for the WAFWA Landscape Conservation Design project
  * Written by David Theobald, EXP, dmt@davidmtheobald.com
  * 
+ * and modified by Martin Holdrege
+ * 
+ * Note that in feb 21, 2022 this code was updated to source
+ * assets from MH's assets folder (projects/gee-guest/assets/SEI).
+ * These are the assets that DT shared but that I then exported
+ * in the 'export_daves"assets2drive.js' script, and then ingested.
+ * 
 */
 
 // notes made by me Martin Holdrege start with MH
@@ -17,10 +24,18 @@ var sampleResolution = 270
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
 var version = '11'
+var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
 
-var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019") // defines the study region
+var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019") // defines the study region
 var region = biome.geometry()
-var WAFWAecoregions = ee.FeatureCollection("users/DavidTheobald8/WAFWA/WAFWAecoregionsFinal") 
+var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal") 
+
+// Climate change variables
+var RCP = 'RCP85'
+var epoch = '2030-2060'  //'2070-2100' // //
+var root = 'ClimateOnly_' // 'ClimateOnly_'
+var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
 
 // image visualization params
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
@@ -31,7 +46,7 @@ var yearNLCD = '2019'  // needs to be a string
 Map.addLayer(ee.Image(1),{},'background',false)
 
 // Human modification dataset (Q4)
-var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush');
+var H = ee.Image(path + 'hm/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush');
 
 /// from USGS GAP land cover	
 var LC = ee.Image("USGS/GAP/CONUS/2011")	
@@ -78,12 +93,6 @@ var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
 ///////////////////////////////////////
 // 0. Generate climate change ratio
 
-var RCP = 'RCP85'
-var epoch = '2030-2060'  //'2070-2100' // //
-var root = 'ClimateOnly_' // 'ClimateOnly_'
-var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-  'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
-  
 var ratioCheatgrass = ee.Image().float()
 var ratioPgrass = ee.Image().float()
 var ratioSagebrush = ee.Image().float()
@@ -91,17 +100,17 @@ var ratioSagebrush = ee.Image().float()
 
 for (var i=0; i<lstScenarios.length; i++) {
   print(i)
-  var futureCheatgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
+  var futureCheatgrass = ee.Image(path +'stepwat_change_rasters/' + root + 'Cheatgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
 
   var x = futureCheatgrass.add(1.0).rename('Cheatgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   // MH--looks like the file being read in is already the ratio
   var ratioCheatgrass = ratioCheatgrass.addBands(x)
 
-  var futurePgrass = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Pgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
+  var futurePgrass = ee.Image(path +'stepwat_change_rasters/' + root + 'Pgrass_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   var x = futurePgrass.add(1.0).rename('Pgrass'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   var ratioPgrass = ratioPgrass.addBands(x)
 
-  var futureSagebrush = ee.Image('users/DavidTheobald8/USGS/Biomass/' + root + 'Sagebrush_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
+  var futureSagebrush = ee.Image(path +'stepwat_change_rasters/' + root + 'Sagebrush_ChangePropHistoricalMax_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   var x = futureSagebrush.add(1.0).rename('Sagebrush'+ '_' + RCP + '_' + epoch + '_' + lstScenarios[i])
   var ratioSagebrush = ratioSagebrush.addBands(x)
 }
@@ -118,7 +127,7 @@ Map.addLayer(ratioSagebrush,{},'Sagebrush'+ '_' + RCP + '_' + epoch ,false)
 // 1. step 1 - 
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-var mtbs = ee.FeatureCollection('users/DavidTheobald8/MTBS/mtbs_perims_DD_2018') 
+// DT made this file public (exporting it to drive and re-ingesting throws errors)
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History') 
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
@@ -138,7 +147,7 @@ Map.addLayer(rap,{},'rap all 4 years',false)
 
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
-  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // this loads
+  var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // this loads
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
@@ -316,13 +325,12 @@ for (var i=0; i<lstScenarios.length; i++) {
   /** Currently not exporting these, run this when have all the 
   Export.image.toAsset({ 
     image: WAFWAoutputs, //single image with multiple bands
-    assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20220215',
+    assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20220215',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
   })
   */
-
 }
 
 
@@ -365,7 +373,7 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
-  assetId: 'users/MartinHoldrege/SEI/v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + root + '_' +  RCP + '_' + epoch + '_median_20220215',
+  assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + root + '_' +  RCP + '_' + epoch + '_median_20220215',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
