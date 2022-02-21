@@ -31,8 +31,8 @@ var region = biome.geometry()
 var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal") 
 
 // Climate change variables
-var RCP = 'RCP45' 
-var epoch = '2070-2100' // '2030-2060'  // //
+var RCP = 'RCP45' // 'RCP85' //
+var epoch = '2030-2060'  // '2070-2100' //
 var root = 'ClimateOnly_' // 'ClimateOnly_'
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
@@ -346,7 +346,7 @@ for (var i=0; i<lstScenarios.length; i++) {
 // Step 8a (median across GCMs)
 var Q5yAll = ee.ImageCollection(Q5yAllList)
 var Q5yMed = Q5yAll.median()
-Map.addLayer(Q5yMed, imageVisQ, "median Q5y across GCMs")
+Map.addLayer(Q5yMed, imageVisQ, "median Q5y across GCMs", false)
 
 // Step 8b (smoothing)
 
@@ -382,7 +382,7 @@ Export.image.toAsset({
 /////////////////////////////////////////
 // Display additional overlay layers.
 var imageBiome = empty.paint(biome,1,2)
-Map.addLayer(imageBiome,{},'Biome boundary')
+Map.addLayer(imageBiome,{},'Biome boundary', false)
 
 Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
 
