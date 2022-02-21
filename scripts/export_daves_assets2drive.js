@@ -73,3 +73,18 @@ for (var i=yearStart; i<=yearEnd; i++) {
   });
 
 }
+
+// fire regions
+
+if (false) {
+// This code doesn't work, I get the following error:
+// "Shapefiles cannot contain multiple geometry types; found 'LineString', 'Polygon'. (Error code: 3)"
+var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History');
+
+Export.table.toDrive({
+  collection: wildfires,
+  description: "Interagency_Fire_Perimeter_History",
+  folder: "USGS",
+  fileFormat: "SHP"});
+
+}
