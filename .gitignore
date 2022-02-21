@@ -5,6 +5,11 @@
 *.jpg
 *.pdf
 
+# specific folders
+scripts/example_scripts_from_others/*
+data_raw
+paper
+
 # History files
 .Rhistory
 .Rapp.history
@@ -33,5 +38,4 @@ vignettes/*.pdf
 *.knit.md
 # R Environment Variables
 .Renviron
-data_raw
-paper
+
