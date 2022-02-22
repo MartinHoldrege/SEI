@@ -9,6 +9,8 @@
  * assets from MH's assets folder (projects/gee-guest/assets/SEI).
  * These are the assets that DT shared but that I then exported
  * in the 'export_daves"assets2drive.js' script, and then ingested.
+ * Note that not all the 'ingestions', worked properly in those
+ * cases I'm still directly loading DTs assets
  * 
 */
 
@@ -39,6 +41,7 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal")
 
 // create lists of simulations types
 // Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
+// This function repeats each element of the list a speciefied number of times
 var rootList = SEI.repeatelemList(
   ['ClimateOnly_', 'CheatgrassFire_', 'CheatgrassFireC4off_'], // epochs
   [4, 4, 2]); // number of assets with each of these epochs
@@ -49,7 +52,6 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
   
 // list of epochs
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
-
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
@@ -90,8 +92,6 @@ Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playa
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') // MH--this loads
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
-
-
 
 /**
 * Model overview with steps: 
@@ -390,15 +390,14 @@ for (var k = 0; k<rootList.length; k++) {
   
   
   // Step 8d save raster
-  if (false) {
-  Export.image.toAsset({ 
+    Export.image.toAsset({ 
     image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
     assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_median_20220215',
     description: 'SEI_' + root + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
   });
-  }
+  
 
 } // end of loop through climate simulations (RCPs, time periods etc)
 
