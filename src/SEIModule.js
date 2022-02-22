@@ -151,7 +151,9 @@ exports.decileFixedClasses = function(Q5s) {
  * @ param n number of times to repeat the element
  * @ returns a list
  */
-exports.repeatelem = function(elem, n){
+var repeatelem = exports.repeatelem = function(elem, n){
+    // both exporting and assigning to a variable so that it can be 
+    // used in the function below
     // returns an array with element elem repeated n times.
     var arr = [];
 
@@ -160,4 +162,24 @@ exports.repeatelem = function(elem, n){
     }
 
     return arr;
+};
+
+/**
+ * return a list with each element of elemList return nList times
+ * @ param elemList list of elements to be repeated
+ * @ param nList, same length as elemList, defining how many times
+ *    each element of that list should be repeated
+ * @ returns a list
+ */
+exports.repeatelemList = function(elemList, nList) {
+  
+  if (elemList.length != nList.length) {
+    throw 'arguments must have the same length';
+  }
+  
+  var out = [];
+  for (var i = 0; i < elemList.length; i++) {
+    var out = out.concat(repeatelem(elemList[i], nList[i]));
+  }
+  return out;
 };
