@@ -141,3 +141,23 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.565)).add(1) // so range is 1-10
   return(out)
 };
+
+
+/**
+ * return a list with element repeated n times
+ * I'm just copying this function from here:
+ * https://stackoverflow.com/questions/12503146/create-an-array-with-same-element-repeated-multiple-times
+ * @ param elem to be repeated
+ * @ param n number of times to repeat the element
+ * @ returns a list
+ */
+var repeatelem = function(elem, n){
+    // returns an array with element elem repeated n times.
+    var arr = [];
+
+    for (var i = 0; i <= n; i++) {
+        arr = arr.concat(elem);
+    }
+
+    return arr;
+};
