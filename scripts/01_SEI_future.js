@@ -32,9 +32,11 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal")
 
 // Climate change variables
 var RCP = 'RCP85' // 'RCP45' // 
-var epoch = '2030-2060'  // '2070-2100' // 
-// Note that the CheatgrassFire change rasters will need to be updated one simulations have re-run
-var root = 'CheatgrassFire_' // 'ClimateOnly_' // 
+var epoch = '2070-2100' // '2030-2060'  // 
+
+// Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
+var root = 'CheatgrassFireC4off_' // 'CheatgrassFire_' // 'ClimateOnly_' // 
+
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
 
@@ -374,7 +376,7 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
-  assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + root + '_' +  RCP + '_' + epoch + '_median_20220215',
+  assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_median_20220215',
   description: 'SEI_' + root + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_median',
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
