@@ -11,9 +11,13 @@
  * The purspose is to calculate SEI, this is done by removing
  * step 0, of the Climate change script where the rasters
  * where multiplied by the climate change ratios
+ * 
+ * Note thate in feb 21, 2022 this code was updated to source
+ * assets from MH's assets folder (projects/gee-guest/assets/SEI).
+ * These are the assets that DT shared but that I then exported
+ * in the 'export_daves"assets2drive.js' script, and then ingested.
 */
 
-// notes made by me Martin Holdrege start with MH
 
 // User-defined variables.
 
@@ -25,13 +29,14 @@ var sampleResolution = 270 // MH--this is only used in one place, with no downst
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
 var version = '11'
+var path = 'projects/gee-guest/assets/SEI/' // path to where most assets live
 
 // MH--this feature is present
-var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019") // defines the study region
+var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019") // provided by DT
 var region = biome.geometry()
 
 // polygons outlining the 3 regions
-var WAFWAecoregions = ee.FeatureCollection("users/DavidTheobald8/WAFWA/WAFWAecoregionsFinal") // MH this loads
+var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal") // provided by DT
 
 // image visualization params
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
@@ -41,6 +46,8 @@ var yearNLCD = '2019'  // needs to be a string
 Map.addLayer(ee.Image(1),{},'background',false)
 
 // MH this is the human modification dataset
+// At the moment don't use the copy of this data set that I ingest (it is corrupted somehow)
+//var H = ee.Image(path + 'hm/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 
 /// from USGS GAP land cover	
@@ -71,7 +78,7 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 // Load module with functions and HSI curves used below
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js")
 
 /**
 * Model overview with steps: 
@@ -89,7 +96,9 @@ var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
 // 1. step 1 - 
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); // MH--this loads
+// DT has made this file public, and I ran into issue exporting it (contains both polygons and lines which
+// can't both be in a shapefile)
+var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); 
 
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
@@ -116,7 +125,10 @@ Map.addLayer(rap,{},'rap all 4 years',false)
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
   // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
-  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i) // this loads
+  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
+    // Note--I somehow screwed up ingesting these rcmap rasters so at least for now keep
+    // loading the ones DT made publically available
+  //var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // from DT
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 
@@ -282,12 +294,13 @@ var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
   Q5scdeciles.byte().rename('Q5scdeciles'),
   Q5sc3.byte().rename('Q5sc3'),
   imageEcoregions.byte().rename('SEIecoregions')
-  ])
+  ]);
 
 // This tod ~ 33 minutes when the task was run in the task bar
+
 Export.image.toAsset({ 
   image: WAFWAoutputsCurrent, //single image with multiple bands
-  assetId: 'users/MartinHoldrege/SEI/v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
+  assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees

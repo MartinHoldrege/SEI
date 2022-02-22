@@ -23,80 +23,92 @@
 */
 
 // parameters --------------------------------------------------------
-// visualization
-// (c3 stands for classification into 3 levels)
-var imageVisQc3 = {"opacity":1,"min":1,"max":3};
-var c9Palette = ['#000000', // stable core (black)
-  '#64AC46', // core becomes grow
-  '#ABAB4B', // core becomes impacted
-  '#2159B0', // grow becomes core
-  '#757170', // stable grow
-  '#F0FA77', //grow becomes impacted
-  '#7698D8', // impacted becomes core
-  '#B1CE94', // impacted becomes grow
-  '#D9D9D9' // stable impacted
-];
-var c9Names = [
-  'Stable core',
-  'Core becomes grow',
-  'Core becomes impacted',
-  'Grow becomes core',
-  'Stable grow',
-  'Grow becomes impacted',
-  'Impacted becomes core',
-  'Impacted becomes grow',
-  'Stable impacted'
-  ];
-var imageVisc9 = {"opacity":1,"min":1,"max":9, "palette":c9Palette};
+
 
 // parameters for which images to read in
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
 var resolution = 90;    // output resolution, 90 initially, 30 m eventually
-var epoch = '2030-2060';  //'2070-2100' // //
-var root = 'ClimateOnly_'; // 'ClimateOnly_'
-var RCP = 'RCP85';
-var s = "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + RCP + "_" + epoch + "_";
 
-// Read in data -------------------------------------------------------
+var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+
+// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+
+// create lists of simulations types
+var rootList = SEI.repeatelemList(
+  ['ClimateOnly_', 'CheatgrassFire_', 'CheatgrassFireC4off_'], // epochs
+  [4, 4, 2]); // number of assets with each of these epochs
+  
+// list of RCP scenarios
+var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat this list twice
+  .concat(['RCP85', 'RCP85']); // CheatgrassFireC4off only run for RCP85 at the moment, so adding seperatly
+  
+// list of epochs
+var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
+
+var imageVisQc3 = {"opacity":1,"min":1,"max":3};
+// Read in current SEI -------------------------------------------------------
 
 // region of interest
-var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019"); // defines the study region
+var biome = ee.FeatureCollection(path + 'US_Sagebrush_Biome_2019'); // defines the study region
 var region = biome.geometry();
 
 // Current SEI classification
 var currentString = "SEIv11" + "_" + yearStart + '_' + yearEnd + "_" + resolution + "_Current_20220215";
-var current = ee.Image("users/MartinHoldrege/SEI/v11/current/" + currentString);
+var current = ee.Image(path + "v11/current/" + currentString);
 
 print(current.bandNames());
-var c3Current = current.select('Q5sc3'); // band with 3 category classification
-// Future SEI classification
-
-var futureString = "SEIv11" + s + "median_20220215";
-var c3Future = ee.Image("users/MartinHoldrege/SEI/v11/forecasts/" + futureString);
+var c3Current = current.select('Q5sc3'); // band with 3 category classification (hence 'c3' in name)
 Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
-Map.addLayer(c3Future, imageVisQc3, "Q5c3 Future", false);
+
+// Future SEI classification --------------------------------------------
+
+var c3Future = ee.Image().float(); // empty image
+var futureStringList = [];
+for (var i = 0; i < rootList.length; i++) {
+  var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + rootList[i] + RCPList[i] + "_" + epochList[i] + "_";
+
+  var futureString = "SEIv11" + s + "median_20220215";
+  print(futureString);
+  var futureStringList = futureStringList.concat(futureString);
+  
+  // SEI for the given climate scenario
+  var tempImage = ee.Image(path + "v11/forecasts/" + futureString); 
+  
+  Map.addLayer(tempImage, imageVisQc3, "Q5c3 Future " + rootList[i] + RCPList[i] + "_" + epochList[i], false);
+  
+  // each band is the SEI classification for a different scenario
+  var c3Future = c3Future.addBands(tempImage.rename(futureString)); 
+  
+} 
 
 // transitions between classes ----------------------------------------
-
+  
 var c3Current10 = c3Current.multiply(10); // 3 categories now becomes 10, 20, and 30
 
-// adding the two rasters together, this creates 9 categories:
-// for exampl: 
+// adding the two rasters together, this creates 9 categories (hence 'c9' in object names),
+// for example: 
 // 11 means that an area was a core area and stayed a core area
 // 12 = core area becomes grow
 // 13 = core becomes impacted
 // 32 = impacted becomes grow
 // etc.
-var c9a = c3Current10.add(c3Future);
+
+ // c3Current only has one band, so this is then added to each of the bands for c3Futer
+var c9a = c3Future.add(c3Current10);
 
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  
 
-// Saving the layer ----------------------------------------------------------
-// for later use by others
+  // Saving the layer ----------------------------------------------------------
+  // for later use by others
+  
 
+
+if (false){
 Export.image.toDrive({
   image: c9b,
   description: 'SEIv11_9ClassTransition' + s + "median",
@@ -107,77 +119,5 @@ Export.image.toDrive({
   region: region,
   fileFormat: 'GeoTIFF'
 });
+}
 
-// creating a map -------------------------------------------------------------
-var empty = ee.Image().byte();
-
-var states = ee.FeatureCollection('TIGER/2016/States'); // for background of map
-
-var statesOutline = empty.paint({
-  featureCollection: states,
-  color: 1,
-  width: 2
-});
-
-Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'background'); // white background
-Map.addLayer(statesOutline, {}, 'outline'); // outline of states
-Map.addLayer(c9b, imageVisc9, 'c9 transition');
-
-// Legend --------------------------
-
-// set position of panel
-var legend = ui.Panel({
-  style: {
-    position: 'bottom-left',
-    padding: '8px 15px'
-  }
-});
- 
-// Create legend title
-var legendTitle = ui.Label({
-  value: 'Transition',
-  style: {
-    fontWeight: 'bold',
-    fontSize: '18px',
-    margin: '0 0 4px 0',
-    padding: '0'
-    }
-});
- 
-// Add the title to the panel
-legend.add(legendTitle);
- 
-// Creates and styles 1 row of the legend.
-var makeRow = function(color, name) {
- 
-      // Create the label that is actually the colored box.
-      var colorBox = ui.Label({
-        style: {
-          backgroundColor: color,
-          // Use padding to give the box height and width.
-          padding: '8px',
-          margin: '0 0 4px 0'
-        }
-      });
- 
-      // Create the label filled with the description text.
-      var description = ui.Label({
-        value: name,
-        style: {margin: '0 0 4px 6px'}
-      });
- 
-      // return the panel
-      return ui.Panel({
-        widgets: [colorBox, description],
-        layout: ui.Panel.Layout.Flow('horizontal')
-      });
-};
- 
-
-// Add color and and names
-for (var i = 0; i < c9Palette.length; i++) {
-  legend.add(makeRow(c9Palette[i], c9Names[i]));
-  }  
- 
-// add legend to map (alternatively you can also print the legend to the console)
-Map.add(legend);
