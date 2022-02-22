@@ -113,10 +113,11 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 // This outer loop runs through different simulation types
 // E.g. for each RCP, epoch, and root (e.g. climate only vs cheatgrassfire stepwat simulations)
 for (var k = 0; k<rootList.length; k++) {
-  var RCP = RCPList[i];
-  var epoch = epochList[i];
-  var root = rootList[i];
-  print(root + RCP + epoch);
+  var RCP = RCPList[k];
+  var epoch = epochList[k];
+  var root = rootList[k];
+  print(root + RCP + '_' + epoch);
+
 
   var ratioCheatgrass = ee.Image().float()
   var ratioPgrass = ee.Image().float()
