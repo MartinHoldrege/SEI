@@ -155,7 +155,7 @@ exports.repeatelem = function(elem, n){
     // returns an array with element elem repeated n times.
     var arr = [];
 
-    for (var i = 0; i <= n; i++) {
+    for (var i = 1; i <= n; i++) {
         arr = arr.concat(elem);
     }
 
