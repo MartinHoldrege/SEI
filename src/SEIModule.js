@@ -151,7 +151,7 @@ exports.decileFixedClasses = function(Q5s) {
  * @ param n number of times to repeat the element
  * @ returns a list
  */
-var repeatelem = function(elem, n){
+exports.repeatelem = function(elem, n){
     // returns an array with element elem repeated n times.
     var arr = [];
 
