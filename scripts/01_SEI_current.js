@@ -76,7 +76,7 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 // Load module with functions and HSI curves used below
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js")
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js")
 
 /**
 * Model overview with steps: 
