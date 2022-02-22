@@ -42,6 +42,7 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal")
 // create lists of simulations types
 // Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
 // This function repeats each element of the list a speciefied number of times
+/* temporarily not running the following code
 var rootList = SEI.repeatelemList(
   ['ClimateOnly_', 'CheatgrassFire_', 'CheatgrassFireC4off_'], // epochs
   [4, 4, 2]); // number of assets with each of these epochs
@@ -52,6 +53,12 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
   
 // list of epochs
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
+*/
+
+// Temp for testing
+var rootList = ['ClimateOnly_']
+var RCPList = ['RCP45']
+var epochList = ['2030-2060']
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
