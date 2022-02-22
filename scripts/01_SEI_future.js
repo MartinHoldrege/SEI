@@ -17,7 +17,7 @@
 // Load module with functions and HSI curves used below
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 
-var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
 // User-defined variables.
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
@@ -112,7 +112,7 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 
 // This outer loop runs through different simulation types
 // E.g. for each RCP, epoch, and root (e.g. climate only vs cheatgrassfire stepwat simulations)
-for (var i = 0; i<rootList.length; i++) {
+for (var k = 0; k<rootList.length; k++) {
   var RCP = RCPList[i];
   var epoch = epochList[i];
   var root = rootList[i];
