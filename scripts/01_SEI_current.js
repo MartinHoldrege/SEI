@@ -46,7 +46,9 @@ var yearNLCD = '2019'  // needs to be a string
 Map.addLayer(ee.Image(1),{},'background',false)
 
 // MH this is the human modification dataset
-var H = ee.Image(path + 'hm/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
+// At the moment don't use the copy of this data set that I ingest (it is corrupted somehow)
+//var H = ee.Image(path + 'hm/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
+var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
 
 /// from USGS GAP land cover	
 var LC = ee.Image("USGS/GAP/CONUS/2011")	
@@ -123,7 +125,10 @@ Map.addLayer(rap,{},'rap all 4 years',false)
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
   // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
-  var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // from DT
+  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
+    // Note--I somehow screwed up ingesting these rcmap rasters so at least for now keep
+    // loading the ones DT made publically available
+  //var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // from DT
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 
@@ -292,6 +297,7 @@ var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
   ]);
 
 // This tod ~ 33 minutes when the task was run in the task bar
+
 Export.image.toAsset({ 
   image: WAFWAoutputsCurrent, //single image with multiple bands
   assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
