@@ -35,7 +35,7 @@ var RCP = 'RCP85' // 'RCP45' //
 var epoch = '2070-2100' // '2030-2060'  // 
 
 // Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
-var root = 'CheatgrassFireC4off_' // 'CheatgrassFire_' // 'ClimateOnly_' // 
+var root = 'ClimateOnly_' // 'CheatgrassFireC4off_' // 'CheatgrassFire_' // 
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
@@ -150,7 +150,10 @@ Map.addLayer(rap,{},'rap all 4 years',false)
 
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
-  var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // this loads
+    var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
+    // Note--I somehow screwed up ingesting these rcmap rasters so at least for now keep
+    // loading the ones DT made publically available
+//  var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) 
   var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
 }
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage')
@@ -325,15 +328,6 @@ for (var i=0; i<lstScenarios.length; i++) {
     imageEcoregions.byte().rename('SEIecoregions')
     ])
   
-  /** Currently not exporting these, 
-  Export.image.toAsset({ 
-    image: WAFWAoutputs, //single image with multiple bands
-    assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_'  + root + '_' + s + '_20220215',
-    description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
-    maxPixels: 1e13, scale: resolution, region: region,
-    crs: 'EPSG:4326'    // set to WGS84, decimal degrees
-  })
-  */
 }
 
 
@@ -373,7 +367,7 @@ Map.addLayer(Q5sc3Med.selfMask(),{},'Q5sMed 3 classes',false)
 
 
 // Step 8d save raster
-
+if (false) {
 Export.image.toAsset({ 
   image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
   assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_median_20220215',
@@ -381,7 +375,7 @@ Export.image.toAsset({
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
 });
-
+}
 /////////////////////////////////////////
 // Display additional overlay layers.
 var imageBiome = empty.paint(biome,1,2)
