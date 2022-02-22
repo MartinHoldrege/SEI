@@ -42,7 +42,6 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal")
 // create lists of simulations types
 // Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
 // This function repeats each element of the list a speciefied number of times
-/* temporarily not running the following code
 var rootList = SEI.repeatelemList(
   ['ClimateOnly_', 'CheatgrassFire_', 'CheatgrassFireC4off_'], // epochs
   [4, 4, 2]); // number of assets with each of these epochs
@@ -53,12 +52,14 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
   
 // list of epochs
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
-*/
 
-// Temp for testing
+
+// for testing
+/*
 var rootList = ['ClimateOnly_']
 var RCPList = ['RCP45']
 var epochList = ['2030-2060']
+*/
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
@@ -151,10 +152,12 @@ for (var k = 0; k<rootList.length; k++) {
   
   //print(futureCheatgrass);
   var visParamRatio = {"opacity":1,"min":-0.1,"max":0.1,"palette":["0a3fff","bababa","a50000"]}
+  
+  /*
   Map.addLayer(ratioCheatgrass,{},'Cheatgrass'+ '_' + RCP + '_' + epoch ,false)
   Map.addLayer(ratioPgrass,{},'Pgrass'+ '_' + RCP + '_' + epoch ,false)
   Map.addLayer(ratioSagebrush,{},'Sagebrush'+ '_' + RCP + '_' + epoch ,false)
-  
+  */
   
   ///////////////////////////////////////
   // 1. step 1 - 
@@ -213,7 +216,6 @@ for (var k = 0; k<rootList.length; k++) {
   // end of the data, cycling through GCMs
   for (var i=0; i<lstScenarios.length; i++) {
   
-    print(i)
     var s = '_' + RCP + '_' + epoch + '_' + lstScenarios[i]
     // apply ratio to rap & nlcd data
     var rapAnnualG = rap.select('AFGC')
@@ -289,13 +291,13 @@ for (var k = 0; k<rootList.length; k++) {
     }
     
     // Display Q images
-    Map.addLayer(Q1,imageVisQ,'Q1',false)
+    //Map.addLayer(Q1,imageVisQ,'Q1',false)
     var Q2y = Q1.multiply(Q2).clip(biome)
-    Map.addLayer(Q2y,imageVisQ,'Q2y',false)
+    //Map.addLayer(Q2y,imageVisQ,'Q2y',false)
     var Q3y = Q2y.multiply(Q3).clip(biome)
-    Map.addLayer(Q3y,imageVisQ,'Q3y',false)
+    //Map.addLayer(Q3y,imageVisQ,'Q3y',false)
     var Q4y = Q3y.multiply(Q4).clip(biome)
-    Map.addLayer(Q4y,imageVisQ,'Q4y',false)
+    //Map.addLayer(Q4y,imageVisQ,'Q4y',false)
     var Q5y = Q4y.multiply(Q5).clip(biome)
     Map.addLayer(Q5y,imageVisQ,'Q5y',false)
     Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false)
