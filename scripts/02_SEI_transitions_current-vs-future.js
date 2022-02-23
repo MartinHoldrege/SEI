@@ -110,7 +110,8 @@ var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 
   
 Export.image.toAsset({
   image: c9b,
-  description: 'SEIv11_9ClassTransition_by-scenario_median_20220223',
+  assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220223',
+  description: 'SEIv11_9ClassTransition_byScenario_median',
   maxPixels: 1e13, 
   scale: resolution,
   crs: 'EPSG:4326' 
