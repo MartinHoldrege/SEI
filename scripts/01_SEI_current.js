@@ -121,7 +121,6 @@ var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with mean 
 Map.addLayer(rap,{},'rap all 4 years',false)
 
 
-
 var lstRCMAPsage = ee.List([])
 for (var i=yearStart; i<=yearEnd; i++) {
   // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
@@ -231,12 +230,13 @@ for (var e=1; e<=lstEcoregionIds.length; e++) {
 // Step 4. is integrated here, multiplying each factor by the earlier one
 // MH--this multiplication is calculating the SEI (continuous), variable
 Map.addLayer(Q1,imageVisQ,'Q1',false);
-var Q2y = Q1.multiply(Q2).clip(biome); 
+var Q2y = Q1.multiply(Q2); //
 Map.addLayer(Q2y,imageVisQ,'Q2y',false);
-var Q3y = Q2y.multiply(Q3).clip(biome);
+var Q3y = Q2y.multiply(Q3);
 Map.addLayer(Q3y,imageVisQ,'Q3y',false);
-var Q4y = Q3y.multiply(Q4).clip(biome);
+var Q4y = Q3y.multiply(Q4);
 Map.addLayer(Q4y,imageVisQ,'Q4y',false);
+// I only left the clip statement in this last multiply
 var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
 Map.addLayer(Q5y,imageVisQ,'Q5y',false); 
 Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
