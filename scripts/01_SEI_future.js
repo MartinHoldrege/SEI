@@ -292,11 +292,11 @@ for (var k = 0; k<rootList.length; k++) {
     
     // Display Q images
     //Map.addLayer(Q1,imageVisQ,'Q1',false)
-    var Q2y = Q1.multiply(Q2).clip(biome)
+    var Q2y = Q1.multiply(Q2)
     //Map.addLayer(Q2y,imageVisQ,'Q2y',false)
-    var Q3y = Q2y.multiply(Q3).clip(biome)
+    var Q3y = Q2y.multiply(Q3)
     //Map.addLayer(Q3y,imageVisQ,'Q3y',false)
-    var Q4y = Q3y.multiply(Q4).clip(biome)
+    var Q4y = Q3y.multiply(Q4)
     //Map.addLayer(Q4y,imageVisQ,'Q4y',false)
     var Q5y = Q4y.multiply(Q5).clip(biome)
     Map.addLayer(Q5y,imageVisQ,'Q5y',false)
