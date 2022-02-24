@@ -67,6 +67,8 @@ Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 
 var c3Future = ee.Image().float(); // empty image
 var futureStringList = [];
+// Using a for loop isn't efficient but I could get ee.Image() to work when 
+// a ee.String() was passed to it (was would be need if running something like list.iterate(function)
 for (var i = 0; i < rootList.length; i++) {
   var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + rootList[i] + RCPList[i] + "_" + epochList[i] + "_";
 
@@ -103,9 +105,18 @@ var c9a = c3Future.add(c3Current10);
 var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
   
 
-  // Saving the layer ----------------------------------------------------------
-  // for later use by others
+// Saving the layer ----------------------------------------------------------
+// for later use by others
   
+Export.image.toAsset({
+  image: c9b,
+  assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220223',
+  description: 'SEIv11_9ClassTransition_byScenario_median',
+  maxPixels: 1e13, 
+  scale: resolution,
+  crs: 'EPSG:4326' 
+});
+
 
 
 if (false){
