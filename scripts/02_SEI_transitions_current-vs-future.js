@@ -79,6 +79,7 @@ for (var i = 0; i < rootList.length; i++) {
   
   // SEI for the given climate scenario
   var tempImage = ee.Image(path + "v11/forecasts/" + futureString); 
+  var bandName = 'c9_' + rootList[i] + RCPList[i] + "_" + epochList[i];
   
   Map.addLayer(tempImage, imageVisQc3, "Q5c3 Future " + rootList[i] + RCPList[i] + "_" + epochList[i], false);
   
@@ -110,22 +111,30 @@ var c9a = c3FutureCollection.map(function(image) {
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.map(function(image) {
   var image = ee.Image(image);
-  var name = image.bandNames().get(0); // the image only has on band, getting it's name
+  var name = ee.String(image.bandNames().get(0)); // the image only has on band, getting it's name
   var remapped = image.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  return remapped.rename(ee.String(name));
+  return remapped.rename(name);
 });
 
 // convert collection to one image, where each original image becomes its own band
 var c9c = c9b.toBands();
 
+// renaming bands so they don't have leading numbers and _, which causes errors when exporting
+var names = c9c.bandNames().map(function(name){
+  var out = ee.String(name)
+    .replace('\\d+_', ''); 
+  return out;
+});
+
+var c9d = c9c.rename(names);
 //print(c9c);
-//print(c9c.bandNames());
+//print(c9d.bandNames());
 
 // Saving the layer ----------------------------------------------------------
 
 
 Export.image.toAsset({
-  image: c9c,
+  image: c9d,
   assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224',
   description: 'SEIv11_9ClassTransition_byScenario_median',
   maxPixels: 1e13, 
