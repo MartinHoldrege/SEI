@@ -69,6 +69,7 @@ var c3Future = ee.Image().float(); // empty image
 var futureStringList = [];
 // Using a for loop isn't efficient but I could get ee.Image() to work when 
 // a ee.String() was passed to it (was would be need if running something like list.iterate(function)
+var c3Future = ee.List([])
 for (var i = 0; i < rootList.length; i++) {
   var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + rootList[i] + RCPList[i] + "_" + epochList[i] + "_";
 
@@ -78,11 +79,12 @@ for (var i = 0; i < rootList.length; i++) {
   
   // SEI for the given climate scenario
   var tempImage = ee.Image(path + "v11/forecasts/" + futureString); 
+  var bandName = 'c9_' + rootList[i] + RCPList[i] + "_" + epochList[i];
   
   Map.addLayer(tempImage, imageVisQc3, "Q5c3 Future " + rootList[i] + RCPList[i] + "_" + epochList[i], false);
   
   // each band is the SEI classification for a different scenario
-  var c3Future = c3Future.addBands(tempImage.rename(futureString)); 
+  var c3Future = c3Future.add(tempImage.rename(futureString)); 
   
 } 
 
@@ -98,19 +100,42 @@ var c3Current10 = c3Current.multiply(10); // 3 categories now becomes 10, 20, an
 // 32 = impacted becomes grow
 // etc.
 
- // c3Current only has one band, so this is then added to each of the bands for c3Futer
-var c9a = c3Future.add(c3Current10);
+
+var c3FutureCollection = ee.ImageCollection(c3Future); // convert list to image collection
+
+ // c3Current only has one band, so adding that to each image (scenario) of c3Futer
+var c9a = c3FutureCollection.map(function(image) {
+  return ee.Image(image).add(c3Current10);
+});
 
 // remapping from 1-9 for figure creation reasons
-var c9b = c9a.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  
+var c9b = c9a.map(function(image) {
+  var image = ee.Image(image);
+  var name = ee.String(image.bandNames().get(0)); // the image only has on band, getting it's name
+  var remapped = image.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  return remapped.rename(name);
+});
+
+// convert collection to one image, where each original image becomes its own band
+var c9c = c9b.toBands();
+
+// renaming bands so they don't have leading numbers and _, which causes errors when exporting
+var names = c9c.bandNames().map(function(name){
+  var out = ee.String(name)
+    .replace('^\\d+_', ''); 
+  return out;
+});
+
+var c9d = c9c.rename(names);
+//print(c9c);
+//print(c9d.bandNames());
 
 // Saving the layer ----------------------------------------------------------
-// for later use by others
-  
+
+
 Export.image.toAsset({
-  image: c9b,
-  assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220223',
+  image: c9d,
+  assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224',
   description: 'SEIv11_9ClassTransition_byScenario_median',
   maxPixels: 1e13, 
   scale: resolution,
@@ -118,8 +143,8 @@ Export.image.toAsset({
 });
 
 
-
-if (false){
+// export to drive (old code)
+/*
 Export.image.toDrive({
   image: c9b,
   description: 'SEIv11_9ClassTransition' + s + "median",
@@ -130,5 +155,5 @@ Export.image.toDrive({
   region: region,
   fileFormat: 'GeoTIFF'
 });
-}
+*/
 
