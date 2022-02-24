@@ -122,7 +122,7 @@ var c9c = c9b.toBands();
 // renaming bands so they don't have leading numbers and _, which causes errors when exporting
 var names = c9c.bandNames().map(function(name){
   var out = ee.String(name)
-    .replace('\\d+_', ''); 
+    .replace('^\\d+_', ''); 
   return out;
 });
 
