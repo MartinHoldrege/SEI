@@ -63,6 +63,10 @@ print(current.bandNames());
 var c3Current = current.select('Q5sc3'); // band with 3 category classification (hence 'c3' in name)
 Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 
+// Using this to define region to export. 
+var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
+var region = biome.geometry(); 
+
 // Future SEI classification --------------------------------------------
 
 var c3Future = ee.Image().float(); // empty image
@@ -131,7 +135,7 @@ var c9d = c9c.rename(names);
 //print(c9d.bandNames());
 
 // Saving the layer ----------------------------------------------------------
-
+//Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), {min: 1, max: 9});
 
 Export.image.toAsset({
   image: c9d,
@@ -139,6 +143,7 @@ Export.image.toAsset({
   description: 'SEIv11_9ClassTransition_byScenario_median',
   maxPixels: 1e13, 
   scale: resolution,
+  region: region,
   crs: 'EPSG:4326' 
 });
 
