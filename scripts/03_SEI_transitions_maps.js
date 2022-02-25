@@ -38,7 +38,8 @@ var statesOutline = empty.paint({
   color: 1,
   width: 2
 });
-Map.addLayer(c9d, {});
+
+
 //Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'background'); // white background
 //Map.addLayer(statesOutline, {}, 'outline'); // outline of states
 //Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), imageVisc9, 'c9 transition');
