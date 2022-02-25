@@ -137,6 +137,7 @@ var c9d = c9c.rename(names);
 // Saving the layer ----------------------------------------------------------
 //Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), {min: 1, max: 9});
 
+if (false) { // turn to true when want to re-run this. 
 Export.image.toAsset({
   image: c9d,
   assetId: path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224',
@@ -146,19 +147,18 @@ Export.image.toAsset({
   region: region,
   crs: 'EPSG:4326' 
 });
+}
 
-
-// export to drive (old code)
-/*
+// export to drive (for now using low resolution)
 Export.image.toDrive({
-  image: c9b,
-  description: 'SEIv11_9ClassTransition' + s + "median",
-  folder: 'USGS',
+  image: c9d,
+  description: 'SEIv11_9ClassTransition_1000_byScenario_median_20220224',
+  folder: 'gee',
   maxPixels: 1e13, 
-  crs: 'EPSG:4326',    // set to WGS84, decimal degrees
-  scale: resolution,
+  scale: 1000,
   region: region,
+  crs: 'EPSG:4326',
   fileFormat: 'GeoTIFF'
 });
-*/
+
 
