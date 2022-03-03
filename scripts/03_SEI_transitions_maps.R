@@ -16,6 +16,7 @@
 
 library(terra)
 library(tmap)
+source("src/fig_params.R")
 
 # read in data ------------------------------------------------------------
 
@@ -36,19 +37,6 @@ c9Palette = c(   '#000000', # stable core (black)
                  '#B1CE94', # impacted becomes grow
                  '#D9D9D9') # stable impacted
 
-c9Names <-  c(
-  'Stable core',
-  'Core becomes grow',
-  'Core becomes other',
-  'Grow becomes core',
-  'Stable grow',
-  'Grow becomes other',
-  'Other becomes core',
-  'Other becomes grow',
-  'Stable other'
-)
-
-
 
 # maps --------------------------------------------------------------------
 
@@ -60,7 +48,7 @@ c9[c9==0] <- NA # 0s are the values that were originally masked
 tmap_mode('plot')
 
 # the 1000 refers to the resolution
-pdf("figures/maps_transition/c9_transition_1000_byScenario_v1.pdf")
+pdf("figures/transition_maps/c9_transition_1000_byScenario_v1.pdf")
 
 for (i in seq_along(bands)) {
 print(
