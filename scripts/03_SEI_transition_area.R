@@ -15,6 +15,13 @@ source("src/fig_params.R")
 source("src/general_functions.R")
 ee_check()
 # ee_clean_pyenv()
+# this file remove command removes the credentials that otherwise
+# cause an error: This is a workaround that Yvan Aquino at Google recommended
+# (at least for now)
+#Note that if just use ee_Initialize(), with no username
+# then remove the username from the file path (i.e. go up one directory)
+#
+file.remove("/Users/mholdrege/.config/earthengine/mholdrege@gcp.usgs.gov/credentials")
 ee_Initialize(user = "mholdrege@gcp.usgs.gov")
 
 # connect to assets -------------------------------------------------------
