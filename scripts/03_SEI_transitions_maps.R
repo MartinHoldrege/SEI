@@ -5,13 +5,6 @@
 # Purpose: create maps of transitions in sagebrush ecosystem integrity
 # from current to future conditions. These are 9 classes.
 
-# Next steps
-# --update colors to match the newer map that John has
-# but make impacted becomes core a mustard yellow
-# and make the one blue color a deeper blue
-
-# also add a background (state polygon) to these maps. 
-
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
@@ -118,3 +111,18 @@ for (i in seq_along(bands)) {
 }      
 dev.off()
 
+
+# write misc. files -------------------------------------------------------
+
+# RCP8.5, mid-century Raster to send the BLM
+names(c9)
+lyr <- "SEIv11_2017_2020_90_ClimateOnly_RCP85_2030-2060_median_20220215"
+
+writeRaster(
+  c9[[lyr]],
+  "data_processed/transitions/SEIv11_9ClassTransition_1000_ClimateOnly_RCP85_2030-2060.tif",
+  overwrite = TRUE)
+
+# testing
+#r <-rast("data_processed/transitions/SEIv11_9ClassTransition_1000_ClimateOnly_RCP85_2030-2060.tif")
+#plot(r)
