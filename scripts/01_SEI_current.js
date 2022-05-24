@@ -24,7 +24,7 @@
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 90     // output resolution, 90 initially, 30 m eventually
+var resolution = 30     // output resolution, 90 initially, 30 m eventually
 var sampleResolution = 270 // MH--this is only used in one place, with no downstream affects
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
