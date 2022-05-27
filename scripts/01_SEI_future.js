@@ -25,7 +25,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 90     // output resolution, 90 initially, 30 m eventually
+var resolution = 30     // output resolution, 90 initially, 30 m eventually
 
 var sampleResolution = 270
 var radius = 560    // used to set radius of Gaussian smoothing kernel
@@ -39,6 +39,7 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal")
 
 // Climate change variables --------------------------------------------------------------
 
+/*
 // create lists of simulations types
 // Note that the CheatgrassFire change rasters will need to be updated once simulations have re-run
 // This function repeats each element of the list a speciefied number of times
@@ -52,14 +53,14 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
   
 // list of epochs
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
-
+*/
 
 // for testing
-/*
+
 var rootList = ['ClimateOnly_']
-var RCPList = ['RCP45']
+var RCPList = ['RCP85']
 var epochList = ['2030-2060']
-*/
+
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4']
