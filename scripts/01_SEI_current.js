@@ -300,7 +300,7 @@ var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
 
 Export.image.toAsset({ 
   image: WAFWAoutputsCurrent, //single image with multiple bands
-  assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220215',
+  assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220717',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
