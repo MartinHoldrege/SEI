@@ -16,6 +16,9 @@
  * assets from MH's assets folder (projects/gee-guest/assets/SEI).
  * These are the assets that DT shared but that I then exported
  * in the 'export_daves"assets2drive.js' script, and then ingested.
+ * 
+ * This version of the code is designed to loop over multiple historical 
+ * time periods
 */
 
 
@@ -127,18 +130,19 @@ for (var k=0; k<yearEndList.length; k++) {
   Map.addLayer(rap,{},'rap all 4 years',false)
   
   
-  var lstRCMAPsage = ee.List([])
-  for (var i=yearStart; i<=yearEnd; i++) {
-    // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
-    var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
-      // Note--I somehow screwed up ingesting these rcmap rasters so at least for now keep
-      // loading the ones DT made publically available
-    //var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // from DT
-    var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
-  }
+  // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
+  var rcmap = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/RCMAP/V4/COVER');
   
-  var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage') // MH average sagebrush cover across 4 years
+  var yearStartString = ee.Number(yearStart).format("%.0f");
+  var yearEndString = ee.Number(yearEnd).format("%.0f");
   
+  // MH average sagebrush cover across 4 years
+  var rcmapSage = rcmap.filter(ee.Filter.gte('system:index', yearStartString))
+    .filter(ee.Filter.lte('system:index', yearEndString))
+    .select('rangeland_sagebrush')
+    .mean()
+    .rename('nlcdSage');
+
   
   // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
   var rapAnnualG = rap.select('AFGC') // AFG
@@ -306,7 +310,7 @@ for (var k=0; k<yearEndList.length; k++) {
   
   Export.image.toAsset({ 
     image: WAFWAoutputsCurrent, //single image with multiple bands
-    assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220717',
+    assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220718',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
