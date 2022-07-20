@@ -24,5 +24,14 @@ var nlcd2020 = dataset.filter(ee.Filter.gte('system:index', ee.Number(start).for
 Map.addLayer(nlcd2020, {min:0, max: 50, palette: ['white', 'green']}, 'mean')
 */
 
-var sei1 = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_2013_2016_30_20211228')
-print(sei1)
+var seidt = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_2017_2020_30_20211228')
+  .select('Q5sc3');
+print(seidt)
+
+var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+
+// image created by 01_SEI_future.js script
+var seimh = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717')
+  .select('Q5sc3');
+Map.addLayer(ee.Image(1), {palette: 'black'},'white')
+Map.addLayer(seimh.subtract(seidt), {min:-6, max:6, palette: ['red', 'white', 'blue']}, 'diff')
