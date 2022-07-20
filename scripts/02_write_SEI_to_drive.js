@@ -32,9 +32,27 @@ Map.addLayer(Q5sc3Med, {min:1,max:3, palette: ["black","grey","white"]}, '3 clas
 var scale = 30; 
 var crs = 'EPSG:5070';
 
+// datset #1
+var c3dataset3 = ee.Image(path + 'v11/current/SEIv11_1998_2001_30_Current_20220718')
+  .select('Q5sc3');
+Export.image.toDrive({
+  image: c3dataset3,
+  description: 'SEIv11_1998_2001_30_Current_20220718',
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: scale,
+  region: region,
+  crs: crs,
+  fileFormat: 'GeoTIFF'
+});
+
+
+
 // datset #4
 // export to drive (30m esolution)
 //'SEIv11_2017_2020_30_ClimateOnly_RCP85_2030-2060_median_20200527'
+
+
 var c3dataset4 = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_2013_2016_30_20211228')
   .select('Q5sc3');
 Export.image.toDrive({
@@ -70,7 +88,7 @@ Export.image.toDrive({
 //'SEIv11_2017_2020_30_ClimateOnly_RCP85_2030-2060_median_20200527'
 Export.image.toDrive({
   image: Q5sc3Med,
-  description: 'SEIv11_2017_2020_30_ClimateOnly_RCP85_2030-2060_median_20200527',
+  description: 'SEIv11_2017_2020_30_ClimateOnly_RCP85_2030-2060_median_20220215',
   folder: 'gee',
   maxPixels: 1e13, 
   scale: scale,
