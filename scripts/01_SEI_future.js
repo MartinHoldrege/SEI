@@ -217,6 +217,8 @@ for (var k = 0; k<rootList.length; k++) {
   
   // this loop runs almost all they way to the 
   // end of the data, cycling through GCMs
+  
+  var GCMoutputs = ee.Image(0).rename('empty'); // empty image, Q5sc3 for each gcm will be added as bands
   for (var i=0; i<lstScenarios.length; i++) {
   
     var s = '_' + RCP + '_' + epoch + '_' + lstScenarios[i];
@@ -309,7 +311,7 @@ for (var k = 0; k<rootList.length; k++) {
      * Step 5. Smooth quality values to reflect "management" scale
      */
      
-     // creating a image that has a band of Q5y (ie. SEI560) for each GCM (to be used later)
+     // creating a image that has a band of Q5s (ie. SEI560) for each GCM (to be used later)
   
     var Q5yAllList = Q5yAllList.add(Q5y) ;
      
@@ -348,21 +350,13 @@ for (var k = 0; k<rootList.length; k++) {
      // area inside the WAFWA ecoregion polygons
     var imageEcoregions = empty.paint(WAFWAecoregions,1);
     
-    var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
-      Q2.float().rename('Q2raw'),
-      Q3.float().rename('Q3raw'),
-      Q4.float().rename('Q4raw'),
-      Q5.float().rename('Q5raw'),
-      Q2y.float().rename('Q2'),
-      Q3y.float().rename('Q3'),
-      Q4y.float().rename('Q4'),
-      Q5y.float().rename('Q5'),
-      Q5s.float().rename('Q5s'),
-      Q5scdeciles.byte().rename('Q5scdeciles'),
-      Q5sc3.byte().rename('Q5sc3'),
-      imageEcoregions.byte().rename('SEIecoregions')
-      ]);
     
+    var GCMoutputs = GCMoutputs
+      // SEI 2000
+      .addBands(Q5s.float().rename('Q5s_' + lstScenarios[i]))
+      // 3 class (core, grow, other), convert to byte so takes up less space 
+      .addBands(Q5sc3.byte().rename('Q5sc3_' + lstScenarios[i]));
+      
   }
   
   
@@ -411,8 +405,22 @@ for (var k = 0; k<rootList.length; k++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
   });
-  
   }
+  
+  if (saveGCM) {
+    Export.image.toAsset({ 
+    image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
+    assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_20221005',
+    description: 'SEI_' + root + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_by-GCM',
+    maxPixels: 1e13, scale: resolution, region: region,
+    crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+  });
+    
+    
+  }
+  
+  // step 
+  
 } // end of loop through climate simulations (RCPs, time periods etc)
 
 /////////////////////////////////////////
