@@ -27,7 +27,7 @@ var saveGCM = true; // logical save output for each GCM
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 30;     // output resolution, 90 initially, 30 m eventually
+var resolution = 90;     // output resolution, 90 initially, 30 m eventually
 
 var sampleResolution = 270;
 var radius = 560;    // used to set radius of Gaussian smoothing kernel
@@ -57,11 +57,10 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
 */
 
-// for testing
 
-var rootList = ['ClimateOnly_'];
-var RCPList = ['RCP85'];
-var epochList = ['2030-2060'];
+var rootList = ['ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_'];
+var RCPList = ['RCP85', 'RCP85', 'RCP45', 'RCP45'];
+var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
