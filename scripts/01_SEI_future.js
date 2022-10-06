@@ -65,7 +65,7 @@ var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 
 var rootList = ['ClimateOnly_'];
 var RCPList = ['RCP85'];
-var epochList = ['2030-2060'];
+var epochList = ['2070-2100'];
 
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4'];
