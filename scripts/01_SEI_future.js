@@ -23,7 +23,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
 // User-defined variables.
 var saveMed = false; // logical whether to save output which is the median across GCMs
-var saveGCM = false; // logical save output for each GCM
+var saveGCM = true; // logical save output for each GCM
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
