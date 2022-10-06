@@ -23,7 +23,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
 // User-defined variables.
 var saveMed = false; // logical whether to save output which is the median across GCMs
-var saveGCM = true; // logical save output for each GCM
+var saveGCM = false; // logical save output for each GCM
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
@@ -408,7 +408,7 @@ for (var k = 0; k<rootList.length; k++) {
   
   if (saveGCM) {
     Export.image.toAsset({ 
-    image: Q5sc3Med, //single image with one band (median SEI 2000 across GCM's)
+    image: GCMoutputs, //single image with many bands (a couple for each GCM)
     assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_20221005',
     description: 'SEI_' + root + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_by-GCM',
     maxPixels: 1e13, scale: resolution, region: region,
