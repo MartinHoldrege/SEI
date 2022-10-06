@@ -16,6 +16,9 @@
  * Those two rasters are combined to classify how each pixel
  * changes (or doesn't) from one classification to another
  * 
+ * This is done for median future conditions, as well as
+ * for each GCM seperately
+ * 
  * Steps:
  * 1. read in data
  * 2. Calculate transitions between classes
@@ -49,6 +52,12 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
 
 var imageVisQc3 = {"opacity":1,"min":1,"max":3};
+
+// params for the gcm level projections
+var rootListGCM = ['ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_'];
+var RCPListGCM = ['RCP85', 'RCP85', 'RCP45', 'RCP45'];
+var epochListGCM = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
+
 // Read in current SEI -------------------------------------------------------
 
 // region of interest
@@ -69,6 +78,7 @@ var region = biome.geometry();
 
 // Future SEI classification --------------------------------------------
 
+// median 
 var c3Future = ee.Image().float(); // empty image
 var futureStringList = [];
 // Using a for loop isn't efficient but I could get ee.Image() to work when 
@@ -78,7 +88,7 @@ for (var i = 0; i < rootList.length; i++) {
   var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + rootList[i] + RCPList[i] + "_" + epochList[i] + "_";
 
   var futureString = "SEIv11" + s + "median_20220215";
-  print(futureString);
+
   var futureStringList = futureStringList.concat(futureString);
   
   // SEI for the given climate scenario
@@ -91,6 +101,38 @@ for (var i = 0; i < rootList.length; i++) {
   var c3Future = c3Future.add(tempImage.rename(futureString)); 
   
 } 
+
+// by GCM
+var fImageListGCM = [];
+
+for (var i = 0; i < rootListGCM.length; i++) {
+  
+  var root = rootListGCM[i];
+  var RCP = RCPListGCM[i];
+  var epoch = epochListGCM[i];
+  var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + RCP + "_" + epoch +"_";
+
+  var futurePath = path + "v11/forecasts/SEIv11" + s + "by-GCM_20221005";
+
+  var image = ee.Image(futurePath)
+  // adding image properties
+    .set(
+      {modelRun : root + RCP + "_" + epoch,
+      root: root,
+      RCP: RCP,
+      epoch: epoch
+    });
+    
+  var fImageListGCM =   fImageListGCM.concat(image);
+} 
+
+//print(fImageListGCM);
+
+// ic where images are for a given simulation (time period etc), where each
+// image contains two bands for each GCM (i.e. c3 as well as a continuous value)
+var allFutureGCM = ee.ImageCollection(fImageListGCM);
+
+print(allFutureGCM.first().bandNames())
 
 // transitions between classes ----------------------------------------
   
@@ -147,7 +189,7 @@ Export.image.toAsset({
   region: region,
   crs: 'EPSG:4326' 
 });
-}
+
 
 // export to drive (for now using low resolution)
 Export.image.toDrive({
@@ -161,4 +203,4 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
 
-
+}
