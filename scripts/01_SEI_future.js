@@ -57,16 +57,16 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
 */
 
-/*
+
 var rootList = ['ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_'];
 var RCPList = ['RCP85', 'RCP85', 'RCP45', 'RCP45'];
 var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
-*/
 
+/*
 var rootList = ['ClimateOnly_'];
 var RCPList = ['RCP85'];
 var epochList = ['2070-2100'];
-
+*/
 var lstScenarios = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
   'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4'];
 
@@ -355,8 +355,8 @@ for (var k = 0; k<rootList.length; k++) {
     
     
     var GCMoutputs = GCMoutputs
-      // SEI 2000
-      .addBands(Q5s.float().rename('Q5s_' + lstScenarios[i]))
+      // SEI 2000 (adding this band makes the asset 10Gb)
+      //.addBands(Q5s.float().rename('Q5s_' + lstScenarios[i]))
       // 3 class (core, grow, other), convert to byte so takes up less space 
       .addBands(Q5sc3.byte().rename('Q5sc3_' + lstScenarios[i]));
       
@@ -413,7 +413,7 @@ for (var k = 0; k<rootList.length; k++) {
   if (saveGCM) {
     Export.image.toAsset({ 
     image: GCMoutputs, //single image with many bands (a couple for each GCM)
-    assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_20221005',
+    assetId: path + 'v' + version + '/forecasts/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_20221010',
     description: 'SEI_' + root + yearStart + '_' + yearEnd + '_' + resolution + '_' +  RCP + '_' + epoch + '_by-GCM',
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
