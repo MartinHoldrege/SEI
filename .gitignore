@@ -9,6 +9,9 @@
 scripts/example_scripts_from_others/*
 data_raw
 paper
+data_publication/*
+misc/*
+presentations/*
 
 # History files
 .Rhistory

@@ -22,7 +22,7 @@ ee_check()
 # then remove the username from the file path (i.e. go up one directory)
 #
 file.remove("/Users/mholdrege/.config/earthengine/mholdrege@gcp.usgs.gov/credentials")
-ee_Initialize(user = "mholdrege@gcp.usgs.gov")
+ee_Initialize(user = "mholdrege@gcp.usgs.gov", drive = TRUE)
 
 # connect to assets -------------------------------------------------------
 
