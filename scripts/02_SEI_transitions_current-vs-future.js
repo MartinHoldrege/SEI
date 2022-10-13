@@ -52,6 +52,17 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
 
 var imageVisQc3 = {"opacity":1,"min":1,"max":3};
+var imageVisQc9 = {'min': 1, 'max':9,
+  palette: ['#000000', // stable core (black)
+             '#f4a582', // core becomes grow
+             '#b2182b', // core becomes impacted
+             '#92c5de', // grow becomes core
+             '#757170', // stable grow
+             '#d6604d', // grow becomes impacted
+             '#2166ac', // impacted becomes core
+             '#4393c3', // impacted becomes grow
+             '#D9D9D9']
+}
 
 // params for the gcm level projections
 var rootListGCM = ['ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_'];
@@ -112,7 +123,7 @@ for (var i = 0; i < rootListGCM.length; i++) {
   var epoch = epochListGCM[i];
   var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + RCP + "_" + epoch +"_";
 
-  var futurePath = path + "v11/forecasts/SEIv11" + s + "by-GCM_20221005";
+  var futurePath = path + "v11/forecasts/SEIv11" + s + "by-GCM_20221010";
 
   var image = ee.Image(futurePath)
   // adding image properties
@@ -129,12 +140,32 @@ for (var i = 0; i < rootListGCM.length; i++) {
 //print(fImageListGCM);
 
 // ic where images are for a given simulation (time period etc), where each
-// image contains two bands for each GCM (i.e. c3 as well as a continuous value)
-var allFutureGCM = ee.ImageCollection(fImageListGCM);
+// image contains band(s) for each GCM. The most important bands are labeld Q5sc3
+// those are the core, grow, other classified images
+var allFutureGCM1 = ee.ImageCollection(fImageListGCM);
 
-print(allFutureGCM.first().bandNames())
+// print(allFutureGCM1.first().bandNames())
 
-// transitions between classes ----------------------------------------
+// remove the 'empty' band (keeping bands that contain 'Q5sc3' in the name)
+var c3FutureGCM1 = allFutureGCM1.map(function(x) {
+  var bands = ee.Image(x)
+    .bandNames()
+    .filter(ee.Filter.stringContains('item', 'Q5sc3'));
+  
+  // rename bands so just name of GCM remains
+  var newNames = bands.map(function(x) {
+    return ee.String(x).replace("Q5sc3_", "");
+  });
+  var out = ee.Image(x)
+    .select(bands)
+    .rename(newNames);
+  
+  return out;
+});
+
+var namesGCM = c3FutureGCM1.first().bandNames();
+
+// transitions between classes (median) --------------------------------------
   
 var c3Current10 = c3Current.multiply(10); // 3 categories now becomes 10, 20, and 30
 
@@ -154,11 +185,15 @@ var c9a = c3FutureCollection.map(function(image) {
   return ee.Image(image).add(c3Current10);
 });
 
+// lists for remapping
+var c9From = ee.List([11, 12, 13, 21, 22, 23, 31, 32, 33]); 
+var c9To = ee.List([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.map(function(image) {
   var image = ee.Image(image);
   var name = ee.String(image.bandNames().get(0)); // the image only has on band, getting it's name
-  var remapped = image.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  var remapped = image.remap(c9From, c9To);
   return remapped.rename(name);
 });
 
@@ -175,6 +210,51 @@ var names = c9c.bandNames().map(function(name){
 var c9d = c9c.rename(names);
 //print(c9c);
 //print(c9d.bandNames());
+
+// transitions between classes (by GCM) --------------------------------------
+
+var c9GCM1 = c3FutureGCM1.map(function(image) {
+  var out = ee.Image(image).add(c3Current10)
+  // so RCP etc. properties are retained
+    .copyProperties(ee.Image(image));
+  return out;
+});
+
+
+
+
+// remap one band of an image but keep the other bands
+var remapOneBand = function(bandName, image) {
+  
+  var oldImage = ee.Image(image);
+  var names = ee.Image(oldImage).bandNames();
+  
+  //single band image of just remapped band
+  var remappedImage = ee.Image(image).remap({
+    from: c9From,
+    to: c9To,
+    bandName: bandName
+  }).rename([bandName]);
+  
+  var otherBands = names.removeAll([bandName]);
+  
+  // select bands not remapped in this step
+  var out = oldImage.select(otherBands)
+  // add remapped band back in
+    .addBands(remappedImage);
+  
+  return out;
+};
+
+var c9GCM2 = c9GCM1.map(function(image) {
+  var out = namesGCM.iterate(remapOneBand, image);
+  return ee.Image(out);
+});
+
+//print('c9GCM2 image', c9GCM2.first());
+Map.addLayer(c9GCM2.first().select('CESM1-CAM5'), imageVisQc9, 'c9 CESM1-CAM5', false);
+
+// CONTINUE HERE
 
 // Saving the layer ----------------------------------------------------------
 //Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), {min: 1, max: 9});
