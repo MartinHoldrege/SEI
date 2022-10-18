@@ -31,7 +31,7 @@
 // parameters for which images to read in
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
-
+var date = '20221017' // for file names
 var resolution = 90;    // output resolution, 90 initially, 30 m eventually
 
 var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
@@ -86,6 +86,69 @@ Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 // Using this to define region to export. 
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 var region = biome.geometry(); 
+
+// functions --------------------------------------------------------------
+
+/**
+ * function that  calculates the amount of area belonging to each class (c9)
+ * for all bands (GCMs) in an image
+ * @param {ee.Image} image this is an image where each band  contains
+ * values between 1-9, representing the each of the 9 transition classes
+ * @return {ee.FeatureCollection} feature collection of giving the amount
+ * of area belonging to each of the 9 transition classes in each of
+ * band of the image
+ */
+var areaAllBands = function(image) {
+  var areaImage = ee.Image.pixelArea();
+  
+  var bandNames = image.bandNames();
+  
+  var reducer = {
+      reducer: ee.Reducer.sum().group({
+      groupField: 1,
+      groupName: 'c9',
+    }),
+    geometry: region,
+    scale: resolution,
+    maxPixels: 1e12
+    };
+    
+  // 'looping' over bands in the image, where each list element
+  // is a feature collection giving areas grouped by c9 for a given
+  // band (GCM)
+  var areaAllBandsList = bandNames.map(function(bandName){
+    // creating a two band image, one band is the area
+    // second band is the grouping (c9) band for a given
+    // GCM
+    var areaReduced = areaImage
+      .addBands(image.select(ee.String(bandName)).rename('c9'))
+      // reducing the image
+      .reduceRegion(reducer); 
+    
+    // mapping across transition categories (C9)
+    var areasList = ee.List(areaReduced.get('groups')).map(function (x) {
+    
+      var f = ee.Feature(null, 
+        // using this code here to rename the parts as needed
+        {c9: ee.Number(ee.Dictionary(x).get('c9')),
+        // binary code of fire year
+        GCM: ee.String(bandName),
+        modelRun: image.get('modelRun'), // string describing the epoch, RCP, etc. 
+        // area in m^2
+        area_m2: ee.Dictionary(x).get('sum')
+      });
+    
+      return f;
+    });
+    
+    var areasFc = ee.FeatureCollection(areasList);
+    return areasFc;
+  });
+  
+  var out = ee.FeatureCollection(areaAllBandsList).flatten();
+  return out; 
+}; 
+
 
 // Future SEI classification --------------------------------------------
 
@@ -255,75 +318,26 @@ var c9GCM2 = c9GCM1.map(function(image) {
 Map.addLayer(c9GCM2.first().select('CESM1-CAM5'), imageVisQc9, 'c9 CESM1-CAM5', false);
 
 // area by c9 and GCM -------------------------------------------------------
-// calculating the amount of area belonging to each class
 
 
 
- 
-var areaAllBands = function(image) {
-  var areaImage = ee.Image.pixelArea();
-  
-  var bandNames = image.bandNames();
-  
-  
-  
-  
-};
 // test code
+//var test = areaAllBands(c9GCM2.first());
+//print('test fc', test)
 
-// area and 1 band of the c9 image
-var areaBand = areaImage
-  .addBands(c9GCM2.first().select('CESM1-CAM5').rename('c9'));
-  
-var areaReduced = areaBand.reduceRegion({
-    reducer: ee.Reducer.sum().group({
-    groupField: 1,
-    groupName: 'c9',
-  }),
-  geometry: region,
-  scale: 10000,
-  maxPixels: 1e12
-  }); 
-  
-print('area', areaReduced)
+// getting the area of all classes across bands, across modelRuns
+var areasc9GCM1 = c9GCM2.map(areaAllBands);
+var areasc9GCM2 = ee.FeatureCollection(areasc9GCM1).flatten();
 
-/*
-// looping through each unique bin, calculating the area of each suid
-// falling into that bin, creating feature that has properties including the bin, the suid, and the area
-// and next all these features are combined into one big feature collection
-// that should have all combinations of suid and bin. 
-var areas = binUnique.map(function(bin) {
-  var binImage = cwfBinImageM.eq(ee.Number(bin)).selfMask();
-  
-  var suidMasked = suid1.updateMask(binImage.unmask());
-  
-  var suidArea = areaImage.addBands(suid1);
-  
-  var reduced = suidArea.reduceRegion({
-      reducer: ee.Reducer.sum().group({
-      groupField: 1,
-      groupName: 'suid',
-    }),
-    geometry: region,
-    scale: scale,
-    maxPixels: 1e12
-    }); 
-    
-    // list where each component is a feature
-  var areasList = ee.List(reduced.get('groups')).map(function (x) {
-    return ee.Feature(null, 
-      // using this code here to rename the parts as needed
-      {suid: ee.Number(ee.Dictionary(x).get('suid')),
-      // binary code of fire year
-      bin: ee.Number(bin),
-      // area in m^2
-      area_m2: ee.Dictionary(x).get('sum')
-    });
-  });
+// saving areas of c9 classes ------------------------------------------------
 
-  return ee.FeatureCollection(areasList);
+Export.table.toDrive({
+    collection: areasc9GCM2,
+    description: 'SEIv11_9ClassTransition_' + resolution + '_area_by-GCM-modelRun_' + date,
+    folder: 'SEI',
+    fileFormat: 'CSV'
 });
-*/
+
 // Saving the layer ----------------------------------------------------------
 //Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), {min: 1, max: 9});
 
