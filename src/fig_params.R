@@ -16,6 +16,8 @@ c9Names <-  c(
   'Stable other'
 )
 
+c3Names <- c("Core", "Grow", "Other")
+
 # colors ------------------------------------------------------------------
 
 cols_rcp <- c(#"Current" = "cornflower blue",
@@ -33,9 +35,12 @@ c9Palette = c('#000000', # stable core (black)
              '#4393c3', # impacted becomes grow
              '#D9D9D9') # stable impacted
 
+
+
 names(c9Palette) <- c9Names
 
-
+c3Palette <- c9Palette[c(1, 4, 9)]
+names(c3Palette) <- c3Names
 
 
 

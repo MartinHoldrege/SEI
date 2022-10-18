@@ -8,6 +8,7 @@
 # specific folders
 scripts/example_scripts_from_others/*
 data_raw
+data_processed/*
 paper
 data_publication/*
 misc/*
