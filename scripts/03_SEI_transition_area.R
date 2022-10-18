@@ -6,6 +6,10 @@
 # Determine the proportion of area in each of the 9 SEI (sagebrush 
 # ecosystem integrity) transition categories, and plot it.
 
+# This script is no longer running because of gcloud installation problems
+# on my end
+
+
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
