@@ -31,7 +31,7 @@
 // parameters for which images to read in
 var yearEnd = 2020;  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
-
+var date = '20221017' // for file names
 var resolution = 90;    // output resolution, 90 initially, 30 m eventually
 
 var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
@@ -52,6 +52,17 @@ var RCPList = SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 2) // repeat 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100'], 5); // repeat this list of epochs  n times
 
 var imageVisQc3 = {"opacity":1,"min":1,"max":3};
+var imageVisQc9 = {'min': 1, 'max':9,
+  palette: ['#000000', // stable core (black)
+             '#f4a582', // core becomes grow
+             '#b2182b', // core becomes impacted
+             '#92c5de', // grow becomes core
+             '#757170', // stable grow
+             '#d6604d', // grow becomes impacted
+             '#2166ac', // impacted becomes core
+             '#4393c3', // impacted becomes grow
+             '#D9D9D9']
+}
 
 // params for the gcm level projections
 var rootListGCM = ['ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_', 'ClimateOnly_'];
@@ -75,6 +86,69 @@ Map.addLayer(c3Current, imageVisQc3, "Q5c3 Current", false);
 // Using this to define region to export. 
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 var region = biome.geometry(); 
+
+// functions --------------------------------------------------------------
+
+/**
+ * function that  calculates the amount of area belonging to each class (c9)
+ * for all bands (GCMs) in an image
+ * @param {ee.Image} image this is an image where each band  contains
+ * values between 1-9, representing the each of the 9 transition classes
+ * @return {ee.FeatureCollection} feature collection of giving the amount
+ * of area belonging to each of the 9 transition classes in each of
+ * band of the image
+ */
+var areaAllBands = function(image) {
+  var areaImage = ee.Image.pixelArea();
+  
+  var bandNames = image.bandNames();
+  
+  var reducer = {
+      reducer: ee.Reducer.sum().group({
+      groupField: 1,
+      groupName: 'c9',
+    }),
+    geometry: region,
+    scale: resolution,
+    maxPixels: 1e12
+    };
+    
+  // 'looping' over bands in the image, where each list element
+  // is a feature collection giving areas grouped by c9 for a given
+  // band (GCM)
+  var areaAllBandsList = bandNames.map(function(bandName){
+    // creating a two band image, one band is the area
+    // second band is the grouping (c9) band for a given
+    // GCM
+    var areaReduced = areaImage
+      .addBands(image.select(ee.String(bandName)).rename('c9'))
+      // reducing the image
+      .reduceRegion(reducer); 
+    
+    // mapping across transition categories (C9)
+    var areasList = ee.List(areaReduced.get('groups')).map(function (x) {
+    
+      var f = ee.Feature(null, 
+        // using this code here to rename the parts as needed
+        {c9: ee.Number(ee.Dictionary(x).get('c9')),
+        // binary code of fire year
+        GCM: ee.String(bandName),
+        modelRun: image.get('modelRun'), // string describing the epoch, RCP, etc. 
+        // area in m^2
+        area_m2: ee.Dictionary(x).get('sum')
+      });
+    
+      return f;
+    });
+    
+    var areasFc = ee.FeatureCollection(areasList);
+    return areasFc;
+  });
+  
+  var out = ee.FeatureCollection(areaAllBandsList).flatten();
+  return out; 
+}; 
+
 
 // Future SEI classification --------------------------------------------
 
@@ -112,7 +186,7 @@ for (var i = 0; i < rootListGCM.length; i++) {
   var epoch = epochListGCM[i];
   var s =  "_" + yearStart + '_' + yearEnd + "_" + resolution + "_" + root + RCP + "_" + epoch +"_";
 
-  var futurePath = path + "v11/forecasts/SEIv11" + s + "by-GCM_20221005";
+  var futurePath = path + "v11/forecasts/SEIv11" + s + "by-GCM_20221010";
 
   var image = ee.Image(futurePath)
   // adding image properties
@@ -129,12 +203,32 @@ for (var i = 0; i < rootListGCM.length; i++) {
 //print(fImageListGCM);
 
 // ic where images are for a given simulation (time period etc), where each
-// image contains two bands for each GCM (i.e. c3 as well as a continuous value)
-var allFutureGCM = ee.ImageCollection(fImageListGCM);
+// image contains band(s) for each GCM. The most important bands are labeld Q5sc3
+// those are the core, grow, other classified images
+var allFutureGCM1 = ee.ImageCollection(fImageListGCM);
 
-print(allFutureGCM.first().bandNames())
+// print(allFutureGCM1.first().bandNames())
 
-// transitions between classes ----------------------------------------
+// remove the 'empty' band (keeping bands that contain 'Q5sc3' in the name)
+var c3FutureGCM1 = allFutureGCM1.map(function(x) {
+  var bands = ee.Image(x)
+    .bandNames()
+    .filter(ee.Filter.stringContains('item', 'Q5sc3'));
+  
+  // rename bands so just name of GCM remains
+  var newNames = bands.map(function(x) {
+    return ee.String(x).replace("Q5sc3_", "");
+  });
+  var out = ee.Image(x)
+    .select(bands)
+    .rename(newNames);
+  
+  return out;
+});
+
+var namesGCM = c3FutureGCM1.first().bandNames();
+
+// transitions between classes (median) --------------------------------------
   
 var c3Current10 = c3Current.multiply(10); // 3 categories now becomes 10, 20, and 30
 
@@ -154,11 +248,15 @@ var c9a = c3FutureCollection.map(function(image) {
   return ee.Image(image).add(c3Current10);
 });
 
+// lists for remapping
+var c9From = ee.List([11, 12, 13, 21, 22, 23, 31, 32, 33]); 
+var c9To = ee.List([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
 // remapping from 1-9 for figure creation reasons
 var c9b = c9a.map(function(image) {
   var image = ee.Image(image);
   var name = ee.String(image.bandNames().get(0)); // the image only has on band, getting it's name
-  var remapped = image.remap([11, 12, 13, 21, 22, 23, 31, 32, 33], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  var remapped = image.remap(c9From, c9To);
   return remapped.rename(name);
 });
 
@@ -175,6 +273,70 @@ var names = c9c.bandNames().map(function(name){
 var c9d = c9c.rename(names);
 //print(c9c);
 //print(c9d.bandNames());
+
+// transitions between classes (by GCM) --------------------------------------
+
+var c9GCM1 = c3FutureGCM1.map(function(image) {
+  var out = ee.Image(image).add(c3Current10)
+  // so RCP etc. properties are retained
+    .copyProperties(ee.Image(image));
+  return out;
+});
+
+
+
+
+// remap one band of an image but keep the other bands
+var remapOneBand = function(bandName, image) {
+  
+  var oldImage = ee.Image(image);
+  var names = ee.Image(oldImage).bandNames();
+  
+  //single band image of just remapped band
+  var remappedImage = ee.Image(image).remap({
+    from: c9From,
+    to: c9To,
+    bandName: bandName
+  }).rename([bandName]);
+  
+  var otherBands = names.removeAll([bandName]);
+  
+  // select bands not remapped in this step
+  var out = oldImage.select(otherBands)
+  // add remapped band back in
+    .addBands(remappedImage);
+  
+  return out;
+};
+
+var c9GCM2 = c9GCM1.map(function(image) {
+  var out = namesGCM.iterate(remapOneBand, image);
+  return ee.Image(out);
+});
+
+//print('c9GCM2 image', c9GCM2.first());
+Map.addLayer(c9GCM2.first().select('CESM1-CAM5'), imageVisQc9, 'c9 CESM1-CAM5', false);
+
+// area by c9 and GCM -------------------------------------------------------
+
+
+
+// test code
+//var test = areaAllBands(c9GCM2.first());
+//print('test fc', test)
+
+// getting the area of all classes across bands, across modelRuns
+var areasc9GCM1 = c9GCM2.map(areaAllBands);
+var areasc9GCM2 = ee.FeatureCollection(areasc9GCM1).flatten();
+
+// saving areas of c9 classes ------------------------------------------------
+
+Export.table.toDrive({
+    collection: areasc9GCM2,
+    description: 'SEIv11_9ClassTransition_' + resolution + '_area_by-GCM-modelRun_' + date,
+    folder: 'SEI',
+    fileFormat: 'CSV'
+});
 
 // Saving the layer ----------------------------------------------------------
 //Map.addLayer(c9d.select('SEIv11_2017_2020_90_ClimateOnly_RCP45_2030-2060_median_20220215'), {min: 1, max: 9});
