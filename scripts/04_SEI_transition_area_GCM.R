@@ -44,6 +44,27 @@ range_area <- max(c9_area2$total_area_m2) - max(c9_area2$total_area_m2)
 
 stopifnot(range_area < 0.1)
 
+
+# current area by c3 ------------------------------------------------------
+# getting current (2017-2020) area by c3
+
+c3_area_current <- c9_area2 %>% 
+  ungroup() %>% 
+  # arbitrarily grabbing one of the modelruns
+  filter(modelRun == min(modelRun),
+         GCM == min(GCM)) %>% 
+  mutate(c3_current = case_when(
+    c9 %in% 1:3 ~ 1,
+    c9 %in% 4:6 ~ 2,
+    c9 %in% 7:9 ~ 3
+  )) %>% 
+  group_by(c3_current) %>% 
+  summarise(area_m2 = sum(area_m2)) %>% 
+  mutate(area_perc = area_m2/sum(area_m2)*100,
+         c3_name = c3_named_factor(c3_current))
+
+c3_area_current$GCM <- "Current"
+
 # percent of total area ---------------------------------------------------
 
 c3_area1 <- c9_area2 %>% 
@@ -74,20 +95,42 @@ c3_area_l2 <- map(c3_area_l1, function(df) {
     arrange(desc(area_perc)) %>% 
     pull(GCM)
   
-  df$GCM <- factor(df$GCM, levels = gcm_names)
+  df <- bind_rows(c3_area_current, df)
+  df$GCM <- factor(df$GCM, levels = c("Current", gcm_names))
+  
+  
   df
 })
 
 pdf("figures/area/c3_area_by-GCM_barchart_v1.pdf")  
+
 map2(c3_area_l2, names(c3_area_l2), function(df, name) {
+  
+  current <- df %>% 
+    filter(GCM == "Current")
+  stopifnot(nrow(current) == 3)
+  
+  core_perc <- current %>% 
+    filter(c3_name == c3_named_factor(1)) %>% 
+    pull(area_perc)
+  
+  grow_perc <- current %>% 
+    filter(c3_name == c3_named_factor(2)) %>% 
+    pull(area_perc)
+  
   ggplot(df, aes(x = GCM, y = area_perc, 
                               fill = forcats::fct_rev(c3_name))) +
     geom_bar(position = "stack", stat = "identity") +
-    scale_fill_manual(values = c3Palette) +
+    scale_fill_manual(values = c3Palette,
+                      guide = guide_legend(reverse = TRUE)) +
     theme(legend.title = element_blank()) +
     theme(axis.text.x = element_text(angle = 90)) +
     labs(y = "Percent of total area",
-         subtitle = name) 
+         subtitle = name) +
+    geom_hline(yintercept = core_perc)+
+    # percent of area that is either core or grow
+    geom_hline(yintercept = core_perc + grow_perc, color = c3Palette[2])
 })
+
 dev.off()
   
