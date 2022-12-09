@@ -1,0 +1,80 @@
+
+// User defined variables -------------------------------------
+
+// date range
+var startYear = 1986;
+//var startYear = 2018; // short time period for testing
+var endYear = 2019;
+var startDate = ee.Date.fromYMD(startYear, 1, 1);
+var endDate = ee.Date.fromYMD(endYear, 12, 31); 
+
+var scale = 30; 
+
+// dependencies -------------------------------------------------------
+
+// sagebrush region mask
+// Mask of the sagebrush region
+var m = require("users/mholdrege/cheatgrass_fire:scripts/00_biome_mask.js");
+var mask = m.mask;
+var region = m.region;
+
+// functions
+var fnsC = require("users/mholdrege/cheatgrass_fire:src/ee_functions.js");
+
+// read in data ---------------------------------------------------
+
+// cover
+
+var rap1 = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v3')
+  .filterDate(startDate,  endDate)
+  .filterBounds(region)
+  .map(function(image) {
+    return ee.Image(image).mask(mask).toFloat();
+  }); // to avoid incompatible data types on export
+
+// biomass
+
+var npp = ee.ImageCollection("projects/rangeland-analysis-platform/npp-partitioned-v3")
+  .select(['afgNPP', 'pfgNPP'])
+  .filterDate(startDate,  endDate)
+  .filterBounds(region);
+
+var biomass = npp
+  .map(fnsC.biomassFunction)
+  .filterBounds(region)
+  .map(function(x) {
+    return ee.Image(x).mask(mask).toFloat(); // to avoid incompatible datatypes error
+  });
+ 
+// summarize ---------------------------------------------------------
+
+var covMean =  rap1.mean();
+var bioMean = biomass.mean();
+
+print('cover bands', covMean.bandNames(),
+      'biomass bands', bioMean.bandNames());
+
+var covBio = covMean.addBands(bioMean); 
+
+// sampling points --------------------------------------------------------
+
+var one = ee.Image(1).rename('one');
+// using stratifiedSample method b/ recommendation here
+// https://gis.stackexchange.com/questions/304929/what-is-the-difference-between-sample-sampleregions-and-stratifiedsample-in-go
+
+var sample = covBio.addBands(one)
+  .stratifiedSample({
+    numPoints: 3,
+    classBand: 'one',
+    region: region,
+    scale: scale
+  });
+print(sample);
+
+// // Generate chart from sample
+var chart = ui.Chart.feature.byFeature(sample, 'PFG', 'pfgAGB')
+    .setChartType('ScatterChart');
+print("chart",chart);      
+
+
+
