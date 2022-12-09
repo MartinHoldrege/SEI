@@ -1,3 +1,13 @@
+/*
+Purpose: select a sample of pixels from RAP (cover and biomass),
+to output this sample. For the examination of a relationship between
+cover and biomass for annuals and perennials
+
+Author: Martin Holdrege
+
+Date started: 12/7/2022
+
+*/
 
 // User defined variables -------------------------------------
 
@@ -8,7 +18,10 @@ var endYear = 2019;
 var startDate = ee.Date.fromYMD(startYear, 1, 1);
 var endDate = ee.Date.fromYMD(endYear, 12, 31); 
 
+// for output
 var scale = 30; 
+var sampleSize = 1000000;
+var dateString = "20221209";
 
 // dependencies -------------------------------------------------------
 
@@ -51,10 +64,11 @@ var biomass = npp
 var covMean =  rap1.mean();
 var bioMean = biomass.mean();
 
-print('cover bands', covMean.bandNames(),
-      'biomass bands', bioMean.bandNames());
+print('cover', covMean,
+      'biomass', bioMean);
 
-var covBio = covMean.addBands(bioMean); 
+var covBio = covMean.select(['AFG', 'PFG']).addBands(bioMean.select(['afgAGB', 'pfgAGB'])); 
+
 
 // sampling points --------------------------------------------------------
 
@@ -64,17 +78,33 @@ var one = ee.Image(1).rename('one');
 
 var sample = covBio.addBands(one)
   .stratifiedSample({
-    numPoints: 3,
+    numPoints: sampleSize,
     classBand: 'one',
     region: region,
-    scale: scale
+    scale: scale,
+    seed: 123
   });
-print(sample);
+
 
 // // Generate chart from sample
-var chart = ui.Chart.feature.byFeature(sample, 'PFG', 'pfgAGB')
-    .setChartType('ScatterChart');
-print("chart",chart);      
+// var chart = ui.Chart.feature.byFeature(sample, 'PFG', 'pfgAGB')
+//     .setChartType('ScatterChart');
+//print("chart",chart);      
+
+
+// save results -----------------------------------------------------------
+
+  Export.table.toDrive({
+    collection: sample,
+    description: 'RAP_cover_and_biomass_mean_' + sampleSize + 'obs_'+ scale + 'm_' + dateString,
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
+
+
+
+
+
 
 
 
