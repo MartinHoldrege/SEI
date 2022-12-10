@@ -20,7 +20,7 @@ var endDate = ee.Date.fromYMD(endYear, 12, 31);
 
 // for output
 var scale = 30; 
-var sampleSize = 1000000;
+var sampleSize = 100000;
 var dateString = "20221209";
 
 // dependencies -------------------------------------------------------
