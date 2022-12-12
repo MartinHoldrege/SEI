@@ -5,6 +5,12 @@
 *.jpg
 *.pdf
 
+# word
+*.docx
+
+# knitted docs
+*.html
+
 # specific folders
 scripts/example_scripts_from_others/*
 data_raw
