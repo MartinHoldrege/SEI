@@ -6,13 +6,13 @@
 # downloading functions ---------------------------------------------------
 
 # download files from gdrive
-drive_download_from_df <- function(df, folder_path = "./") {
+drive_download_from_df <- function(df, folder_path = "./", overwrite = TRUE) {
   
   stopifnot(nrow(df) > 0)
   for (i in 1:nrow(df)) {
     drive_download(file = df$id[i], 
                    path = file.path(folder_path, df$name[i]),
-                   overwrite = TRUE)
+                   overwrite = overwrite)
   }
   
 }
