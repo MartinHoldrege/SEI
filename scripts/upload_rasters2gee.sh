@@ -45,6 +45,20 @@ do
 done
 cd ../..; # reset wd (not sure if necessary)
 
+#
+# code started for transfering files to gcloud
+# note-- gsutil can move files to to the gcloud bucket
+# dir_old=pwd;
+# # where the raster are located
+# dir_rast="../grazing_effects/data_processed/interpolated_rasters/biomass/";
+# cd $dir_rast;
+# # list file names based on regex (note: apparently doing this with
+# # ls isn't good practice)
+# fp1=$(ls . | grep -E "c4on_[A-z]+_biomass_Current.*_Light_" | grep -E "(Cheatgrass)|(Sagebrush)|(Pherb)")
+# echo $fp1
+
+
+
 # just some non-functioning code I was testing
 # assets=$(earthengine ls ${asset_folder} | tr ''
 # echo "${assets}"
