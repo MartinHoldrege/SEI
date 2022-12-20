@@ -212,7 +212,7 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
 
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'); // mask from Maestas, Matt Jones
 
-exports.rangeMaskx = rangeMask.eq(0)
+exports.mask = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask()
   .clip(biome);
