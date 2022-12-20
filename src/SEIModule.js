@@ -183,3 +183,35 @@ exports.repeatelemList = function(elemList, nList) {
   }
   return out;
 };
+
+/*
+
+Commonly used mask (of the sagebrush region) and outline of the sagebrush region
+
+*/
+
+var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
+
+exports.region = biome.geometry();
+
+
+/// from USGS GAP land cover	
+var LC = ee.Image("USGS/GAP/CONUS/2011");
+
+// MH--remap converts selected values (which are turndra landcover) to 1, everything else becomes masked
+// MH--unmask(0) replaces all masked values with 0.
+// MH--eq(0), returning 1 for all cell values that are 0 (i.e. not tundra), 0 otherwise (i.e. flipping the 0 to 1 and 1 to 0)
+var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1])
+  .unmask(0)
+  .eq(0);	
+
+var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'); // mask from Maestas, Matt Jones
+
+exports.rangeMaskx = rangeMask.eq(0)
+  .multiply(tundra)
+  .selfMask()
+  .clip(biome);
+
+
+
