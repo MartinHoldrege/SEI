@@ -4,6 +4,10 @@
  * scripts for calculating sagebrush ecological integrity (SEI).
  * Module created by Martin Holdrege, but uses
  * code written by David Theobald
+ * 
+ * load like this:
+ * var m = require("users/mholdrege/SEI:src/SEIModule.js");
+ * 
  * @module src/SEIModule
  */
 
