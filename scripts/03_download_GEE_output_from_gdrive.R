@@ -13,6 +13,7 @@ source("src/general_functions.R")
 
 # get file paths drive --------------------------------------------------------
 
+drive_auth(email = "mholdrege@contractor.usgs.gov")
 # sagebrush biome masked data
 files1 <- drive_ls(path = "SEI")
 files1
@@ -29,13 +30,9 @@ files2 <- files1 %>%
          date = lubridate::ymd(date),
          modifiedTime = map_chr(drive_resource, function(x) x$modifiedTime)) %>% 
   # if multiple files with the same
-  # name only download the newer one
-  group_by(name) %>% 
-  filter(modifiedTime == max(modifiedTime)) %>% 
-  # if multiple files create with different date strings
-  # only keep the recent one 
+  # base name name only download the newest one
   group_by(name_no_date) %>% 
-  filter(date == max(date))
+  filter(modifiedTime == max(modifiedTime))
 files2
 
 
@@ -47,4 +44,10 @@ files_area <- files2 %>%
 
 drive_download_from_df(files_area, folder_path = "data_processed/area")
 
+# percentiles -------------------------------------------------------------
 
+files_perc <- files2 %>% 
+  filter(str_detect(name, "^percentiles"))
+files_perc
+
+drive_download_from_df(files_perc, folder_path = "data_processed/percentiles")
