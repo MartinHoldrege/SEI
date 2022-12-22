@@ -4,6 +4,10 @@
  * scripts for calculating sagebrush ecological integrity (SEI).
  * Module created by Martin Holdrege, but uses
  * code written by David Theobald
+ * 
+ * load like this:
+ * var m = require("users/mholdrege/SEI:src/SEIModule.js");
+ * 
  * @module src/SEIModule
  */
 
@@ -183,3 +187,40 @@ exports.repeatelemList = function(elemList, nList) {
   }
   return out;
 };
+
+/*
+
+Commonly used mask (of the sagebrush region) and outline of the sagebrush region
+
+*/
+
+var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
+
+exports.region = biome.geometry();
+
+
+/// from USGS GAP land cover	
+var LC = ee.Image("USGS/GAP/CONUS/2011");
+
+// MH--remap converts selected values (which are turndra landcover) to 1, everything else becomes masked
+// MH--unmask(0) replaces all masked values with 0.
+// MH--eq(0), returning 1 for all cell values that are 0 (i.e. not tundra), 0 otherwise (i.e. flipping the 0 to 1 and 1 to 0)
+var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1,1,1,1,1,1,1,1,1,1,1,1])
+  .unmask(0)
+  .eq(0);	
+
+var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'); // mask from Maestas, Matt Jones
+
+exports.mask = rangeMask.eq(0)
+  .multiply(tundra)
+  .selfMask()
+  .clip(biome);
+
+
+// for outputs and calculations (change later as needed)
+// wkt 
+// so can use the same projection in multiple places
+var projUSGS = ee.Projection("PROJCS[\"USA_Contiguous_Albers_Equal_Area_Conic_USGS_version\", \n  GEOGCS[\"GCS_North_American_1983\", \n    DATUM[\"D_North_American_1983\", \n      SPHEROID[\"GRS_1980\", 6378137.0, 298.257222101]], \n    PRIMEM[\"Greenwich\", 0.0], \n    UNIT[\"degree\", 0.017453292519943295], \n    AXIS[\"Longitude\", EAST], \n    AXIS[\"Latitude\", NORTH]], \n  PROJECTION[\"Albers_Conic_Equal_Area\"], \n  PARAMETER[\"central_meridian\", -96.0], \n  PARAMETER[\"latitude_of_origin\", 23.0], \n  PARAMETER[\"standard_parallel_1\", 29.5], \n  PARAMETER[\"false_easting\", 0.0], \n  PARAMETER[\"false_northing\", 0.0], \n  PARAMETER[\"standard_parallel_2\", 45.5], \n  UNIT[\"m\", 1.0], \n  AXIS[\"x\", EAST], \n  AXIS[\"y\", NORTH]]")
+
+exports.crs = projUSGS.wkt().getInfo();
