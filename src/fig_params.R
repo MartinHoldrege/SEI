@@ -42,5 +42,8 @@ names(c9Palette) <- c9Names
 c3Palette <- c9Palette[c(1, 5, 9)]
 names(c3Palette) <- c3Names
 
-
+# colors matching those used in doherty et al 2022
+cols_region <- c("great_plains" = "#DB9E27",
+                 "intermountain" = "#0E9A72",
+                 "great_basin" = "#0E72AD")
 

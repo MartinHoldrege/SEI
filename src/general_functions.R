@@ -39,6 +39,9 @@ c3_named_factor <- function(x) {
 }
 
 
+# q curve functions -------------------------------------------------------
+
+
 #' parsq q curves (parsed from .js script)
 #'
 #' @return list of 5 dataframes, each one gives the data for the 
@@ -79,4 +82,42 @@ parse_q_curves <- function() {
               max(df$cover) == 1)
   })
   out
+}
+
+
+
+#' generate string that is valid js code defining a q-curve
+#'
+#' @param df dataframe with 4 columns
+#' @param name name that the js object should take
+#'
+#' @return multiline string that is a nested list, which can 
+#' be sourced in earth engine 
+#' @examples
+#' df <- tibble(
+#' x = 1:5,
+#' great_basin = rnorm(5),
+#' intermountain = runif(5),
+#' great_plains = runif(5)
+#' )
+#' out <- create_js_q_curve_code(df, name = "myobject")
+#' cat(out)
+create_js_q_curve_code <- function(df, name) {
+  stopifnot(ncol(df) == 4,
+            names(df)[-1] == c("great_basin", "intermountain", "great_plains"))
+  
+  rows1 <- map(1:nrow(df), function(i) {
+    as.numeric(df[i, ]) %>% 
+      unlist()
+  })
+  rows2 <- map(rows1, function(x) {
+    paste0("\t[", 
+           paste(x, collapse = ", "), 
+           "]")
+  })
+  
+  out <- paste0("\nexports.", name, " = [\n", 
+                   paste(unlist(rows2), collapse = ",\n"),
+                   "\n];\n")
+  out           
 }

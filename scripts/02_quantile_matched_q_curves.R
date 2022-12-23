@@ -11,6 +11,8 @@
 library(tidyverse)
 library(terra)
 source("src/general_functions.R")
+source("src/fig_params.R")
+theme_set(theme_classic())
 
 # read in data ------------------------------------------------------------
 
@@ -41,6 +43,7 @@ r_sage <- rast(file.path(dir_rast, files_sage))
 # main q curves (i.e. used in doherty et al 2022)
 q1 <- parse_q_curves()
 
+regions <- names(q1[[1]])[2:4]
 # process data ------------------------------------------------------------
 
 # * rap/rcmap -------------------------------------------------------------
@@ -63,9 +66,7 @@ rapPerc2 <- rapPerc1 %>%
   )) %>% 
   rename(cover = value)
 
-ggplot(rapPerc2, aes(perc, cover)) +
-  geom_point() +
-  facet_wrap(~var)
+
 
 
 # * stepwat biomass -------------------------------------------------------
@@ -122,14 +123,66 @@ q_sw2 <- q_sw1 %>%
                values_to = "q", names_to = "region")
 
 
+# figures -----------------------------------------------------------------
+
+
 g <- ggplot(q_sw2, aes(y = q, color = region)) +
-  facet_wrap(~PFT, ncol = 2, scales = 'free')
+  facet_wrap(~PFT, ncol = 2, scales = 'free') +
+  labs(y = "Q Value") +
+  scale_color_manual(values = cols_region)
+
+pdf("figures/q_curves/q_curves_v1.pdf",
+    width = 6, height = 4)
+g +
+  geom_line(aes(x = cover)) +
+  labs(subtitle = "Original Q curve (Theobald 2022)")
 
 g +
-  geom_line(aes(x = cover))
+  geom_line(aes(x = perc*100)) +
+  labs(x = "Percentile",
+       subtitle = "RAP/RCMAP cover converted to percentile")
 
 g +
-  geom_line(aes(x = sw_biomass))
+  geom_line(aes(x = sw_biomass)) +
+  labs(x = "Stepwat biomass (g/m2)",
+       subtitle = "Q curve based on quantile matching between stepwat biomass and RAP cover") 
 
-g +
-  geom_line(aes(x = perc))
+ggplot(rapPerc2, aes(perc*100, cover)) +
+  geom_point() +
+  facet_wrap(~var, ncol = 2) +
+  labs(x = "Percentile",
+       subtitle = "Percentiles of RAP/RCMAP cover data smoothed to 560m")
+
+dev.off()
+
+
+# write q-curves into js script -------------------------------------------
+# do
+q_sw3 <- q_sw2 %>% 
+  select(-cover, -perc) %>% 
+  # removing duplicated rows because covers (e.g. 75% cover and 100%cover
+  # both got mapped to the maximum biomass)
+  distinct() %>% 
+  pivot_wider(#id_cols = c("PFT", "q"), 
+              names_from = "region",
+              values_from = "q") %>% 
+  # making sure
+  # same order of regions as original q curves
+  select(sw_biomass, all_of(regions), PFT) %>% 
+  split(.$PFT) %>% 
+  map(select, -PFT)
+
+# putting bio in the name to denote that this is 'biomass' q-curve
+afg_js <- create_js_q_curve_code(q_sw3$afg, name = 'annualQBio1')
+pfg_js <- create_js_q_curve_code(q_sw3$pfg, name = 'perennialQBio1')
+sage_js <- create_js_q_curve_code(q_sw3$pfg, name = 'sageQBio1')
+
+# strings to write
+q2write <- c("//Note: this is an automatically created file, do not edit",
+             "//File created in 02_quantile_matched_q_curves.R script",
+             "//These are adjusted q-curved to use with stepwat biomass output",
+             "\n", 
+             afg_js, pfg_js, sage_js)
+cat(q2write)
+write_lines(q2write, "src/qCurves4StepwatOutput.js")
+
