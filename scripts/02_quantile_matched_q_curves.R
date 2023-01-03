@@ -175,7 +175,7 @@ q_sw3 <- q_sw2 %>%
 # putting bio in the name to denote that this is 'biomass' q-curve
 afg_js <- create_js_q_curve_code(q_sw3$afg, name = 'annualQBio1')
 pfg_js <- create_js_q_curve_code(q_sw3$pfg, name = 'perennialQBio1')
-sage_js <- create_js_q_curve_code(q_sw3$pfg, name = 'sageQBio1')
+sage_js <- create_js_q_curve_code(q_sw3$sage, name = 'sageQBio1')
 
 # strings to write
 q2write <- c("//Note: this is an automatically created file, do not edit",
