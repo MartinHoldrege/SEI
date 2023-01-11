@@ -130,7 +130,7 @@ Export.image.toDrive({
 var bandsForOutput = function(image) {
   var out = image
     .select(['Q1raw', 'Q2raw', 'Q3raw', 'Q4raw', 'Q5raw',"Q5s", 'Q5sc3'])
-    .rename[['Q1raw', 'Q2raw', 'Q3raw', 'Q4raw', 'Q5raw',"SEI", 'sc3']];
+    .rename(['Q1raw', 'Q2raw', 'Q3raw', 'Q4raw', 'Q5raw',"SEI", 'sc3']);
   return out;
 };
 
@@ -162,7 +162,8 @@ var datasetsLst = [
   ];
 
 for (var i=0; i<datasetsLst.length; i++) { 
-
+  print(ee.Image(datasetsLst[i][1]));
+  
   Export.image.toCloudStorage({
     image: ee.Image(datasetsLst[i][1]),
     description: datasetsLst[i][0],
