@@ -134,6 +134,12 @@ var bandsForOutput = function(image) {
   return out;
 };
 
+// can't output all the bands at once b/ the output file (27gb)
+// is to big for gdrive
+var bands1 = ['Q1raw', 'Q2raw', 'Q3raw'];
+var bands2 = ['Q4raw', 'Q5raw'];
+var bands3 = ["SEI", 'sc3'];
+// var bandsLst = [bands1, bands2, bands3];
 // dataset #1
 var dataset1 = ee.Image(path + 'v11/current/SEIv11_1998_2001_30_Current_20220718');
 
@@ -148,6 +154,7 @@ var dataset2 = bandsForOutput(dataset2);
 var dataset5 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 var dataset5 = bandsForOutput(dataset5);
 
+
 var datasetsLst = [
   ['SEIv11_1998_2001_30_Current_20220718', dataset1],
   ['SEIv11_2003_2006_30_Current_20220718', dataset2],
@@ -156,10 +163,11 @@ var datasetsLst = [
 
 for (var i=0; i<datasetsLst.length; i++) { 
 
-  Export.image.toDrive({
+  Export.image.toCloudStorage({
     image: ee.Image(datasetsLst[i][1]),
     description: datasetsLst[i][0],
-    folder: 'SEI',
+    bucket: 'mholdrege',
+    //folder: 'SEI',
     maxPixels: 1e13, 
     scale: scale,
     region: region,
@@ -167,4 +175,5 @@ for (var i=0; i<datasetsLst.length; i++) {
     fileFormat: 'GeoTIFF'
   });
 }
+
 
