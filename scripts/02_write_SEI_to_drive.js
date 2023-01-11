@@ -28,10 +28,11 @@ Map.addLayer(Q5sc3Med, {min:1,max:3, palette: ["black","grey","white"]}, '3 clas
 
 // export to drive
 
+
 // export parameters
 var scale = 30; 
 var crs = 'EPSG:5070';
-
+/*
 // datset #1
 var c3dataset1 = ee.Image(path + 'v11/current/SEIv11_1998_2001_30_Current_20220718')
   .select('Q5sc3');
@@ -74,7 +75,7 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
 
-/*
+
 // datset #4
 
 var c3dataset4 = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_2013_2016_30_20211228')
@@ -121,3 +122,49 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
 */
+
+// exporting additional rasters--but with more layers (i.e. these were not used
+// for the data release)
+
+// selecting the key bands (the 5 q components, continuous (smooth) SEI and sc3
+var bandsForOutput = function(image) {
+  var out = image
+    .select(['Q1raw', 'Q2raw', 'Q3raw', 'Q4raw', 'Q5raw',"Q5s", 'Q5sc3'])
+    .rename[['Q1raw', 'Q2raw', 'Q3raw', 'Q4raw', 'Q5raw',"SEI", 'sc3']];
+  return out;
+};
+
+// dataset #1
+var dataset1 = ee.Image(path + 'v11/current/SEIv11_1998_2001_30_Current_20220718');
+
+var dataset1 = bandsForOutput(dataset1);
+
+// dataset #2
+var dataset2 = ee.Image(path + 'v11/current/SEIv11_2003_2006_30_Current_20220718');
+
+var dataset2 = bandsForOutput(dataset2);
+
+// dataset #5
+var dataset5 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
+var dataset5 = bandsForOutput(dataset5);
+
+var datasetsLst = [
+  ['SEIv11_1998_2001_30_Current_20220718', dataset1],
+  ['SEIv11_2003_2006_30_Current_20220718', dataset2],
+  ['SEIv11_2017_2020_30_Current_20220717', dataset5]
+  ];
+
+for (var i=0; i<datasetsLst.length; i++) { 
+
+  Export.image.toDrive({
+    image: ee.Image(datasetsLst[i][1]),
+    description: datasetsLst[i][0],
+    folder: 'SEI',
+    maxPixels: 1e13, 
+    scale: scale,
+    region: region,
+    crs: crs,
+    fileFormat: 'GeoTIFF'
+  });
+}
+
