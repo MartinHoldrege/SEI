@@ -151,6 +151,15 @@ var dataset2 = ee.Image(path + 'v11/current/SEIv11_2003_2006_30_Current_20220718
 
 var dataset2 = bandsForOutput(dataset2);
 
+// dataset #3
+var dataset3 = ee.Image(path + 'v11/current/SEIv11_2008_2011_30_Current_20220718');
+
+var dataset3 = bandsForOutput(dataset3);
+
+// dataset #4
+var dataset4 = ee.Image(path + 'v11/current/SEIv11_2013_2016_30_Current_20220718');
+var dataset4 = bandsForOutput(dataset4);
+
 // dataset #5
 var dataset5 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 var dataset5 = bandsForOutput(dataset5);
@@ -159,8 +168,13 @@ var dataset5 = bandsForOutput(dataset5);
 var datasetsLst = [
   ['SEIv11_1998_2001_30_Current_20220718', dataset1],
   ['SEIv11_2003_2006_30_Current_20220718', dataset2],
+  ['SEIv11_2008_2011_30_Current_20220718', dataset3],
+  ['SEIv11_2013_2016_30_Current_20220718', dataset4],
   ['SEIv11_2017_2020_30_Current_20220717', dataset5]
   ];
+
+// adding this line of code to just export datasets 3 and 4
+var datasetsLst = datasetsLst.slice(2,4);
 
 for (var i=0; i<datasetsLst.length; i++) { 
   print(ee.Image(datasetsLst[i][1]));
