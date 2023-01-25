@@ -211,8 +211,11 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
   .unmask(0)
   .eq(0);	
 
+exports.tundra = tundra;
+
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'); // mask from Maestas, Matt Jones
 
+// primary sagebrush ecosystem mask used in other scripts
 exports.mask = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask()
