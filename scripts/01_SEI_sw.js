@@ -3,7 +3,7 @@
  * Purpose:
  * Calculate the Sagebrush Ecosystem Integrity with
  * values from stepwat (annuals, perennials, sagebrush) used
- * in the formual 
+ * in the formuala directly 
  * 
  * Script Started: 1/25/2023
  * 
@@ -15,21 +15,26 @@
 
 // User-defined variables.
 
-var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
-var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
+var yearEnd = 2020 ; // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
+var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 90     // output resolution, 90 initially, 30 m eventually
-var sampleResolution = 270 // MH--this is only used in one place, with no downstream affects
-var radius = 560    // used to set radius of Gaussian smoothing kernel
-var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
-var version = '11'
+var resolution = 90;     // output resolution, 90 initially, 30 m eventually
+var sampleResolution = 270; // MH--this is only used in one place, with no downstream affects
+var radius = 560;    // used to set radius of Gaussian smoothing kernel
+var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
+var version = 'sw1'; // first version calculating sei directly from stepwat output
+
+// which stepwat output to read in?
+var root = 'c4on_';
+var RCP =  'current';
+var epoch = 'current';
+var graze = 'Light';
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js")
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
-var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
-
+var path = SEI.path;
 var biome = SEI.biome;
 var region = SEI.region;
 
@@ -39,12 +44,10 @@ var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // pr
 // image visualization params
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
 var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"palette":["e7ed8b","23b608","107a0e","082b08"]};
+
 var yearNLCD = '2019';  // needs to be a string
 
-
-// MH this is the human modification dataset
-// At the moment don't use the copy of this data set that I ingest (it is corrupted somehow)
-//var H = ee.Image(path + 'hm/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush')
+// human modification dataset
 var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush');
 
 // MH--remap converts selected values (which are turndra landcover) to 1, everything else becomes masked
@@ -57,8 +60,24 @@ var rangeMaskx = SEI.mask;
 
 Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
 
-// CONTINUE HERE
-// MH--this currently loads v2, there is now a v3 that came out that we may want to use. 
+// r
+// plant functional types for which stepwat output is being loaded in
+var pftList = ['AForb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
+
+var sw1 = ee.Image(0);
+
+for (var i=0; i<pftList.length(); i++) {
+  var pft = pftList[i];
+  var image = ee.Image(path + root + pft + '_' + RCP + '_' + epoch  + '_' + GCM)
+    .rename(pft);
+    
+  var sw1 = sw1.addBands(image);
+  
+}
+
+
+
+var swAforb = ee.Image('path')
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') //
 
 var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
