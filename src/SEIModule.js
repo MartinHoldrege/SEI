@@ -195,6 +195,7 @@ Commonly used mask (of the sagebrush region) and outline of the sagebrush region
 */
 
 var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+exports.path = path;
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 
 exports.biome = biome;
@@ -220,6 +221,12 @@ exports.mask = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask()
   .clip(biome);
+
+// misc datasets commonly used other scripts--so just defining here
+// polygons outlining the 3 regions
+exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
+
+
 
 
 // for outputs and calculations (change later as needed)
