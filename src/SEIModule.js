@@ -194,9 +194,13 @@ Commonly used mask (of the sagebrush region) and outline of the sagebrush region
 
 */
 
+
 var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
+exports.path = path;
+
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 
+exports.biome = biome;
 exports.region = biome.geometry();
 
 
@@ -210,12 +214,21 @@ var tundra = LC.remap([149,151,500,501,502,503,504,505,506,507,549,550,551],[1,1
   .unmask(0)
   .eq(0);	
 
+exports.tundra = tundra;
+
 var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'); // mask from Maestas, Matt Jones
 
+// primary sagebrush ecosystem mask used in other scripts
 exports.mask = rangeMask.eq(0)
   .multiply(tundra)
   .selfMask()
   .clip(biome);
+
+// misc datasets commonly used other scripts--so just defining here
+// polygons outlining the 3 regions
+exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
+
+
 
 
 // for outputs and calculations (change later as needed)
