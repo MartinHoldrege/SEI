@@ -19,7 +19,8 @@ cd
 source $".bashrc" # b/ of aliases etc. for conda environment
 conda activate ee # earthengine commandline environment
 
-# earthengine set_project usgs-gee-drylandecohydrology # I don't think this line needs to run
+# earthengine authenticate 
+# earthengine set_project usgs-gee-drylandecohydrology # I don't think this line needs to always be run
 
 dir_o="projects/gee-guest/assets/" #old directory
 
