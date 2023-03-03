@@ -194,7 +194,7 @@ Commonly used mask (of the sagebrush region) and outline of the sagebrush region
 
 */
 
-var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 
 exports.region = biome.geometry();

@@ -13,7 +13,7 @@
  * where multiplied by the climate change ratios
  * 
  * Note thate in feb 21, 2022 this code was updated to source
- * assets from MH's assets folder (projects/gee-guest/assets/SEI).
+ * assets from MH's assets folder (projects/usgs-gee-drylandecohydrology/assets/SEI).
  * These are the assets that DT shared but that I then exported
  * in the 'export_daves"assets2drive.js' script, and then ingested.
 */
@@ -29,7 +29,7 @@ var sampleResolution = 270 // MH--this is only used in one place, with no downst
 var radius = 560    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000  // defines radius of overall smoothing to get "cores"
 var version = '11'
-var path = 'projects/gee-guest/assets/SEI/' // path to where most assets live
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/' // path to where most assets live
 
 // MH--this feature is present
 var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019") // provided by DT

@@ -1,5 +1,5 @@
 
-var path = 'projects/gee-guest/assets/SEI/'; 
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; 
 var c9d = ee.Image(path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224')
 
 // visualization parameters

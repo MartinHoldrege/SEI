@@ -13,7 +13,7 @@ Date Started 12/19/2022
 // these correspond to the years that the Q-curves are based on
 var yearEnd = 2020;  
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
-var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 var scale = 30;
 var dateString = "20221220"
 var imageVis100 = {"opacity":1,"min":0,"max":80,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};

@@ -8,7 +8,7 @@ Script started: 5/27/2022
 Author: Martin Holdrege
 */
 
-var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 
 // image created by 01_SEI_future.js script
 var Q5sc3Med = ee.Image(path + 'v11/forecasts/SEIv11_2017_2020_30_ClimateOnly_RCP85_2030-2060_median_20220215');

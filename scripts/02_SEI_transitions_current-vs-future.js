@@ -34,7 +34,7 @@ var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 var date = '20221017' // for file names
 var resolution = 90;    // output resolution, 90 initially, 30 m eventually
 
-var path = 'projects/gee-guest/assets/SEI/'; // path to where most assets live
+var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
