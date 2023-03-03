@@ -19,19 +19,20 @@ conda activate ee # earthengine commandline environment
 
 new="projects/usgs-gee-drylandecohydrology/assets/"
 old="projects/gee-guest/assets/"
-
+ 
 # create folders
 
 paths_fold="/c/Users/mholdrege/OneDrive - DOI/Documents/projects/SEI/data_processed/ee_asset_paths/folders2create.txt"
 
-# uncomment these lines to run
-# while read p; do
-#  earthengine create folder ${new}${p}
-#done <"$paths_fold"
+# comment out if folders have already been created
+while read p; do
+  earthengine create folder ${new}${p}
+done <"$paths_fold"
 
 # initially only running these for the SEI assets
 paths_file="/c/Users/mholdrege/OneDrive - DOI/Documents/projects/SEI/data_processed/ee_asset_paths/files2mv.txt"
 while read p; do
 # using cp instead of mv for safety (can delete assets from gee-guest later)
  earthengine cp ${old}${p} ${new}${p}
+ echo "$p"
 done <"$paths_file"

@@ -58,7 +58,7 @@ files1 <- str_extract(l1, "(?<=gee-guest/assets/).*")
 # removing files that are actually folders
 files2 <- files1[!files1%in% folders2]
 
-files2 <- str_subset(files2, "SEI") # for now just want to move the SEI assets
+# files2 <- str_subset(files2, "SEI") # for now just want to move the SEI assets
 
 # 3: write files -------------------------------------------------------------
 
