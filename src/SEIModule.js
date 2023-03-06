@@ -228,8 +228,8 @@ exports.mask = rangeMask.eq(0)
 // polygons outlining the 3 regions
 exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
 
-
-
+// human modification dataset
+exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebrush');
 
 // for outputs and calculations (change later as needed)
 // wkt 
