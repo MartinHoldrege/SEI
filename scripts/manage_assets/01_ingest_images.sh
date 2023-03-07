@@ -34,12 +34,13 @@ conda activate ee
 
 cd "$dir"
 
-# copy files matching this regular expression to cloud project:
+# copy files matching this regular expression to cloud bucket:
 # (Note this code will fail if breaks in file names exists)
 files=$(find . | grep -P "c4on_(Aforb|Sagebrush|Pherb|Cheatgrass).*2030-2060_Light_.*.tif$")
 
+gsutil cp "$files" ${gs_folder} # upload to bucket
 
-# ingest image to earth engine
+# ingest image to earth engine (from the bucket)
 for file in $files;
 do 
     file=${file:2} # removing leading ./
@@ -49,4 +50,6 @@ do
     #echo ${file2}
     #echo ${gs_folder}${file}
 done
+
+
 
