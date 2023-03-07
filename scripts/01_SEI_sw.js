@@ -12,6 +12,12 @@
  * by Dave Theobald)
 */
 
+// Next steps:
+// re-order to bring tree & hmod data up top
+// improve comments
+// build in gcm loop
+// combine output into multilayer bands
+// start with empty image, and remove the empty band before writing out asset
 
 // User-defined variables.
 
