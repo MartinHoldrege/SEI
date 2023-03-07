@@ -142,8 +142,18 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.244))
   .add(Q5s.gt(0.326))
   .add(Q5s.gt(0.431))
-  .add(Q5s.gt(0.565)).add(1) // so range is 1-10
-  return(out)
+  .add(Q5s.gt(0.565)).add(1); // so range is 1-10
+  return(out);
+};
+
+/**
+ * Smooth pixels within a 560 m neighborhood
+ * @param {ee.Image} image to smooth
+ * @return {ee.Image} image with smoothed pixel values
+ */
+exports.mean560 = function(image) {
+  var out = image.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'));
+  return out;
 };
 
 
@@ -220,7 +230,7 @@ var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'
 
 // primary sagebrush ecosystem mask used in other scripts
 exports.mask = rangeMask.eq(0)
-  .multiply(tundra)
+  .multiply(tundra) // mask out tundra grass/shrub
   .selfMask()
   .clip(biome);
 
