@@ -18,22 +18,29 @@
 var yearEnd = 2020 ; // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 90;     // output resolution, 90 initially, 30 m eventually
-var sampleResolution = 270; // MH--this is only used in one place, with no downstream affects
-var radius = 560;    // used to set radius of Gaussian smoothing kernel
+var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
+
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'sw1'; // first version calculating sei directly from stepwat output
+var version = 'vsw1'; // first version calculating sei directly from stepwat output
+var dateString = '_20230307'; // for appending to 
 
 // which stepwat output to read in?
 var root = 'c4on_';
-var RCP =  'current';
-var epoch = 'current';
+var RCP =  'Current';
+var epoch = 'Current';
 var graze = 'Light';
-var GCM = 'current';
+var GCM = 'Current';
+var s = '_' + RCP + '_' + epoch  + '_' + graze + '_' + GCM;
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+
+// Q curves to use for STEPWAT biomass. Based on the original 
+// Q curves, quantile matched back to stepwat biomass. Note these
+// curves will need to be updated (i.e. new percentiles calculated)
+// for the new stepwat simulation runs
+var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput.js");
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -52,15 +59,14 @@ Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',fal
 
 // read in stepwat vegetation data
 
-
 // plant functional types for which stepwat output is being loaded in
-var pftList = ['AForb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
+var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
 
 var sw1 = ee.Image(0);
 
-for (var i=0; i<pftList.length(); i++) {
+for (var i=0; i<pftList.length; i++) {
   var pft = pftList[i];
-  var image = ee.Image(path + 'stepwat_biomass/' + root + pft + '_' + RCP + '_' + epoch  + '_' + GCM)
+  var image = ee.Image(path + 'stepwat_biomass/' + root + pft + '_biomass' + s)
     .rename(pft);
     
   var sw1 = sw1.addBands(image);
@@ -68,8 +74,8 @@ for (var i=0; i<pftList.length(); i++) {
 }
 
 // annual forb and grass aboveground biomass (simulated)
-var annual = sw1.select('AForb')
-  .addBands(sw1.select('Cheatgrass'))
+var annual = sw1.select('Aforb')
+  .add(sw1.select('Cheatgrass'))
   .rename('afg');
   
 // perennial forb and grass aboveground biomass (simulated)
@@ -79,6 +85,10 @@ var perennial = sw1.select('Pherb')
 // sagebrush aboveground biomass (simulated)
 var sage = sw1.select('Sagebrush')
   .rename('sage');
+  
+Map.addLayer(annual, {min:0, max:100, palette:['white', 'darkgreen']},  'annuals' + s, false);
+Map.addLayer(perennial, {min:0, max:150, palette:['white', 'darkgreen']},  'perennial' + s, false);
+Map.addLayer(sage, {min:0, max:600, palette:['white', 'darkgreen']},  'sage' + s, false);
 
 
 /**
@@ -102,94 +112,63 @@ var sage = sw1.select('Sagebrush')
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); 
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2'); //
 
-Map.addLayer(wildfires,{},'wildfires',false)
-var ones = ee.Image(1)
-var lstTree = ee.List([])
+
+var ones = ee.Image(1);
+var lstTree = ee.List([]);
 for (var y=yearEnd; y>=yearStart; y--) {
-  var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd))
+  var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd));
   
   // MH creates a raster where 0 is area of fire, 1 is no fire (that year)
-  var imageWildfire = ones.paint(wildfiresF, 0) // if a fire occurs, then remove 
-  Map.addLayer(imageWildfire, {min:0, max:1}, 'imageWildfire ' + y, false)
-  
+  var imageWildfire = ones.paint(wildfiresF, 0); // if a fire occurs, then remove 
+
   // MH mean across layers of ic. then multiply to remove areas that are fire
   var tree1 = ic.filterDate(y + '-01-01',  y + '-12-31')
     .select('TREE')
     .mean()
-    .multiply(imageWildfire.selfMask()) // remove,  
-  Map.addLayer(tree1, {}, 'tree ' + y, false) // the rap layer now has 'holes' in it. 
-  var lstTree = lstTree.add(tree1)
+    .multiply(imageWildfire.selfMask()); // remove,  
+
+  var lstTree = lstTree.add(tree1);
 }
 
 
-var tree = ee.ImageCollection(lstTree).mean() // replace rap collection with mean of wildfire filtered images
-Map.addLayer(tree,{},'tree all 4 years',false)
-
-
-var lstRCMAPsage = ee.List([])
-for (var i=yearStart; i<=yearEnd; i++) {
-  // Data characterize the percentage of each 30-meter pixel in the Western United States covered by sagebrush
-  var rcmapSage = ee.Image("users/DavidTheobald8/USGS/RCMAP/rcmap_sagebrush_" + i)
-    // Note--I somehow screwed up ingesting these rcmap rasters so at least for now keep
-    // loading the ones DT made publically available
-  //var rcmapSage = ee.Image(path + "rcmap/rcmap_sagebrush_" + i) // from DT
-  var lstRCMAPsage = lstRCMAPsage.add(rcmapSage)
-}
-
-var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage') // MH average sagebrush cover across 4 years
-var sage = sw1.select('sage')
+var tree = ee.ImageCollection(lstTree).mean(); // replace rap collection with mean of wildfire filtered images
+Map.addLayer(tree,{min:0, max:75, palette: ['white', 'darkgreen']},'tree all 4 years',false);
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
-var rapAnnualG = rap.select('AFGC') // AFG
-  .multiply(tundra) // mask out tundra grass/shrub
-var rapPerennialG = rap.select('PFGC') // PFG 
-  .multiply(tundra) // mask out tundra grass/shrub
-var rapTree = rap.select('TREE') // PFG 
-  .multiply(tundra) // mask out tundra grass/shrub
-var nlcdSage = rcmapSage
-  .multiply(tundra) // mask out tundra grass/shrub
-Map.addLayer(rapAnnualG.selfMask(),{},'rapAnnualG',false)
-Map.addLayer(rapPerennialG.selfMask(),{},'rapPerennialG',false)
-Map.addLayer(nlcdSage.selfMask(),{},'nlcdSage',false)
-if (true) {
-var rapAnnualGscenarios = ee.Image().float()
-var rapPerennialGscenarios = ee.Image().float()
-var nlcdSageScenarios = ee.Image().float()
+var annual = annual // AFG
+  .multiply(tundra); 
+var perennial = perennial // PFG 
+  .multiply(tundra); 
+var rapTree = tree1 // trees
+  .multiply(tundra); 
+var sage = sage
+  .multiply(tundra); 
 
-
-var s = '_Current'; // this string contains the GCM when running for future scenarios
-
-// apply ratio to rap & nlcd data
-var rapAnnualG = rap.select('AFGC')
-
-var rapPerennialG = rap.select('PFGC')
-
-var nlcdSage = nlcdSage.select('nlcdSage')
-
-Map.addLayer(rapAnnualG,imageVisQ,'rapAnnualG'+s, false)
-Map.addLayer(rapPerennialG,imageVisQ,'rapPerenniallG'+s, false)
-Map.addLayer(nlcdSage,imageVisQ,'nlcdSage'+s, false)
 
 
 /**
  * Step 2. smooth raw data
+ * 
+ * averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
+ * the weights are derived from a normal distribution with a sd of 560. 
+ * 
+ * For now I'm not smoothing the stepwat biomass data b/ it's not really relavent b/ it's native
+ * resolution is 1km
  */
  
-// MH--I think this works by averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
-//the weights are derived from a normal distribution with a sd of 560. 
-var nlcdSage560m = SEI.mean560(nlcdSage)
-  .divide(100.0) // MH convert from % cover to proportion
-  .unmask(0.0); // MH masked pixels converted to 0
 
-var rapAnnualG560m = SEI.mean560(rapAnnualG)
-  .divide(100.0)
+var sage560m = sage
+  .unmask(0.0); // masked pixels converted to 0
+
+var annual560m = annual
   .unmask(0.0);
-var rapPerennialG560m = SEI.mean560(rapPerennialG)
-  .divide(100.0)
+var perennial560m = perennial
   .unmask(0.0);
+  
 var H560m = SEI.mean560(H)
   .unmask(0.0); //  this is human modification
-var rapTree560m = SEI.mean560(rapTree)
+
+var rapTree560m = SEI.mean560(tree)
   .divide(100.0)
   .unmask(0.0);
 
@@ -198,78 +177,78 @@ var rapTree560m = SEI.mean560(rapTree)
  * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
  */
  
-var Q1 = ee.Image(0.0).float()
-var Q2 = ee.Image(0.0).float()
-var Q3 = ee.Image(0.0).float()
-var Q4 = ee.Image(0.0).float()
-var Q5 = ee.Image(0.0).float()
+var Q1 = ee.Image(0.0).float();
+var Q2 = ee.Image(0.0).float();
+var Q3 = ee.Image(0.0).float();
+var Q4 = ee.Image(0.0).float();
+var Q5 = ee.Image(0.0).float();
 
-var lstEcoregionIds = ['00000000000000000000','00000000000000000001','00000000000000000002'] // GB, IM, Pl
+var lstEcoregionIds = ['00000000000000000000','00000000000000000001','00000000000000000002']; // GB, IM, Pl
 for (var e=1; e<=lstEcoregionIds.length; e++) {
-  var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])) //
-  var Q1x = SEI.raw2HSI(nlcdSage560m, SEI.lstSage2Q, e)
-    .max(0.001) // MH replaces values less than 0.001 with 0.001
-    .multiply(mask) // MH values that are not rangeland become zero, 
-    .clip(ecoregion) // MH clip to the ecoregion being looped through
-    .unmask(0.0) // MH convert masked values to 0.
+  var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])); //
+  var Q1x = SEI.raw2HSI(sage560m, Q.sageQBio1, e)
+    .max(0.001) // eplaces values less than 0.001 with 0.001
+    .multiply(mask) // values that are not rangeland become zero, 
+    .clip(ecoregion) // clip to the ecoregion being looped through
+    .unmask(0.0); // convert masked values to 0.
      
-  var Q1 = Q1.max(Q1x) // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
+  var Q1 = Q1.max(Q1x); // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
 
-  var Q2x = SEI.raw2HSI(rapPerennialG560m, SEI.lstPerennialG2Q, e)
-    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
-  var Q2 = Q2.max(Q2x)
+  var Q2x = SEI.raw2HSI(perennial560m, Q.perennialQBio1, e)
+    .max(0.001)
+    .multiply(mask)
+    .clip(ecoregion)
+    .unmask(0.0);
+  
+  var Q2 = Q2.max(Q2x);
 
-  var Q3x = SEI.raw2HSI(rapAnnualG560m, SEI.lstAnnualG2Q, e)
-    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
-  var Q3 = Q3.max(Q3x)
+  var Q3x = SEI.raw2HSI(annual560m, Q.annualQBio1, e)
+    .max(0.001)
+    .multiply(mask)
+    .clip(ecoregion)
+    .unmask(0.0);
+    
+  var Q3 = Q3.max(Q3x);
 
   var Q4x = SEI.raw2HSI(H560m, SEI.lstH2Q, e)
-    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
   var Q4 = Q4.max(Q4x)
 
   var Q5x = SEI.raw2HSI(rapTree560m, SEI.lstTree2Q, e)
-    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
-  var Q5 = Q5.max(Q5x)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
+  var Q5 = Q5.max(Q5x);
 }
 
 // Display Q images
 // Step 4. is integrated here, multiplying each factor by the earlier one
-// MH--this multiplication is calculating the SEI (continuous), variable
-Map.addLayer(Q1,imageVisQ,'Q1',false);
-var Q2y = Q1.multiply(Q2); //
-Map.addLayer(Q2y,imageVisQ,'Q2y',false);
+// this multiplication is calculating the SEI (continuous), variable
+
+var Q2y = Q1.multiply(Q2); 
 var Q3y = Q2y.multiply(Q3);
-Map.addLayer(Q3y,imageVisQ,'Q3y',false);
 var Q4y = Q3y.multiply(Q4);
-Map.addLayer(Q4y,imageVisQ,'Q4y',false);
-// I only left the clip statement in this last multiply
-var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
-Map.addLayer(Q5y,imageVisQ,'Q5y',false); 
+
+var Q5y = Q4y.multiply(Q5).clip(biome); // this is the final multiple (i.e. SEI560)
+Map.addLayer(Q5y,imageVisQ,'Q5y (SEI560_',false); 
 Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
 
 /**
  * Step 5. Smooth quality values to reflect "management" scale
  */
  
-var Q5s = Q5y // MH this is SEI2000
+var Q5s = Q5y // this is SEI2000
   .unmask(0)
   .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
   .multiply(mask);
 
 // MH here the updateMask call dictates that 0 SEI values aren't shown 
-Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask',false);
-  
+Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)',false);
+
+
 /**
  * Step 6. Classify
  * Calculate and classify Q5s into decile classes.
  */
  
-// MH-- the actually calculated deciles were not used, instead the derived/hard coded ones (below)
-// are used. 
-var Q5s_deciles = Q5s.reduceRegion({reducer: ee.Reducer.percentile([1,10,20,30,40,50,60,70,80,90,100]),
-    maxPixels: 1e13, geometry: biome.geometry(), scale: sampleResolution});
- print('Percentiles for Q5s',Q5s_deciles)
-
 // decile-based classes, derived and hard-coded from Q5s_deciles
 var Q5scdeciles = SEI.decileFixedClasses(Q5s);
   
@@ -277,46 +256,37 @@ var Q5scdeciles = SEI.decileFixedClasses(Q5s);
 // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
 var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
 Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false);
-Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes',false)
+Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes',false)l
 
+if (false) {
 /**
  * Step 7. Export stack of images into bands sent to GEE asset.
  * Build a multi-band image for more compact storage of an GEE asset. This is internal to GEE
  * and needs to be unpacked when exporting to GeoTIFF.
 */
-var empty = ee.Image().byte()
-var imageEcoregions = empty.paint(WAFWAecoregions,1)
 
-var WAFWAoutputsCurrent = Q1.float().rename('Q1raw').addBands([
-  Q2.float().rename('Q2raw'),
-  Q3.float().rename('Q3raw'),
-  Q4.float().rename('Q4raw'),
-  Q5.float().rename('Q5raw'),
-  Q2y.float().rename('Q2'),
-  Q3y.float().rename('Q3'),
-  Q4y.float().rename('Q4'),
-  Q5y.float().rename('Q5'),
-  Q5s.float().rename('Q5s'),
-  Q5scdeciles.byte().rename('Q5scdeciles'),
-  Q5sc3.byte().rename('Q5sc3'),
-  imageEcoregions.byte().rename('SEIecoregions')
+
+var WAFWAoutputsCurrent = Q1.float().rename('Q1raw_' + GCM)
+  .addBands([
+    Q2.float().rename('Q2raw_' + GCM),
+    Q3.float().rename('Q3raw_' + GCM),
+    Q4.float().rename('Q4raw_' + GCM),
+    Q5.float().rename('Q5raw_' + GCM),
+    Q5y.float().rename('Q5_' + GCM),
+    Q5s.float().rename('Q5s_' + GCM),
+    Q5scdeciles.byte().rename('Q5scdeciles_' + GCM),
+    Q5sc3.byte().rename('Q5sc3_' + GCM)
   ]);
 
-// This tod ~ 33 minutes when the task was run in the task bar
 
+var fileName = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_' + dateString;
 Export.image.toAsset({ 
   image: WAFWAoutputsCurrent, //single image with multiple bands
-  assetId: path + 'v' + version + '/current/SEIv' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20220717',
-  description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
+  assetId: path + version + '/sw_SEI/' + fileName,
+  description: fileName,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
-})
+});
 
 
-/////////////////////////////////////////
-// Display additional overlay layers.
-var imageBiome = empty.paint(biome,1,2)
-Map.addLayer(imageBiome,{},'Biome boundary')
-
-Map.addLayer(imageEcoregions,{},'WAFWA Ecoregions boundary',false)
 }
