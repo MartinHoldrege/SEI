@@ -29,38 +29,30 @@ var root = 'c4on_';
 var RCP =  'current';
 var epoch = 'current';
 var graze = 'Light';
+var GCM = 'current';
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
+// datasets, constants etc. defined in SEIModule
 var path = SEI.path;
 var biome = SEI.biome;
 var region = SEI.region;
-
-// polygons outlining the 3 regions
-var WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
+var WAFWAecoregions = SEI.WAFWAecoregions; // polygons outlining the 3 regions
+var H = SEI.H2019; // human modification dataset from 2019
+var tundra = SEI.tundra;
+var mask = SEI.mask; 
 
 // image visualization params
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
 var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"palette":["e7ed8b","23b608","107a0e","082b08"]};
 
-var yearNLCD = '2019';  // needs to be a string
+Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
 
-// human modification dataset
-var H = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_' + yearNLCD + '_90_60ssagebrush');
+// read in stepwat vegetation data
 
-// MH--remap converts selected values (which are turndra landcover) to 1, everything else becomes masked
-// MH--unmask(0) replaces all masked values with 0.
-// MH--eq(0), returning 1 for all cell values that are 0 (i.e. not tundra), 0 otherwise (i.e. flipping the 0 to 1 and 1 to 0)
-var tundra = SEI.tundra;
 
-// MH -- here 1's are rangelands, and everything else is masked out
-var rangeMaskx = SEI.mask; 
-
-Map.addLayer(rangeMaskx.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
-
-// r
 // plant functional types for which stepwat output is being loaded in
 var pftList = ['AForb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
 
@@ -68,20 +60,25 @@ var sw1 = ee.Image(0);
 
 for (var i=0; i<pftList.length(); i++) {
   var pft = pftList[i];
-  var image = ee.Image(path + root + pft + '_' + RCP + '_' + epoch  + '_' + GCM)
+  var image = ee.Image(path + 'stepwat_biomass/' + root + pft + '_' + RCP + '_' + epoch  + '_' + GCM)
     .rename(pft);
     
   var sw1 = sw1.addBands(image);
   
 }
 
-
-
-var swAforb = ee.Image('path')
-var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') //
-
-var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
-
+// annual forb and grass aboveground biomass (simulated)
+var annual = sw1.select('AForb')
+  .addBands(sw1.select('Cheatgrass'))
+  .rename('afg');
+  
+// perennial forb and grass aboveground biomass (simulated)
+var perennial = sw1.select('Pherb')
+  .rename('pfg');  
+  
+// sagebrush aboveground biomass (simulated)
+var sage = sw1.select('Sagebrush')
+  .rename('sage');
 
 
 /**
@@ -103,10 +100,11 @@ var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ???
 // DT has made this file public, and I ran into issue exporting it (contains both polygons and lines which
 // can't both be in a shapefile)
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); 
+var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2'); //
 
 Map.addLayer(wildfires,{},'wildfires',false)
 var ones = ee.Image(1)
-var lstRap = ee.List([])
+var lstTree = ee.List([])
 for (var y=yearEnd; y>=yearStart; y--) {
   var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd))
   
@@ -115,14 +113,17 @@ for (var y=yearEnd; y>=yearStart; y--) {
   Map.addLayer(imageWildfire, {min:0, max:1}, 'imageWildfire ' + y, false)
   
   // MH mean across layers of ic. then multiply to remove areas that are fire
-  var rap1 = ic.filterDate(y + '-01-01',  y + '-12-31').mean().multiply(imageWildfire.selfMask()) // remove,  
-  Map.addLayer(rap1, {}, 'rap1 ' + y, false) // the rap layer now has 'holes' in it. 
-  var lstRap = lstRap.add(rap1)
+  var tree1 = ic.filterDate(y + '-01-01',  y + '-12-31')
+    .select('TREE')
+    .mean()
+    .multiply(imageWildfire.selfMask()) // remove,  
+  Map.addLayer(tree1, {}, 'tree ' + y, false) // the rap layer now has 'holes' in it. 
+  var lstTree = lstTree.add(tree1)
 }
 
 
-var rap = ee.ImageCollection(lstRap).mean() // replace rap collection with mean of wildfire filtered images
-Map.addLayer(rap,{},'rap all 4 years',false)
+var tree = ee.ImageCollection(lstTree).mean() // replace rap collection with mean of wildfire filtered images
+Map.addLayer(tree,{},'tree all 4 years',false)
 
 
 var lstRCMAPsage = ee.List([])
@@ -136,7 +137,7 @@ for (var i=yearStart; i<=yearEnd; i++) {
 }
 
 var rcmapSage = ee.ImageCollection(lstRCMAPsage).mean().rename('nlcdSage') // MH average sagebrush cover across 4 years
-
+var sage = sw1.select('sage')
 
 // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
 var rapAnnualG = rap.select('AFGC') // AFG
@@ -176,18 +177,19 @@ Map.addLayer(nlcdSage,imageVisQ,'nlcdSage'+s, false)
  
 // MH--I think this works by averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
 //the weights are derived from a normal distribution with a sd of 560. 
-var nlcdSage560m = nlcdSage.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+var nlcdSage560m = SEI.mean560(nlcdSage)
   .divide(100.0) // MH convert from % cover to proportion
   .unmask(0.0); // MH masked pixels converted to 0
-var rapAnnualG560m = rapAnnualG.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+
+var rapAnnualG560m = SEI.mean560(rapAnnualG)
   .divide(100.0)
   .unmask(0.0);
-var rapPerennialG560m = rapPerennialG.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+var rapPerennialG560m = SEI.mean560(rapPerennialG)
   .divide(100.0)
   .unmask(0.0);
-var H560m = H.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
-  .unmask(0.0); // MH this is human modification
-var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+var H560m = SEI.mean560(H)
+  .unmask(0.0); //  this is human modification
+var rapTree560m = SEI.mean560(rapTree)
   .divide(100.0)
   .unmask(0.0);
 
@@ -207,26 +209,26 @@ for (var e=1; e<=lstEcoregionIds.length; e++) {
   var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])) //
   var Q1x = SEI.raw2HSI(nlcdSage560m, SEI.lstSage2Q, e)
     .max(0.001) // MH replaces values less than 0.001 with 0.001
-    .multiply(rangeMaskx) // MH values that are not rangeland become zero, 
+    .multiply(mask) // MH values that are not rangeland become zero, 
     .clip(ecoregion) // MH clip to the ecoregion being looped through
     .unmask(0.0) // MH convert masked values to 0.
      
   var Q1 = Q1.max(Q1x) // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
 
   var Q2x = SEI.raw2HSI(rapPerennialG560m, SEI.lstPerennialG2Q, e)
-    .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
   var Q2 = Q2.max(Q2x)
 
   var Q3x = SEI.raw2HSI(rapAnnualG560m, SEI.lstAnnualG2Q, e)
-    .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
   var Q3 = Q3.max(Q3x)
 
   var Q4x = SEI.raw2HSI(H560m, SEI.lstH2Q, e)
-    .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
   var Q4 = Q4.max(Q4x)
 
   var Q5x = SEI.raw2HSI(rapTree560m, SEI.lstTree2Q, e)
-    .max(0.001).multiply(rangeMaskx).clip(ecoregion).unmask(0.0)
+    .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0)
   var Q5 = Q5.max(Q5x)
 }
 
@@ -252,10 +254,10 @@ Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
 var Q5s = Q5y // MH this is SEI2000
   .unmask(0)
   .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
-  .multiply(rangeMaskx);
+  .multiply(mask);
 
 // MH here the updateMask call dictates that 0 SEI values aren't shown 
-Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s rangeMaskx',false);
+Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask',false);
   
 /**
  * Step 6. Classify
