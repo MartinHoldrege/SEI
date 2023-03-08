@@ -2,40 +2,45 @@
 /********************************************************
  * Purpose:
  * Calculate the Sagebrush Ecosystem Integrity with
- * values from stepwat (annuals, perennials, sagebrush) used
- * in the formuala directly 
+ * values from stepwat (annuals, perennials, sagebrush biomass) used
+ * in the formuala directly. 
  * 
  * Script Started: 1/25/2023
  * 
  * Author: Martin Holdrege
  * (this script borrows heavily from original SEI code written
  * by Dave Theobald)
+ * 
+ * 
+ *    
+ * Model overview with steps: 
+ * 1. get 4 year average of % cover from Rap tree cover, adjusted by fire perimeters
+ * 2. smooth % cover from Trees (RAP), simulated biomass (annuals, perennials, sagebrush) and human modification
+ *    by "ecological" context using Gaussian kernel radius
+ * 3. convert smoothed values to "quality" through HSI curves
+ * 4. combine resources (sage, perennial) and threats (annual grass, tree, human modification) by multiplication (SEI560)
+ * 5. smooth quality by "management" level context using Gaussian kernel radius (SEI2000)
+ * 6. find deciles and then reclass to 3-classes: core, grow, treat
+ * 7. export image with data layers as bands in an image asset
 */
 
-// Next steps:
-// re-order to bring tree & hmod data up top
-// improve comments
-// build in gcm loop
-// combine output into multilayer bands
-// start with empty image, and remove the empty band before writing out asset
+
 
 // User-defined variables.
 
-var yearEnd = 2020 ; // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
-var yearStart = yearEnd - 3; // inclusive, so if -3 then 2017-2020, inclusive
-
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
-
+var yearEnd = 2020;  // relavent for RAP tree cover
+var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = 'vsw1'; // first version calculating sei directly from stepwat output
 var dateString = '_20230308'; // for appending to output file names
 
 // which stepwat output to read in?
-var rootList = 'c4on_';
-var RCPList =  'Current';
-var epochList = 'Current';
-var grazeList = 'Light';
-var GCM = 'Current';
+var rootList = ['c4on_'];
+var RCPList =  ['Current'];
+var epochList = ['Current'];
+var grazeList = ['Light'];
+var GCM = ['Current'];
 
 
 // Load module with functions 
@@ -65,7 +70,6 @@ Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',fal
 
 // Prepare tree dover data ----------------------------------------------------
 
-
 // changed logic of years to incorporate fires
 // select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
 // DT has made this file public, and I ran into issue exporting it (contains both polygons and lines which
@@ -73,9 +77,10 @@ Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',fal
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); 
 var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2'); //
 
-
 var ones = ee.Image(1);
 var lstTree = ee.List([]);
+
+// step 1
 for (var y=yearEnd; y>=yearStart; y--) {
   var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd));
   
@@ -99,18 +104,19 @@ Map.addLayer(tree,{min:0, max:75, palette: ['white', 'darkgreen']},'tree all 4 y
 var rapTree = tree1 // trees
   .multiply(tundra); // not sure if this actually needed here
 
-// smooth within 560 radius
+// smooth within 560 radius (step 2)
 var rapTree560m = SEI.mean560(tree)
   .divide(100.0)
   .unmask(0.0);
   
 // prepare HMod data ---------------------------------------------------
 
-// smooth to 560 meters
+// smooth to 560 meters (step 2)
 var H560m = SEI.mean560(H)
   .unmask(0.0); 
 
-// Loop of scenarios
+// Loop over climate scenarios ------------------------------------------------------
+
 for (var j=0; j<RCPList.length; j++) {
   var root = rootList[j];
   var RCP = RCPList[j];
@@ -129,9 +135,10 @@ for (var j=0; j<RCPList.length; j++) {
       'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4'];
   }
   
-  // Loop over GCMs
+  // Loop over GCMs ---------------------------------------------------------------------
   for (var g=0; g<GCMList.length; g++) {
     var GCM = GCMList[g];
+  
   // read in stepwat vegetation data
   
     // plant functional types for which stepwat output is being loaded in
@@ -163,21 +170,6 @@ for (var j=0; j<RCPList.length; j++) {
     Map.addLayer(sage, {min:0, max:600, palette:['white', 'darkgreen']},  'sage' + s, false);
     
     
-    /**
-    * Model overview with steps: 
-    * 1. get 4 year average of % cover from RAP, adjusted by fire perimeters
-    * 2. smooth % cover from RAP by "ecological" context using Gaussian kernel radius
-    * 3. convert smoothed % cover to "quality" through HSI curves
-    * 4. combine resources (sage, perennial) and threats (annual grass, tree, human modification) by multiplication
-    * 5. smooth quality by "management" level context using Gaussian kernel radius
-    * 6. find deciles and then reclass to 3-classes: core, grow, treat
-    * 7. export image with data layers as bands in an image asset
-    */
-    
-    
-    ///////////////////////////////////////
-    // 1. step 1 - 
-    
     // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
     var annual = annual // AFG
       .multiply(tundra); 
@@ -192,21 +184,20 @@ for (var j=0; j<RCPList.length; j++) {
      * averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
      * the weights are derived from a normal distribution with a sd of 560. 
      * 
-     * For now I'm not smoothing the stepwat biomass data b/ it's not really relavent b/ it's native
-     * resolution is 1km
+     * It may not be relevant to smooth the stepwat data b/ it has a native resolution of 560 m (perhaps it makes
+     * a difference at the pixel edges when downsampling to 30 meters)
      */
      
-    
     var sage560m = sage
       .unmask(0.0); // masked pixels converted to 0
     
     var annual560m = annual
       .unmask(0.0);
+      
     var perennial560m = perennial
       .unmask(0.0);
       
-    
-    /**
+        /**
      * Step 3. convert smoothed % cover to quality using HSI curves
      * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
      */
@@ -263,9 +254,7 @@ for (var j=0; j<RCPList.length; j++) {
     var Q4y = Q3y.multiply(Q4);
     
     var Q5y = Q4y.multiply(Q5).clip(biome); // this is the final multiple (i.e. SEI560)
-    Map.addLayer(Q5y,imageVisQ,'Q5y (SEI560_',false); 
-    Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
-    
+
     /**
      * Step 5. Smooth quality values to reflect "management" scale
      */
@@ -275,8 +264,8 @@ for (var j=0; j<RCPList.length; j++) {
       .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
       .multiply(mask);
     
-    // MH here the updateMask call dictates that 0 SEI values aren't shown 
-    Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)',false);
+    // here the updateMask call dictates that 0 SEI values aren't shown 
+    Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)' + s,false);
     
     
     /**
@@ -290,7 +279,7 @@ for (var j=0; j<RCPList.length; j++) {
     // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
     // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
     var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
-    Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes' + s,false);
+
     Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes' + s,false);
     
 
@@ -315,13 +304,14 @@ for (var j=0; j<RCPList.length; j++) {
     
   }// end loop over GCM
   
-  var fileName = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM_' + dateString;
-  // Export.image.toAsset({ 
-  //   image: outputByGCM, //single image with multiple bands
-  //   assetId: path + version + '/sw_SEI/' + fileName,
-  //   description: fileName,
-  //   maxPixels: 1e13, scale: resolution, region: region,
-  //   crs: 'EPSG:4326'    // set to WGS84, decimal degrees
-  // });
+  var fileName = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+  Export.image.toAsset({ 
+    image: outputByGCM, //single image with multiple bands
+    assetId: path + version + '/sw_SEI/' + fileName,
+    description: fileName,
+    maxPixels: 1e13, scale: resolution, region: region,
+    crs: SEI.crs,
+    crsTransform: SEI.crsTransform
+  });
   
 }// end loop over scenario
