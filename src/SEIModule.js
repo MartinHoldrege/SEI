@@ -198,6 +198,30 @@ exports.repeatelemList = function(elemList, nList) {
   return out;
 };
 
+/**
+ * Read in a number of images that have the same path except
+ * for one substitution
+ * @ param string, genericpath is a string that is the path to the
+ * images including the full asset name except 'ZZZZ' is put in
+ * the location of the string that differs between the assets
+ * @ param nameList, a list of strings to replace the 'ZZZZ' part of
+ * the file path
+ * @ returns an image where each band has a name from nameList
+ */
+exports.readImages2Bands = function(genericPath, nameList) {
+    out = ee.Image(0);
+    for (var i=0; i<nameList.length; i++) {
+      var name = nameList[i];
+      var newPath = genericPath.replace('ZZZZ', name);
+      var image = ee.Image(newPath)
+        .rename(name);
+        
+      var out = out.addBands(image);
+    
+    }
+    return out;
+  };
+
 /*
 
 Commonly used mask (of the sagebrush region) and outline of the sagebrush region
