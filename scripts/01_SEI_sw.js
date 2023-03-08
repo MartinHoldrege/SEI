@@ -36,12 +36,10 @@ var version = 'vsw1'; // first version calculating sei directly from stepwat out
 var dateString = '_20230308'; // for appending to output file names
 
 // which stepwat output to read in?
-var rootList = ['c4on_'];
-var RCPList =  ['Current'];
-var epochList = ['Current'];
-var grazeList = ['Light'];
-var GCM = ['Current'];
-
+var rootList = ['c4on_', 'c4on_'];
+var RCPList =  ['Current', 'RCP85'];
+var epochList = ['Current', '2030-2060'];
+var grazeList = ['Light', 'Light'];
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
