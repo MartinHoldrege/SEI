@@ -246,6 +246,7 @@ var remapAllBands = function(image, from, to) {
     
   return remappedImage;
 };
+
 /*
 
 Commonly used mask (of the sagebrush region) and outline of the sagebrush region
