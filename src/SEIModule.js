@@ -229,7 +229,7 @@ exports.readImages2Bands = function(genericPath, nameList) {
 * @param {list} t list of values to remap to
  * @return {ee.Image} Image with the same bandNames as the input
 */
-var remapAllBands = function(image, from, to) {
+exports.remapAllBands = function(image, from, to) {
   var bands = image.bandNames();
   
   var renamedList = bands.map(function(band) {
