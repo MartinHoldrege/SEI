@@ -142,8 +142,18 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.244))
   .add(Q5s.gt(0.326))
   .add(Q5s.gt(0.431))
-  .add(Q5s.gt(0.565)).add(1) // so range is 1-10
-  return(out)
+  .add(Q5s.gt(0.565)).add(1); // so range is 1-10
+  return(out);
+};
+
+/**
+ * Smooth pixels within a 560 m neighborhood
+ * @param {ee.Image} image to smooth
+ * @return {ee.Image} image with smoothed pixel values
+ */
+exports.mean560 = function(image) {
+  var out = image.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'));
+  return out;
 };
 
 
@@ -188,6 +198,30 @@ exports.repeatelemList = function(elemList, nList) {
   return out;
 };
 
+/**
+ * Read in a number of images that have the same path except
+ * for one substitution
+ * @ param string, genericpath is a string that is the path to the
+ * images including the full asset name except 'ZZZZ' is put in
+ * the location of the string that differs between the assets
+ * @ param nameList, a list of strings to replace the 'ZZZZ' part of
+ * the file path
+ * @ returns an image where each band has a name from nameList
+ */
+exports.readImages2Bands = function(genericPath, nameList) {
+    out = ee.Image(0);
+    for (var i=0; i<nameList.length; i++) {
+      var name = nameList[i];
+      var newPath = genericPath.replace('ZZZZ', name);
+      var image = ee.Image(newPath)
+        .rename(name);
+        
+      var out = out.addBands(image);
+    
+    }
+    return out;
+  };
+
 /*
 
 Commonly used mask (of the sagebrush region) and outline of the sagebrush region
@@ -220,7 +254,7 @@ var rangeMask = ee.Image('users/chohnz/reeves_nlcd_range_mask_union_with_playas'
 
 // primary sagebrush ecosystem mask used in other scripts
 exports.mask = rangeMask.eq(0)
-  .multiply(tundra)
+  .multiply(tundra) // mask out tundra grass/shrub
   .selfMask()
   .clip(biome);
 
@@ -228,12 +262,12 @@ exports.mask = rangeMask.eq(0)
 // polygons outlining the 3 regions
 exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
 
+// human modification dataset
+exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebrush');
 
 
-
-// for outputs and calculations (change later as needed)
-// wkt 
-// so can use the same projection in multiple places
-var projUSGS = ee.Projection("PROJCS[\"USA_Contiguous_Albers_Equal_Area_Conic_USGS_version\", \n  GEOGCS[\"GCS_North_American_1983\", \n    DATUM[\"D_North_American_1983\", \n      SPHEROID[\"GRS_1980\", 6378137.0, 298.257222101]], \n    PRIMEM[\"Greenwich\", 0.0], \n    UNIT[\"degree\", 0.017453292519943295], \n    AXIS[\"Longitude\", EAST], \n    AXIS[\"Latitude\", NORTH]], \n  PROJECTION[\"Albers_Conic_Equal_Area\"], \n  PARAMETER[\"central_meridian\", -96.0], \n  PARAMETER[\"latitude_of_origin\", 23.0], \n  PARAMETER[\"standard_parallel_1\", 29.5], \n  PARAMETER[\"false_easting\", 0.0], \n  PARAMETER[\"false_northing\", 0.0], \n  PARAMETER[\"standard_parallel_2\", 45.5], \n  UNIT[\"m\", 1.0], \n  AXIS[\"x\", EAST], \n  AXIS[\"y\", NORTH]]")
-
-exports.crs = projUSGS.wkt().getInfo();
+// For setting the projection
+// This is adapted from what Geoffrey B. figured out so
+// that GEE output matches albers equal area usgs version projections
+exports.crs = 'EPSG:5070';
+exports.crsTransform = [30,0,-2363085,0,-30,3178905];

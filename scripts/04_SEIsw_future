@@ -1,0 +1,51 @@
+
+/********************************************************
+ * Purpose:
+ * Use SEI calculated from stepwat biomass for current and future
+ * scenarios, then calculate a delta (% change) and multiply that
+ * delta by the current actual observed SEI to get a 'future' SEI
+ * 
+ * Script Started: March 8, 2023
+ * 
+ * Author: Martin Holdrege
+ * 
+ * Steps:
+ * read in current sw SEI
+ * read in current observed SEI
+ * read in future (by GCM) SEI
+ * for each pixel calculate delta SEI for each GCM
+ * calculate future SEI based on delta (at 560m?)
+ * calculate future core, grow, other, for each gcm
+ *    
+
+*/
+
+
+// User-defined variables.
+
+var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
+var yearEnd = 2020;  // relavent for RAP tree cover
+var yearStart = yearEnd - 3;
+var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
+var version = 'vsw1'; // first version calculating sei directly from stepwat output
+var dateString = '_20230308'; // for appending to output file names
+
+// which stepwat output to read in?
+var rootList = ['c4on_', 'c4on_'];
+var RCPList =  ['Current', 'RCP85'];
+var epochList = ['Current', '2030-2060'];
+var grazeList = ['Light', 'Light'];
+
+// Load module with functions 
+// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+
+
+// datasets, constants etc. defined in SEIModule
+var path = SEI.path;
+
+var region = SEI.region;
+
+
+var mask = SEI.mask; 
+
