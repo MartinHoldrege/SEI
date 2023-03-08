@@ -302,6 +302,10 @@ for (var j=0; j<RCPList.length; j++) {
     
   }// end loop over GCM
   
+  // remove 'empty' band
+  var bandsToKeep = outputByGCM.bandNames().removeAll(['empty']);
+  var outputByGCM = outputByGCM.select(bandsToKeep);
+  
   var fileName = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
