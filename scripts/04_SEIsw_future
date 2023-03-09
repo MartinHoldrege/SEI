@@ -33,15 +33,12 @@
  * Also consider a different quantile matching approach b/ stepwat never simulates really
  * low SEI
  * 
- * Plots to create:
- * median diff
- * median delta
- * median Q diff for each of the 5 raw Qs
+ *
  * *******************************************************
 */ 
 
 
-// User-defined variables.
+// User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
@@ -55,6 +52,8 @@ var RCP =  'RCP85';
 var epoch = '2030-2060';
 var graze = 'Light';
 
+// dependencies -----------------------------------------------------------
+
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
@@ -62,13 +61,20 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
 var region = SEI.region;
+var mask = SEI.mask;
+
+// fig params --------------------------------------------------------------
+
+var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
+var visSEI = {min:0, max: 1, palette: ['white', 'black']}
 
 // Read in SEI images -------------------------------------------------------
 
 // Read in current stepwat SEI
 
 var fileName = 'SEI' + version + '_' + resolution + "_" + root +  'Current_Current_by-GCM' + dateString;
-var curSw1 = ee.Image(path + version + '/sw_SEI/' + fileName); // 'stepwat current'
+var curSw1 = ee.Image(path + version + '/sw_SEI/' + fileName) // 'stepwat current'
+  .mask(mask);
 var curSeiSw1 = curSw1.select('Q5s_Current'); // SEI2000 band, 
 
 // Read in current actual observed SEI
@@ -80,17 +86,26 @@ var cur1 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 // Read in Future stepwat SEI 
 
 var fileNameFut = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
-var futSw1 = ee.Image(path + version + '/sw_SEI/' + fileNameFut); 
+var futSw1 = ee.Image(path + version + '/sw_SEI/' + fileNameFut)
+  .mask(mask); 
 var futSeiSw1 = futSw1.select('Q5s_.*'); // SEI2000 bands, (future stepwat SEI)
 
-// maps of all the bands (one for each GCM)
-var bands = futSeiSw1.bandNames().getInfo()
-for (var i=0; i<bands.length; i++) {
-  var band = bands[i];
-  Map.addLayer(futSeiSw1.select(band), {min:0, max: 1, palette: ['white', 'black']}, band, false);
-}
+// maps of current (sw and observed) SEI ------------------------------------
+Map.addLayer(cur1.select('Q5s'), visSEI, 'SEI observed current', false);
+Map.addLayer(curSeiSw1, visSEI, 'SEI sw current', false);
 
-// Calculate delta SEI -------------------------------------------------------
+// median sw future SEI ------------------------------------------------------
+var futSeiSwMed1 = futSeiSw1.reduce('median');
+Map.addLayer(futSeiSwMed1, visSEI, 'futSeiSw1 median', false);
+
+// maps of all the bands (one for each GCM)
+// var bands = futSeiSw1.bandNames().getInfo()
+// for (var i=0; i<bands.length; i++) {
+//   var band = bands[i];
+//   Map.addLayer(futSeiSw1.select(band), {min:0, max: 1, palette: ['white', 'black']}, band, false);
+// }
+
+// Calculate sw SEI diff -------------------------------------------------------
 
 var diff1 = futSeiSw1.subtract(curSeiSw1); // change in SEI
 
@@ -98,20 +113,44 @@ var GCMNames = diff1.bandNames().map(function(string) {
   return ee.String(string).replace('Q5s_', '');
 });
 var diff1 = diff1.rename(GCMNames);
-var diffMed1 = diff1.reduce('median')
+var diffMed1 = diff1.reduce('median');
 
-var delta1 = diff1.divide(curSeiSw1); // 'percent' change in SEI
+Map.addLayer(diffMed1, {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'SEI diff median', false);
 
+// sw proportion change SEI ------------------------------------------------------------
 
-Map.addLayer(diffMed1, {min:-.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diff median', false);
+var delta1 = diff1.divide(curSeiSw1); // proportion change in SEI
+var deltaMed1 = delta1.reduce('median');
+Map.addLayer(deltaMed1, visQDiff, 'SEI delta (proportion) median ', false);
+
 // maps of all the bands (one for each GCM)
-var bands = GCMNames.getInfo()
-for (var i=0; i<bands.length; i++) {
-  var band = bands[i];
-  Map.addLayer(delta1.select(band), {min:-1, max: 1, palette: ['red', 'white', 'blue']}, 'delta ' + band, false);
-  Map.addLayer(diff1.select(band), {min:-.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diff ' + band, false);
-}
+var bands = GCMNames.getInfo();
+// for (var i=0; i<bands.length; i++) {
+//   var band = bands[i];
+//   Map.addLayer(delta1.select(band), visQDiff, 'delta ' + band, false);
+//   Map.addLayer(diff1.select(band), {min:-.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diff ' + band, false);
+// }
 
+// Change in individual Q values ------------------------------------------
+
+// sage q values
+var diffQ1Raw = futSw1.select("Q1raw_.*")
+  .subtract(curSw1.select('Q1raw_Current'));
+var diffQ1RawMed = diffQ1Raw.reduce('median');
+Map.addLayer(diffQ1RawMed, visQDiff, 'Q1 (sage) diff median', false);
+
+// perennial q values
+var diffQ2Raw = futSw1.select("Q2raw_.*")
+  .subtract(curSw1.select('Q2raw_Current'));
+var diffQ2RawMed = diffQ2Raw.reduce('median');
+Map.addLayer(diffQ2RawMed, visQDiff, 'Q2 (perennial) diff median', false);
+  
+// annual q values
+var diffQ3Raw = futSw1.select("Q3raw_.*")
+  .subtract(curSw1.select('Q3raw_Current'));
+var diffQ3RawMed = diffQ3Raw.reduce('median');
+Map.addLayer(diffQ3RawMed, visQDiff, 'Q3 (annual) diff median', false);
+  
 // Calculate future SEI -----------------------------------------------------
 
 // adjust observed SEI by the 'percent' change (delta) as estimate from the changes
