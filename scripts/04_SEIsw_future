@@ -33,7 +33,9 @@
  * Also consider a different quantile matching approach b/ stepwat never simulates really
  * low SEI
  * 
- *
+ * Maps of change in core, grow, other classification
+ * based on current sei modified by 'diff' SEI
+ * 
  * *******************************************************
 */ 
 
@@ -66,7 +68,7 @@ var mask = SEI.mask;
 // fig params --------------------------------------------------------------
 
 var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
-var visSEI = {min:0, max: 1, palette: ['white', 'black']}
+var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
 // Read in SEI images -------------------------------------------------------
 
@@ -133,6 +135,11 @@ var bands = GCMNames.getInfo();
 
 // Change in individual Q values ------------------------------------------
 
+// plot current sw q values
+Map.addLayer(curSw1.select('Q1raw_Current'), visSEI, 'Q1 (sage) sw current', false);
+Map.addLayer(curSw1.select('Q2raw_Current'), visSEI, 'Q1 (perennial) sw current', false);
+Map.addLayer(curSw1.select('Q3raw_Current'), visSEI, 'Q1 (annual) sw current', false);
+
 // sage q values
 var diffQ1Raw = futSw1.select("Q1raw_.*")
   .subtract(curSw1.select('Q1raw_Current'));
@@ -166,4 +173,4 @@ var Q5scdeciles = SEI.decileFixedClasses(fut1);
 
 // Classify Q5sdeciles into 3 major classes, called: core, grow, other
 var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1]);  
-print(Q5sc3)
+print(Q5sc3);
