@@ -35,6 +35,7 @@
  * 
  * Maps of change in core, grow, other classification
  * based on current sei modified by 'diff' SEI
+ * Compare to those maps that used the previous (doherty et al 2022) method
  * 
  * *******************************************************
 */ 
