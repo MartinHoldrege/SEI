@@ -1,6 +1,6 @@
 /**
  * Purpose:
- * fit relationship between cover and biomass from RAP 
+ * extract data so can fit relationship between cover and biomass from RAP 
  *  for annuals and perennials, respectively. 
  * (to help develop biomass based Q-curves)
  * 
@@ -17,7 +17,7 @@
  * smooth to within 560 mm neighborhood so that data is comparable
  * to what is used in SEI calculation
  * 
- * 
+ * Randomly sample pixels and output biomass and cover values (and write output)
 */ 
 
 // user defined variables ------------------------------------------------
@@ -25,7 +25,7 @@
 var startYear = 1986;
 var endYear = 2020;
 var scale = 30; 
-var sampleSize = 100;
+var sampleSize = 1e6;
 var dateString = "20230317";
 
 
@@ -39,7 +39,6 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var fire = require("users/mholdrege/cheatgrass_fire:src/ee_functions.js");
 
 // datasets, constants etc. defined in SEIModule
-var path = SEI.path;
 var region = SEI.region;
 var mask = SEI.mask;
 
