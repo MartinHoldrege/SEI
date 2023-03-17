@@ -10,7 +10,7 @@ drive_download_from_df <- function(df, folder_path = "./", overwrite = TRUE) {
   
   stopifnot(nrow(df) > 0)
   for (i in 1:nrow(df)) {
-    drive_download(file = df$id[i], 
+    googledrive::drive_download(file = df$id[i], 
                    path = file.path(folder_path, df$name[i]),
                    overwrite = overwrite)
   }
@@ -120,4 +120,73 @@ create_js_q_curve_code <- function(df, name) {
                    paste(unlist(rows2), collapse = ",\n"),
                    "\n];\n")
   out           
+}
+
+
+
+#' get drive file names, and filter out older duplicates
+#'
+#' @param path file path to look for files on drive
+#' @param email string, email for googledrive authentication
+#'
+#' @return dataframe
+#' @examples
+#' drive_ls_filtered()
+drive_ls_filtered <- function(path = NULL, file_regex = NULL,
+                              email = "mholdrege@gcp.usgs.gov") {
+  googledrive::drive_auth(email = email)
+  files1 <- googledrive::drive_ls(path = path)
+  files2 <- files1 %>% 
+    filter(!str_detect(name, "testRun")) %>% 
+    # name no date removes the date and everything after the 
+    # date (b/ multi tile tifs have coordinates after that
+    # and they belong to the same original image)
+    mutate(name_no_date = str_replace(name, "202\\d{5}.+", ""),
+           date = str_extract(name, "202\\d{5}"),
+           date = lubridate::ymd(date),
+           modifiedTime = map_chr(drive_resource, function(x) x$modifiedTime)) %>% 
+    # if multiple files with the same
+    # name only download the newer one
+    group_by(name_no_date) %>% 
+    filter(modifiedTime == max(modifiedTime)) 
+  
+  if (!is.null(file_regex)) {
+    files2 <- filter(files2, str_detect(name, file_regex))
+  }
+  
+  files2
+}
+
+#' Get path of newest file that matches a regex
+#'
+#' @param path path to folder where to look
+#' @param file_regex string (regex) to match
+#'
+#' @return path the the newest file that matches the given regex
+newest_file_path <- function(path, file_regex) {
+  stopifnot(
+    is.character(path),
+    is.character(file_regex)
+  )
+  paths <- list.files(
+    path = path,
+    pattern = file_regex, 
+    full.names = TRUE)
+  
+
+  if (length(paths) == 0) {
+    stop("no files match that regex")
+  }
+  
+  # time modified
+  time_modified <- file.info(paths)$mtime
+  
+  out <- paths[time_modified == max(time_modified)]
+  
+  if(length(out) > 1) {
+    stop('more than one file match this regex and have the same modified time',
+         '\ntry a more restrictive file_regex')
+  }
+  
+  out
 }

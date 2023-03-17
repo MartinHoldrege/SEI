@@ -21,11 +21,13 @@ theme_set(theme_classic())
 
 ## Read in data
 
-Data created in the RAP_cover_vs_biomass.js script.
-These are a random sample of grid cells from within the sagebrush region
+Data created in the 01_sample-cover-and-biomass.js script 
+(formerly in the RAP_cover_vs_biomass.js script).
+These are a random sample of grid cells from within the sagebrush region.
+The grid cells are 30m but smoothed with a 560m kernal
 
 ```{r}
-df1 <- read_csv("data_processed/cover_vs_biomass/RAP_cover_and_biomass_mean_100000obs_30m_20221209.csv",
+df1 <- read_csv("data_processed/cover_vs_biomass/RAP_cover_and_biomass_mean_smooth560_100000obs_30m_20230317.csv",
                 show_col_types = FALSE) 
 ```
 
@@ -61,7 +63,7 @@ df4 <- df3 %>%
 # Plot data
 
 ```{r message=FALSE, fig.width = 8, fig.height = 6}
-g <- ggplot(df4, aes(Biomass, Cover)) +
+g <- ggplot(df4, aes(Cover, Biomass)) +
   facet_wrap(~pft, scales = "free")
 
 g  + geom_point(alpha = 0.5, size = 0.3)
@@ -71,8 +73,9 @@ g2
 
 g3 <- g2 + geom_smooth()
 g3
-g3 + geom_smooth(method = 'lm', color = 'darkgreen')
-
+g3 + geom_smooth(method = 'lm', color = 'darkgreen',
+                 formula = 'y ~ x - 1') +
+  labs(subtitle = 'linear model with intercept fixed at 0')
 
 g + 
   geom_bin2d(bins = 50) +
