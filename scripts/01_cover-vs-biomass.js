@@ -17,16 +17,16 @@
  * smooth to within 560 mm neighborhood so that data is comparable
  * to what is used in SEI calculation
  * 
- * Next steps:
- * randomly sample 10^6? pixels and export as a table (with a seed set) 
- * then fit equation in R
+ * 
 */ 
 
 // user defined variables ------------------------------------------------
 // date range
 var startYear = 1986;
 var endYear = 2020;
-
+var scale = 30; 
+var sampleSize = 100;
+var dateString = "20230317";
 
 
 // dependencies -----------------------------------------------------------
@@ -92,5 +92,40 @@ Map.addLayer(bioAvg560.select("afgAGB"), {min:0, max:50, palette: ['white', 'bla
 Map.addLayer(bioAvg560.select("pfgAGB"), {min:0, max:150, palette: ['white', 'black']}, 'pfg AGB', false);  
 
 
+// combine into one image 
+var covBio560 = rapAvg560.select(['AFG', 'PFG']).addBands(bioAvg560.select(['afgAGB', 'pfgAGB'])); 
+
+
+// sampling points --------------------------------------------------------
+
+var one = ee.Image(1).rename('one');
+// using stratifiedSample method b/ recommendation here
+// https://gis.stackexchange.com/questions/304929/what-is-the-difference-between-sample-sampleregions-and-stratifiedsample-in-go
+
+var sample = covBio560.addBands(one)
+  .stratifiedSample({
+    numPoints: sampleSize,
+    classBand: 'one',
+    region: region,
+    scale: scale,
+    projection: SEI.crs,
+    seed: 123
+  });
+
+
+// // Generate chart from sample
+// var chart = ui.Chart.feature.byFeature(sample, 'PFG', 'pfgAGB')
+//     .setChartType('ScatterChart');
+//print("chart",chart);      
+
+
+// save results -----------------------------------------------------------
+
+  Export.table.toDrive({
+    collection: sample,
+    description: 'RAP_cover_and_biomass_mean_smooth560_' + sampleSize + 'obs_'+ scale + 'm_' + dateString,
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
 
 
