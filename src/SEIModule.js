@@ -222,6 +222,31 @@ exports.readImages2Bands = function(genericPath, nameList) {
     return out;
   };
 
+/**
+ * Remap all bands in an image
+ * @param {ee.Image} image The multiband image you wan't to remap
+ * @param {list} from list of values to remap from
+* @param {list} t list of values to remap to
+ * @return {ee.Image} Image with the same bandNames as the input
+*/
+exports.remapAllBands = function(image, from, to) {
+  var bands = image.bandNames();
+  
+  var renamedList = bands.map(function(band) {
+    var out = image
+      .select(ee.String(band))
+      .remap(from, to);
+    
+    return out;
+  });
+  
+  var remappedImage = ee.ImageCollection(renamedList)
+    .toBands()
+    .rename(bands);
+    
+  return remappedImage;
+};
+
 /*
 
 Commonly used mask (of the sagebrush region) and outline of the sagebrush region
