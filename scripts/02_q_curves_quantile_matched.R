@@ -179,7 +179,7 @@ sage_js <- create_js_q_curve_code(q_sw3$sage, name = 'sageQBio1')
 
 # strings to write
 q2write <- c("//Note: this is an automatically created file, do not edit",
-             "//File created in 02_quantile_matched_q_curves.R script",
+             "//File created in 02_q_curves_quantile_matched.R script",
              "//These are adjusted q-curved to use with stepwat biomass output",
              "\n", 
              afg_js, pfg_js, sage_js)

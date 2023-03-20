@@ -18,6 +18,12 @@ c9Names <-  c(
 
 c3Names <- c("Core", "Grow", "Other")
 
+
+# axis labels -------------------------------------------------------------
+
+# biomass
+lab_bio0 <- expression("Biomass ("*gm^-2*")")
+
 # colors ------------------------------------------------------------------
 
 cols_rcp <- c(#"Current" = "cornflower blue",

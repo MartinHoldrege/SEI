@@ -1,5 +1,5 @@
 //Note: this is an automatically created file, do not edit
-//File created in 02_quantile_matched_q_curves.R script
+//File created in 02_q_curves_quantile_matched.R script
 //These are adjusted q-curved to use with stepwat biomass output
 
 
