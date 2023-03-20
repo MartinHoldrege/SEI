@@ -25,7 +25,7 @@
 var startYear = 1986;
 var endYear = 2020;
 var scale = 30; 
-var sampleSize = 1e6;
+var sampleSize = 1e5;
 var dateString = "20230317";
 
 
