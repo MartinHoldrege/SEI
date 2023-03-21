@@ -21,13 +21,6 @@ source("scripts/01_create_sw_biomass_df.R")
 
 # read in data ------------------------------------------------------------
 
-
-# * sage cover-biomass ----------------------------------------------------
-# data supplied by scott carpenter
-
-sage1 <- read_csv("data_raw/sage_cover_biomass/Sagebrush_Biomass_and_Predictors_Data.csv",
-                  show_col_types = FALSE)
-
 # * stepwat biomass -------------------------------------------------------
 
 # stepwat biomass under current conditions
@@ -82,8 +75,8 @@ rap2 <- rap1 %>%
 cov2bio_sage <- function(cover) {
   # coefficients for the equation of cover = b0 + b1*biomass
   # (this equation was estimated by scott carpenter)
-  b0 <- -0.026589
-  b1 <- 0.0086
+  b0 <- 0.107836
+  b1 <- 0.034505
   
   # now writing equation in terms of biomass
   biomass <- (cover - b0)/b1
@@ -94,27 +87,6 @@ x <- seq(0, 100, by = 0.1)
 plot(x, cov2bio_sage(x))
 
 
-# * sage -fitting own model -----------------------------------------------
-
-sage2 <- sage1 %>% 
-  janitor::clean_names() %>% 
-  # plot level averages
-  group_by(plot_id) %>% 
-  summarise(crown_area_cm2 = mean(crown_area_cm2),
-            sample_density_number_plants_m2 = mean(sample_density_number_plants_m2),
-            total_biomass_g = mean(total_biomass_g)) %>% 
-  # calculate cover and biomass per plot
-  # convert crown area to m2 then divide by the area
-  mutate(cover = (crown_area_cm2/10000)*(1/sample_density_number_plants_m2)*100,
-         biomass_gm2 = total_biomass_g/sample_density_number_plants_m2)
-
-p <- ggplot(sage2)
-
-p +
-  geom_point(aes(biomass_gm2, cover))
-
-p +
-  geom_point(aes(cover, biomass_gm2))
 # *afg --------------------------------------------------------------------
 
 rap_l1 <- split(rap2, rap2$pft)
