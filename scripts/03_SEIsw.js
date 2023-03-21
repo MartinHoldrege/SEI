@@ -32,8 +32,8 @@ var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var yearEnd = 2020;  // relavent for RAP tree cover
 var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'vsw1'; // first version calculating sei directly from stepwat output
-var dateString = '_20230308'; // for appending to output file names
+var version = 'vsw2'; // first version calculating sei directly from stepwat output
+var dateString = '_20230321'; // for appending to output file names
 
 // which stepwat output to read in?
 var rootList = ['c4on_', 'c4on_'];
@@ -49,7 +49,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 // Q curves, quantile matched back to stepwat biomass. Note these
 // curves will need to be updated (i.e. new percentiles calculated)
 // for the new stepwat simulation runs
-var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput.js");
+var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js");
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
