@@ -1,7 +1,7 @@
 //Note: this is an automatically created file, do not edit
 //File created in 02_q_curves_from-cover-vs-biomass.R script
 //These are adjusted q-curved to use with stepwat biomass output
-(based on cover-biomass relationships)
+//(based on cover-biomass relationships)
 
 
 

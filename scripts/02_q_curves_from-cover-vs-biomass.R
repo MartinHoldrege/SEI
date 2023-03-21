@@ -175,7 +175,7 @@ ggplot(sw_bio_cur, aes(biomass)) +
        x = lab_bio0)
 
 q2_long %>% 
-  filter((PFT == 'sage' & biomass < 4000) | PFT != 'sage') %>% 
+  filter((PFT == 'sage' & biomass < 1000) | PFT != 'sage') %>% 
   ggplot(aes(y = q, color = region)) +
   facet_wrap(~PFT, ncol = 2, scales = 'free') +
   labs(y = "Q Value",
@@ -205,7 +205,7 @@ sage_js <- create_js_q_curve_code(q_out$sage, name = 'sageQBio1')
 q2write <- c("//Note: this is an automatically created file, do not edit",
              "//File created in 02_q_curves_from-cover-vs-biomass.R script",
              "//These are adjusted q-curved to use with stepwat biomass output",
-             "(based on cover-biomass relationships)",
+             "//(based on cover-biomass relationships)",
              "\n", 
              afg_js, pfg_js, sage_js)
 cat(q2write)
