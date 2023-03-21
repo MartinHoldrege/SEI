@@ -46,9 +46,7 @@ var grazeList = ['Light', 'Light'];
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 
 // Q curves to use for STEPWAT biomass. Based on the original 
-// Q curves, quantile matched back to stepwat biomass. Note these
-// curves will need to be updated (i.e. new percentiles calculated)
-// for the new stepwat simulation runs
+// Q curves, but converted to biomass using cover vs biomass relationships
 var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js");
 
 // datasets, constants etc. defined in SEIModule
