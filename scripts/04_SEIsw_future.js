@@ -28,11 +28,6 @@
  * 
  * Next steps:
  * 
- * problems some areas are simulated to have near 0 sei--b/ of quantile matching
- * causes huge swings in percent change SEI. Consider absolute change in SEI?
- * Also consider a different quantile matching approach b/ stepwat never simulates really
- * low SEI
- * 
  * Maps of change in core, grow, other classification
  * based on current sei modified by 'diff' SEI
  * Compare to those maps that used the previous (doherty et al 2022) method
@@ -43,10 +38,9 @@
 
 // User-defined variables -----------------------------------------------------
 
-var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
-var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
+var resolution = 1000;     // output (and input) resolution, 30 m eventually
 var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230327'; // for appending to output file names
+var dateString = '_20230327'; // for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
@@ -161,17 +155,36 @@ Map.addLayer(diffQ3RawMed, visQDiff, 'Q3 (annual) diff median', false);
   
 // Calculate future SEI -----------------------------------------------------
 
-// adjust observed SEI by the 'percent' change (delta) as estimate from the changes
+// adjust observed SEI by the change in SEI estimated from the changes
 // stepwat SEI.
 // creating one band of future SEI for each GCM
 var fut1 = cur1.select('Q5s')
-  .add(cur1.select('Q5s').multiply(delta1));
+  .add(diff1);
+
+Map.addLayer(fut1.reduce('median'), visSEI, 'SEI future median (adjusted obs)', false);
 
 // Calculate future core, grow, other ----------------------------------------
-
-// decile-based classes, derived and hard-coded 
+// this is just for visualizing, not outputting this layer here
+// decile-based classes, derived and hard-coded ()
 var Q5scdeciles = SEI.decileFixedClasses(fut1);
 
 // Classify Q5sdeciles into 3 major classes, called: core, grow, other
 var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1]);  
-print(Q5sc3);
+
+// save assets -----------------------------------------------------------------
+
+// the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
+// (and should be update if a new observed SEI layer is used)
+var assetName = 'SEI' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+
+Export.image.toAsset({ 
+  image: fut1, //single image with multiple bands (1 for each GCM)
+  assetId: path + version + '/forecasts/' + assetName,
+  description: assetName,
+  maxPixels: 1e13, 
+  scale: resolution, 
+  region: region 
+  // not setting crs (temporarily) b/ of (I think) I bug on google's side
+  //crs: SEI.crs,
+  //crsTransform: SEI.crsTransform
+});
