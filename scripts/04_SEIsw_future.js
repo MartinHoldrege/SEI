@@ -45,8 +45,8 @@
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'vsw1'; // first version calculating sei directly from stepwat output
-var dateString = '_20230308'; // for appending to output file names
+var version = 'vsw2'; // first version calculating sei directly from stepwat output
+var dateString = '_20230327'; // for appending to output file names
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
