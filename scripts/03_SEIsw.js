@@ -1,4 +1,5 @@
 
+
 /********************************************************
  * Purpose:
  * Calculate the Sagebrush Ecosystem Integrity with
@@ -33,7 +34,7 @@ var yearEnd = 2020;  // relavent for RAP tree cover
 var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230321'; // for appending to output file names
+var dateString = '_20230327'; // for appending to output file names
 
 // which stepwat output to read in?
 var rootList = ['c4on_', 'c4on_'];
@@ -309,9 +310,10 @@ for (var j=0; j<RCPList.length; j++) {
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/sw_SEI/' + fileName,
     description: fileName,
-    maxPixels: 1e13, scale: resolution, region: region,
-    crs: SEI.crs,
-    crsTransform: SEI.crsTransform
+    maxPixels: 1e13, scale: resolution, region: region 
+    // not setting crs (temporarily) b/ of (I think) I bug on google's side
+    //crs: SEI.crs,
+    //crsTransform: SEI.crsTransform
   });
   
 }// end loop over scenario
