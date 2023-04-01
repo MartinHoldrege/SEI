@@ -282,7 +282,7 @@ exports.calcTransitions = function(current, future) {
   // 32 = impacted becomes grow
   // etc.
 
-  c9a = current10.add(future);
+  var c9a = current10.add(future);
   
   // lists for remapping
   var c9From = ee.List([11, 12, 13, 21, 22, 23, 31, 32, 33]); 
