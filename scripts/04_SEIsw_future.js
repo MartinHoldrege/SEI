@@ -40,7 +40,7 @@
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
 var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230327'; // for appending to output file names (and reading in files)
+var dateString = '_20230331'; // for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
@@ -132,8 +132,8 @@ var bands = GCMNames.getInfo();
 
 // plot current sw q values
 Map.addLayer(curSw1.select('Q1raw_Current'), visSEI, 'Q1 (sage) sw current', false);
-Map.addLayer(curSw1.select('Q2raw_Current'), visSEI, 'Q1 (perennial) sw current', false);
-Map.addLayer(curSw1.select('Q3raw_Current'), visSEI, 'Q1 (annual) sw current', false);
+Map.addLayer(curSw1.select('Q2raw_Current'), visSEI, 'Q2 (perennial) sw current', false);
+Map.addLayer(curSw1.select('Q3raw_Current'), visSEI, 'Q3 (annual) sw current', false);
 
 // sage q values
 var diffQ1Raw = futSw1.select("Q1raw_.*")
@@ -171,6 +171,21 @@ var Q5scdeciles = SEI.decileFixedClasses(fut1);
 // Classify Q5sdeciles into 3 major classes, called: core, grow, other
 var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1]);  
 
+// image for diagnostics -------------------------------------------------------
+
+// creating an export layer that is for diagnostic purposes (i.e. probably most practical for low 
+// resolution runs, where want to figure out the effects of various decisions)
+
+var diagnostics = curSeiSw1 // current sei calculated from stepwat biomass
+  .addBands(futSeiSwMed1.rename('futSeiSwMed')) // future stepwat sei (median accross GCMs)
+  .addBands(diffMed1.rename(diffSeiSwMed)) // difference between current and future sw sei (median)
+  // current q values (based on stepwat data)
+  .addBands(curSw1.select(['Q1raw_Current', 'Q2raw_Current', 'Q3raw_Current']))
+  // q value differences (future - current)
+  .addBands(diffQ1RawMed.rename('diffQ1RawMed')) // sage
+  .addBands(diffQ2RawMed.rename('diffQ2RawMed')) // perennials
+  .addBands(diffQ3RawMed.rename('diffQ3RawMed')); // annuals
+
 // save assets -----------------------------------------------------------------
 
 // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
@@ -188,3 +203,17 @@ Export.image.toAsset({
   //crs: SEI.crs,
   //crsTransform: SEI.crsTransform
 });
+
+
+Export.image.toAsset({ 
+  image: diagnostics, //single image with multiple bands (1 for each GCM)
+  assetId: path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString,
+  description: 'diagnostics_' + version + "_" + root +  RCP + '_' + epoch,
+  maxPixels: 1e13, 
+  scale: resolution, 
+  region: region 
+  // not setting crs (temporarily) b/ of (I think) I bug on google's side
+  //crs: SEI.crs,
+  //crsTransform: SEI.crsTransform
+});
+
