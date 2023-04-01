@@ -288,7 +288,8 @@ exports.calcTransitions = function(current, future) {
   var c9From = ee.List([11, 12, 13, 21, 22, 23, 31, 32, 33]); 
   var c9To = ee.List([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   
-  var out = remapAllBands(c9a, c9From, c9To);
+  var out = remapAllBands(c9a, c9From, c9To) // this function can handle multi band images
+    .toByte(); // to save space
   
   return(out);
 };
