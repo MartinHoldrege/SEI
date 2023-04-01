@@ -112,6 +112,7 @@ var GCMNames = diff1.bandNames().map(function(string) {
 var diff1 = diff1.rename(GCMNames);
 var diffMed1 = diff1.reduce('median');
 
+
 Map.addLayer(diffMed1, {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'SEI diff median', false);
 
 // sw proportion change SEI ------------------------------------------------------------
@@ -164,12 +165,19 @@ var fut1 = cur1.select('Q5s')
 Map.addLayer(fut1.reduce('median'), visSEI, 'SEI future median (adjusted obs)', false);
 
 // Calculate future core, grow, other ----------------------------------------
-// this is just for visualizing, not outputting this layer here
-// decile-based classes, derived and hard-coded ()
-var Q5scdeciles = SEI.decileFixedClasses(fut1);
 
-// Classify Q5sdeciles into 3 major classes, called: core, grow, other
-var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1]);  
+// decile-based classes
+ var Q5scdeciles = SEI.decileFixedClasses(fut1);
+
+// Classify Q5sdeciles into 3 major classes: (1) core, (2) grow, (3) other
+var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1])
+  // adding Q5sc3 prefix
+  .regexpRename('^', 'Q5sc3_');  
+  
+// image with both SEI (continous) and 3 class (core, grow, other) bands for each GCM
+var fut2 = fut1
+  .regexpRename('^', 'Q5s_')
+  .addBands(Q5sc3);
 
 // image for diagnostics -------------------------------------------------------
 
@@ -178,7 +186,7 @@ var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,
 
 var diagnostics = curSeiSw1 // current sei calculated from stepwat biomass
   .addBands(futSeiSwMed1.rename('futSeiSwMed')) // future stepwat sei (median accross GCMs)
-  .addBands(diffMed1.rename(diffSeiSwMed)) // difference between current and future sw sei (median)
+  .addBands(diffMed1.rename('diffSeiSwMed')) // difference between current and future sw sei (median)
   // current q values (based on stepwat data)
   .addBands(curSw1.select(['Q1raw_Current', 'Q2raw_Current', 'Q3raw_Current']))
   // q value differences (future - current)
@@ -193,7 +201,7 @@ var diagnostics = curSeiSw1 // current sei calculated from stepwat biomass
 var assetName = 'SEI' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
 
 Export.image.toAsset({ 
-  image: fut1, //single image with multiple bands (1 for each GCM)
+  image: fut2, //single image with multiple bands, 1 SEI (Q5s) and 3 class (Q5sc3) band for each GCM.
   assetId: path + version + '/forecasts/' + assetName,
   description: assetName,
   maxPixels: 1e13, 
