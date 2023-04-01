@@ -39,8 +39,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230331'; // for appending to output file names (and reading in files)
+var version = 'vsw1'; // first version calculating sei directly from stepwat output
+var dateString = '_20230308'; // '_20230331'; // for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
@@ -48,6 +48,9 @@ var root = 'c4on_';
 var RCP =  'RCP85';
 var epoch = '2030-2060';
 var graze = 'Light';
+
+// export asset showing layers used for later exploration (not recommended at high res b/ of space):
+var export_diagnostics = true; 
 
 // dependencies -----------------------------------------------------------
 
@@ -171,8 +174,8 @@ Map.addLayer(fut1.reduce('median'), visSEI, 'SEI future median (adjusted obs)', 
 
 // Classify Q5sdeciles into 3 major classes: (1) core, (2) grow, (3) other
 var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10], [3,3,3,2,2,2,2,2,1,1])
-  // adding Q5sc3 prefix
-  .regexpRename('^', 'Q5sc3_');  
+  .regexpRename('^', 'Q5sc3_') // adding Q5sc3 prefix
+  .toByte(); // to save space 
   
 // image with both SEI (continous) and 3 class (core, grow, other) bands for each GCM
 var fut2 = fut1
@@ -213,15 +216,17 @@ Export.image.toAsset({
 });
 
 
-Export.image.toAsset({ 
-  image: diagnostics, //single image with multiple bands (1 for each GCM)
-  assetId: path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString,
-  description: 'diagnostics_' + version + "_" + root +  RCP + '_' + epoch,
-  maxPixels: 1e13, 
-  scale: resolution, 
-  region: region 
-  // not setting crs (temporarily) b/ of (I think) I bug on google's side
-  //crs: SEI.crs,
-  //crsTransform: SEI.crsTransform
-});
+if (export_diagnostics) {
+  Export.image.toAsset({ 
+    image: diagnostics, //single image with multiple bands (1 for each GCM)
+    assetId: path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString,
+    description: 'diagnostics_' + version + "_" + root +  RCP + '_' + epoch  + dateString,
+    maxPixels: 1e13, 
+    scale: resolution, 
+    region: region 
+    // not setting crs (temporarily) b/ of (I think) I bug on google's side
+    //crs: SEI.crs,
+    //crsTransform: SEI.crsTransform
+  });
+}
 
