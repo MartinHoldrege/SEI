@@ -229,7 +229,7 @@ exports.readImages2Bands = function(genericPath, nameList) {
 * @param {list} t list of values to remap to
  * @return {ee.Image} Image with the same bandNames as the input
 */
-exports.remapAllBands = function(image, from, to) {
+var remapAllBands = function(image, from, to) {
   var bands = image.bandNames();
   
   var renamedList = bands.map(function(band) {
@@ -245,6 +245,52 @@ exports.remapAllBands = function(image, from, to) {
     .rename(bands);
     
   return remappedImage;
+};
+
+exports.remapAllBands = remapAllBands;
+
+// transitions between classes (median) --------------------------------------
+  
+/**
+ * create 9 class transition raster
+ * @param {ee.Image} current containing 1 band, which is the current
+ * 3 SEI classes, ie. the raster contains values of 1, 2 or 3 (CSA, GOA, and ORA)
+ * @param {ee.Image} future 3 class raster, providing future designations of CSA, GOA and ORA
+ * (this can have multiple bands--e.g. one for each gcm)
+ * @return {ee.Image} image with same bandNames as the 'future' input layer, pixels have values
+ * from 1-9, with the following meanings: 
+ * 1:stable core
+ * 2: core becomes grow
+ * 3: core becomes other
+ * 4: grow becomes core
+ * 5: stable grow
+ * 6: grow becomes other
+ * 7: other becomes core
+ * 8: other becomes grow
+ * 9: stable other
+*/
+exports.calcTransitions = function(current, future) {
+  
+  // multiply current c3 values by 10
+  var current10 = current.multiply(10);
+  
+  // adding the two rasters together, this creates 9 categories (hence 'c9' in object names),
+  // for example: 
+  // 11 means that an area was a core area and stayed a core area
+  // 12 = core area becomes grow
+  // 13 = core becomes impacted
+  // 32 = impacted becomes grow
+  // etc.
+
+  c9a = current10.add(future);
+  
+  // lists for remapping
+  var c9From = ee.List([11, 12, 13, 21, 22, 23, 31, 32, 33]); 
+  var c9To = ee.List([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  
+  var out = remapAllBands(c9a, c9From, c9To);
+  
+  return(out);
 };
 
 /*
