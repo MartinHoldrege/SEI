@@ -36,8 +36,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'v11'; // 'vsw2'; // version (most importantly defines how future SEI was calculated)
-var dateString = '_20221010'; // _20230327'; // // for appending to output file names (and reading in files)
+var version = 'vsw2'; //'v11'; //  version (most importantly defines how future SEI was calculated)
+var dateString = '_20230331'; // '_20221010'; //  // for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
