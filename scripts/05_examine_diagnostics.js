@@ -39,13 +39,12 @@ var graze = 'Light';
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var path = SEI.path;
 
 // fig params --------------------------------------------------------------
 
-var visQDiff = fig.visQDiff;
-var visSEI = fig.visSEI;
+var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
+var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
 // read in assets -----------------------------------------------------------
 
