@@ -18,7 +18,7 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var versions = ['vsw1', 'vsw2', 'vsw2']; // first version calculating sei directly from stepwat output
+var versions = ['vsw1', 'vsw2', 'vsw2']; // version
 // date identifier
 var dateStrings = [
   '_20230308', // q curves created from quantile matching
@@ -53,13 +53,15 @@ var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
 // band Q5 is SEI560, and Q5s is SEI2000
 var cur1 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
+
+Map.centerObject(cur1, 6);
 Map.addLayer(cur1.select('Q5s'), visSEI, 'SEI observed current', false);
 
 
 // loop through versions
 for (var i=0; i<versions.length; i++) {
   var version = versions[i];
-  var dateString = dateStrings[i]
+  var dateString = dateStrings[i];
   var s = ' (' + version + dateString + ')';
 
 // Read in diagnostic images 
