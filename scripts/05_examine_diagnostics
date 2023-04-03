@@ -45,7 +45,7 @@ var path = SEI.path;
 // fig params --------------------------------------------------------------
 
 var visQDiff = fig.visQDiff;
-var visSEI = fig.visQDiff;
+var visSEI = fig.visSEI;
 
 // read in assets -----------------------------------------------------------
 
