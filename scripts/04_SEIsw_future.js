@@ -39,8 +39,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'vsw1'; // first version calculating sei directly from stepwat output
-var dateString = '_20230308'; // '_20230331'; // for appending to output file names (and reading in files)
+var version = 'vsw2'; // first version calculating sei directly from stepwat output
+var dateString = '_20230331'; //'_20230308'; //  for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
