@@ -90,13 +90,8 @@ var futSw1 = ee.Image(path + version + '/sw_SEI/' + fileNameFut)
   .mask(mask); 
 var futSeiSw1 = futSw1.select('Q5s_.*'); // SEI2000 bands, (future stepwat SEI)
 
-// maps of current (sw and observed) SEI ------------------------------------
-Map.addLayer(cur1.select('Q5s'), visSEI, 'SEI observed current', false);
-Map.addLayer(curSeiSw1, visSEI, 'SEI sw current', false);
-
 // median sw future SEI ------------------------------------------------------
 var futSeiSwMed1 = futSeiSw1.reduce('median');
-Map.addLayer(futSeiSwMed1, visSEI, 'futSeiSw1 median', false);
 
 // maps of all the bands (one for each GCM)
 // var bands = futSeiSw1.bandNames().getInfo()
@@ -115,14 +110,10 @@ var GCMNames = diff1.bandNames().map(function(string) {
 var diff1 = diff1.rename(GCMNames);
 var diffMed1 = diff1.reduce('median');
 
-
-Map.addLayer(diffMed1, {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'SEI diff median', false);
-
 // sw proportion change SEI ------------------------------------------------------------
 
 var delta1 = diff1.divide(curSeiSw1); // proportion change in SEI
 var deltaMed1 = delta1.reduce('median');
-Map.addLayer(deltaMed1, visQDiff, 'SEI delta (proportion) median ', false);
 
 // maps of all the bands (one for each GCM)
 var bands = GCMNames.getInfo();
@@ -134,29 +125,21 @@ var bands = GCMNames.getInfo();
 
 // Change in individual Q values ------------------------------------------
 
-// plot current sw q values
-Map.addLayer(curSw1.select('Q1raw_Current'), visSEI, 'Q1 (sage) sw current', false);
-Map.addLayer(curSw1.select('Q2raw_Current'), visSEI, 'Q2 (perennial) sw current', false);
-Map.addLayer(curSw1.select('Q3raw_Current'), visSEI, 'Q3 (annual) sw current', false);
-
 // sage q values
 var diffQ1Raw = futSw1.select("Q1raw_.*")
   .subtract(curSw1.select('Q1raw_Current'));
 var diffQ1RawMed = diffQ1Raw.reduce('median');
-Map.addLayer(diffQ1RawMed, visQDiff, 'Q1 (sage) diff median', false);
 
 // perennial q values
 var diffQ2Raw = futSw1.select("Q2raw_.*")
   .subtract(curSw1.select('Q2raw_Current'));
 var diffQ2RawMed = diffQ2Raw.reduce('median');
-Map.addLayer(diffQ2RawMed, visQDiff, 'Q2 (perennial) diff median', false);
-  
+
 // annual q values
 var diffQ3Raw = futSw1.select("Q3raw_.*")
   .subtract(curSw1.select('Q3raw_Current'));
 var diffQ3RawMed = diffQ3Raw.reduce('median');
-Map.addLayer(diffQ3RawMed, visQDiff, 'Q3 (annual) diff median', false);
-  
+
 // Calculate future SEI -----------------------------------------------------
 
 // adjust observed SEI by the change in SEI estimated from the changes
@@ -164,8 +147,6 @@ Map.addLayer(diffQ3RawMed, visQDiff, 'Q3 (annual) diff median', false);
 // creating one band of future SEI for each GCM
 var fut1 = cur1.select('Q5s')
   .add(diff1);
-
-Map.addLayer(fut1.reduce('median'), visSEI, 'SEI future median (adjusted obs)', false);
 
 // Calculate future core, grow, other ----------------------------------------
 
