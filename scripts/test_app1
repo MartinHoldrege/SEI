@@ -1,3 +1,5 @@
+// code for a simple test earthengine app. 
+
 // Load the image from the archive.
 var image = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20140318');
 
