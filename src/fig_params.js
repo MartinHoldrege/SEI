@@ -96,7 +96,7 @@ for (var i = 0; i < c9Palette.length; i++) {
   legend.add(makeRow(c9Palette[i], c9Names[i]));
   }  
  
-exports.c9legend = legend;
+exports.legendc9 = legend;
 
 // creating a white basemap map -------------------------------------------------------------
 
@@ -112,3 +112,4 @@ var statesOutline = empty.paint({
 });
 
 exports.statesOutline = statesOutline;
+Map.add(legend)
