@@ -30,6 +30,7 @@ conda activate ee
 # gcloud auth login
 # gcloud auth application-default login
 # gcloud config set project usgs-gee-drylandecohydrology 
+# earthengine authenticate
 # earthengine set_project "usgs-gee-drylandecohydrology"
 
 cd "$dir"
