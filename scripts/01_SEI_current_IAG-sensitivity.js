@@ -282,8 +282,8 @@ for (var k=1; k<addToAnnuals.length; k++) {
 
 
 Export.image.toAsset({ 
-    image: WAFWAoutputsCurrent, //single image with multiple bands
-    assetId: path + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230406',
+    image: Q5diff, //single image with multiple bands
+    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230406',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
