@@ -27,9 +27,9 @@ var plus10Map = ui.Map.Layer(diff.select('Q5sDiff_plus10'), vis0, 'Change in SEI
 var plus15Map = ui.Map.Layer(diff.select('Q5sDiff_plus15'), vis0, 'Change in SEI with + 15 IAG');
 
 // Q3 (annuals q value) difference maps
-var plus5MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus5'), vis, '+5');
-var plus10MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus10'), vis, '+10');
-var plus15MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus15'), vis, '+15');
+var plus5MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus5'), vis, 'Change in Q of annuals with + 5 annuals');
+var plus10MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus10'), vis, 'Change in Q of annuals with + 10 annuals');
+var plus15MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus15'), vis, 'Change in Q of annuals with + 15 annuals');
 
 map.add(plus5Map);
 map.add(plus10Map);
