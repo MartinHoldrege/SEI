@@ -1,20 +1,16 @@
 /********************************************************
  * 
- * Calculate the Sagebrush Ecosystem Integrity model 
- * under current conditions
+ * Calculate sensitivity of SEI under current conditions
+ * to changes (increases) in annual covers
  * 
- * This code was modified by Martin Holdrege but is almost 
- * entirely based on the code David Theobald (dmt@davidmtheobald.com)
- * wrote
+ * Author Martin Holdrege
  * 
- * The purspose is to calculate SEI, this is done by removing
- * step 0, of the Climate change script where the rasters
- * where multiplied by the climate change ratios
+ * Date started 4/6/2023
  * 
- * Note thate in feb 21, 2022 this code was updated to source
- * assets from MH's assets folder (projects/usgs-gee-drylandecohydrology/assets/SEI).
- * These are the assets that DT shared but that I then exported
- * in the 'export_daves"assets2drive.js' script, and then ingested.
+ * Details:
+ * Output includes a layers showing the chaning in sei with fixed percentage
+ * point increases in annuals, as wells as the change in the Q values
+ * of annuals as a response to those increases in annuals
 */
 
 
@@ -260,7 +256,6 @@ for (var k=0; k<addToAnnuals.length; k++) {
 
 } // end, looping through the amount to add to IAG
 
-print(combImage)
 
 // compute difference from normal SEI for Q5s and Q3 (q value for annuals)
 var Q5diff = ee.Image();
@@ -279,7 +274,6 @@ for (var k=1; k<addToAnnuals.length; k++) {
     var Q5diff = Q5diff.addBands([diff1, diff2]);
 
 }
-
 
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
