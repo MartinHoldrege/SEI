@@ -1,11 +1,41 @@
 // code for a simple test earthengine app. 
 
-// Load the image from the archive.
-var image = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20140318');
+// Initialize the map
+var map = ui.Map();
 
-// Define visualization parameters in an object literal.
-var vizParams = {bands: ['B5', 'B4', 'B3'], min: 0.02, max: 0.4, gamma: 1.3};
+// Set the center of the map
+map.setCenter(0, 0, 2);
 
-// Center the map on the image and display.
-Map.centerObject(image, 9);
-Map.addLayer(image, vizParams, 'Landsat 8 false color');
+// Add the first layer
+var layer1 = ee.Image("srtm90_v4");
+var layer1Vis = {min: 0, max: 3000};
+var layer1Map = ui.Map.Layer(layer1, layer1Vis, 'Elevation');
+map.add(layer1Map);
+
+// Add the second layer
+var layer2 = ee.Image("MODIS/006/MCD12Q1/2019_01_01");
+var layer2Vis = {palette: '000000,00FF00', min: 0, max: 17};
+var layer2Map = ui.Map.Layer(layer2, layer2Vis, 'Land Cover');
+map.add(layer2Map);
+
+// Create checkboxes for each layer
+var layer1Checkbox = ui.Checkbox('Elevation', true);
+var layer2Checkbox = ui.Checkbox('Land Cover', true);
+
+// Create a function to update the map layers when the checkboxes are toggled
+var updateMapLayers = function() {
+  layer1Map.setShown(layer1Checkbox.getValue());
+  layer2Map.setShown(layer2Checkbox.getValue());
+};
+
+// Add the checkboxes to the map and register the function to be called when they are toggled
+var layer1Panel = ui.Panel([layer1Checkbox], ui.Panel.Layout.Flow('horizontal'));
+var layer2Panel = ui.Panel([layer2Checkbox], ui.Panel.Layout.Flow('horizontal'));
+var layersPanel = ui.Panel([layer1Panel, layer2Panel]);
+layersPanel.style().set({position: 'top-right'});
+map.add(layersPanel);
+layer1Checkbox.onChange(updateMapLayers);
+layer2Checkbox.onChange(updateMapLayers);
+
+// Display the map
+ui.root.widgets().reset([map]);
