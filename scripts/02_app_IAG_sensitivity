@@ -13,7 +13,7 @@ var diff = ee.Image(path + 'v11/sensitivity/IAG_v11_2017_2020_90_Current_2023040
 
 // create maps ----------------------------------------------------------
 
-vis0 = {min: 0, max: 0.8, palette: ['white', 'black']} // max set to 0.8 b/ thats about the max possible SEI 
+var vis0 = {min: 0, max: 0.8, palette: ['white', 'black']} // max set to 0.8 b/ thats about the max possible SEI 
 var vis = {min: 0, max: 1, palette: ['white', 'black']}
 // Initialize the map
 var map = ui.Map();
