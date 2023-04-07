@@ -22,14 +22,14 @@ var map = ui.Map();
 map.centerObject(diff, 6);
 
 // SEI difference maps
-var plus5Map = ui.Map.Layer(diff.select('Q5sDiff_plus5'), vis0, 'Change in SEI with + 5 IAG');
-var plus10Map = ui.Map.Layer(diff.select('Q5sDiff_plus10'), vis0, 'Change in SEI with + 10 IAG');
-var plus15Map = ui.Map.Layer(diff.select('Q5sDiff_plus15'), vis0, 'Change in SEI with + 15 IAG');
+var plus5Map = ui.Map.Layer(diff.select('Q5sDiff_plus5'), vis0, 'Change in SEI with + 5 IAG', false);
+var plus10Map = ui.Map.Layer(diff.select('Q5sDiff_plus10'), vis0, 'Change in SEI with + 10 IAG', false);
+var plus15Map = ui.Map.Layer(diff.select('Q5sDiff_plus15'), vis0, 'Change in SEI with + 15 IAG', false);
 
 // Q3 (annuals q value) difference maps
-var plus5MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus5'), vis, 'Change in Q of annuals with + 5 annuals');
-var plus10MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus10'), vis, 'Change in Q of annuals with + 10 annuals');
-var plus15MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus15'), vis, 'Change in Q of annuals with + 15 annuals');
+var plus5MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus5'), vis, 'Change in Q of annuals with + 5 annuals', false);
+var plus10MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus10'), vis, 'Change in Q of annuals with + 10 annuals', false);
+var plus15MapQ3 = ui.Map.Layer(diff.select('Q3rawDiff_plus15'), vis, 'Change in Q of annuals with + 15 annuals', false);
 
 map.add(plus5Map);
 map.add(plus10Map);
@@ -44,7 +44,7 @@ var plus10Checkbox = ui.Checkbox('Change in SEI with + 10 annuals', false);
 var plus15Checkbox = ui.Checkbox('Change in SEI with + 15 annuals', false);
 var plus5CheckboxQ3 = ui.Checkbox('Change in Q of annuals with + 5 annuals', false);
 var plus10CheckboxQ3 = ui.Checkbox('Change in Q of annuals with + 10 annuals', false);
-var plus15CheckboxQ3 = ui.Checkbox('Change in Q of annuals with + 15 annuals', true);
+var plus15CheckboxQ3 = ui.Checkbox('Change in Q of annuals with + 15 annuals', false);
 
 // Create a function to update the map layers when the checkboxes are toggled
 var updateMapLayers = function() {
