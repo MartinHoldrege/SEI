@@ -36,9 +36,6 @@ var H = SEI.H2019; // human modification dataset from 2019
 var tundra = SEI.tundra;
 var rangeMaskx = SEI.mask; 
 
-// image visualization params
-var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
-var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"palette":["e7ed8b","23b608","107a0e","082b08"]};
 
 /// from USGS GAP land cover	
 var LC = ee.Image("USGS/GAP/CONUS/2011")	
@@ -78,11 +75,9 @@ for (var y=yearEnd; y>=yearStart; y--) {
   
   // MH creates a raster where 0 is area of fire, 1 is no fire (that year)
   var imageWildfire = ones.paint(wildfiresF, 0) // if a fire occurs, then remove 
-  Map.addLayer(imageWildfire, {min:0, max:1}, 'imageWildfire ' + y, false)
-  
+
   // MH mean across layers of ic. then multiply to remove areas that are fire
   var rap1 = ic.filterDate(y + '-01-01',  y + '-12-31').mean().multiply(imageWildfire.selfMask()) // remove,  
-  Map.addLayer(rap1, {}, 'rap1 ' + y, false) // the rap layer now has 'holes' in it. 
   var lstRap = lstRap.add(rap1)
 }
 
@@ -111,9 +106,7 @@ var rapTree = rap.select('TREE') // PFG
   .multiply(tundra) // mask out tundra grass/shrub
 var nlcdSage = rcmapSage
   .multiply(tundra) // mask out tundra grass/shrub
-Map.addLayer(rapAnnualG.selfMask(),{},'rapAnnualG',false)
-Map.addLayer(rapPerennialG.selfMask(),{},'rapPerennialG',false)
-Map.addLayer(nlcdSage.selfMask(),{},'nlcdSage',false)
+
 
 var rapAnnualGscenarios = ee.Image().float()
 var rapPerennialGscenarios = ee.Image().float()
@@ -212,8 +205,7 @@ for (var k=0; k<addToAnnuals.length; k++) {
   // I only left the clip statement in this last multiply
   var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
 
-  Map.addLayer(Q5y.updateMask(Q5y.gt(0.0)),imageVisQ,'Q5y selfMask',false);
-  
+
   /**
    * Step 5. Smooth quality values to reflect "management" scale
    */
@@ -240,9 +232,7 @@ for (var k=0; k<addToAnnuals.length; k++) {
   // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
   // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
   var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
-  Map.addLayer(Q5scdeciles.selfMask(),imageVisQ5sc,'Q5s decile classes',false);
-  Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes',false)
-  
+
   /**
    * Step 7. Export stack of images into bands sent to GEE asset.
    * Build a multi-band image for more compact storage of an GEE asset. This is internal to GEE
@@ -263,12 +253,12 @@ var Q5diff = ee.Image();
 for (var k=1; k<addToAnnuals.length; k++) { 
     
     var addStr = String(addToAnnuals[k]);
-    var diff1 = combImage.select('Q5s_plus0')
-      .subtract(combImage.select('Q5s_plus' + addStr))
+    var diff1 = combImage.select('Q5s_plus' + addStr)
+      .subtract(combImage.select('Q5s_plus0'))
       .rename('Q5sDiff_plus' + addStr);
       
-    var diff2 = combImage.select('Q3raw_plus0')
-      .subtract(combImage.select('Q3raw_plus' + addStr))
+    var diff2 = combImage.select('Q3raw_plus' + addStr)
+      .subtract(combImage.select('Q3raw_plus0'))
       .rename('Q3rawDiff_plus' + addStr);
       
     var Q5diff = Q5diff.addBands([diff1, diff2]);
@@ -277,7 +267,7 @@ for (var k=1; k<addToAnnuals.length; k++) {
 
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
-    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230406',
+    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230407',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
