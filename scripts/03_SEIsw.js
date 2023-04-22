@@ -5,7 +5,7 @@
  * Calculate the Sagebrush Ecosystem Integrity with
  * values from stepwat (annuals, perennials, sagebrush biomass) used
  * in the formuala directly. In iteration using q curves that are derived from cover-biomass relationship
- * for sage and perennials, and percentile matching based for annuals. 
+ * for sage (from Scott C.) and perennials (gamm fit to RAP), and annuals (from Mahood et al). 
  * 
  * Script Started: 1/25/2023
  * 
@@ -34,8 +34,8 @@ var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var yearEnd = 2020;  // relavent for RAP tree cover
 var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230331'; // for appending to output file names
+var version = 'vsw3'; // first version calculating sei directly from stepwat output
+var dateString = '_20230422'; // for appending to output file names
 
 // which stepwat output to read in?
 var rootList = ['c4on_', 'c4on_'];
@@ -50,7 +50,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 // Q curves to use for STEPWAT biomass. Based on the original 
 // Q curves, but converted to biomass using cover vs biomass relationships
 
-var Q0 = require("users/mholdrege/SEI:src/qCurves4StepwatOutput.js"); // q curves from percentile matching
+//var Q0 = require("users/mholdrege/SEI:src/qCurves4StepwatOutput.js"); // q curves from percentile matching
 var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // q curves from biomass-cover equations
 
 // datasets, constants etc. defined in SEIModule
@@ -228,8 +228,7 @@ for (var j=0; j<RCPList.length; j++) {
       
       var Q2 = Q2.max(Q2x);
     
-    // here using percentile derived q curve only for annuals. 
-      var Q3x = SEI.raw2HSI(annual560m, Q0.annualQBio1, e)
+      var Q3x = SEI.raw2HSI(annual560m, Q.annualQBio1, e)
         .max(0.001)
         .multiply(mask)
         .clip(ecoregion)
