@@ -25,7 +25,9 @@ var radius = 560;    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = '11'
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js"); // functions and other objects
-var addToAnnuals = [0, 15]; // for the sensitivity analysis how much to add to annual cover 
+var addToAnnuals = [0, -5, -10, -15, -100, 5, 10, 15]; // for the sensitivity analysis how much to add/subtract to annual cover 
+// list of strings for naming layers based on the changes in addToAnnuals
+var sList = ['plus0', 'minus5', 'minus10', 'minus15', '0Cover', 'plus5', 'plus10', 'plus15'];
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -152,6 +154,10 @@ for (var k=0; k<addToAnnuals.length; k++) {
     var rapAnnualG560m = rapAnnualG.add(addImage).reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
       .divide(100.0)
       .unmask(0.0);
+      
+    if(addToAnnuals[k]===-100) {
+      var rapAnnualG560m = ee.Image(0); // fully decreasing annual cover (to 0)
+    }
   
   /**
    * Step 3. convert smoothed % cover to quality using HSI curves
@@ -240,8 +246,8 @@ for (var k=0; k<addToAnnuals.length; k++) {
   */
 
   var combImage = combImage.addBands([
-    Q3.float().rename('Q3raw_plus' + String(addNum)),
-    Q5s.float().rename('Q5s_plus' + String(addNum))
+    Q3.float().rename('Q3raw_' + sList[k]),
+    Q5s.float().rename('Q5s_' + sList[k])
     ]);
 
 } // end, looping through the amount to add to IAG
@@ -250,24 +256,28 @@ for (var k=0; k<addToAnnuals.length; k++) {
 // compute difference from normal SEI for Q5s and Q3 (q value for annuals)
 var Q5diff = ee.Image();
 
-for (var k=1; k<addToAnnuals.length; k++) { 
+for (var k=1; k<sList.length; k++) { 
     
-    var addStr = String(addToAnnuals[k]);
-    var diff1 = combImage.select('Q5s_plus' + addStr)
+    var str = String(sList[k]);
+    var diff1 = combImage.select('Q5s_' + str)
       .subtract(combImage.select('Q5s_plus0'))
-      .rename('Q5sDiff_plus' + addStr);
+      .rename('Q5sDiff_' + str );
       
-    var diff2 = combImage.select('Q3raw_plus' + addStr)
+    var diff2 = combImage.select('Q3raw_' + str)
       .subtract(combImage.select('Q3raw_plus0'))
-      .rename('Q3rawDiff_plus' + addStr);
+      .rename('Q3rawDiff_' + str);
       
     var Q5diff = Q5diff.addBands([diff1, diff2]);
 
 }
 
+
+var Q5diff = Q5diff.select("Q.*"); // removing the empty 'constant' band
+print(Q5diff);
+
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
-    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230407',
+    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230422',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
