@@ -107,9 +107,16 @@ cov2bio_factory <- function(model) {
 }
 
 # prediction function for annuals
-cov2bio_afg <- cov2bio_factory(mod_afg)
+# cov2bio_afg <- cov2bio_factory(mod_afg) # based on gam from RAP data
+
+cov2bio_afg <- function(cover) {
+  # from Mahood et al 2021
+  biomass <- (2.67*cover^0.5 + 1.53)^2
+}
+
 
 plot(cov2bio_sage(x), x)
+
 # *pfg --------------------------------------------------------------------
 
 mod_pfg <- gam(Biomass ~ s(Cover, bs = 'cs'), data = rap_l1$PFG)
@@ -153,7 +160,7 @@ g <- ggplot(q2_long, aes(y = q, color = region)) +
   labs(y = "Q Value") +
   scale_color_manual(values = cols_region)
 
-pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v1.pdf",
+pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v2.pdf",
     width = 6, height = 4)
 g +
   geom_line(aes(x = cover)) +
@@ -163,7 +170,8 @@ g2 <- g +
   labs(x =  lab_bio0,
        subtitle = "Cover converted to biomass (using cover-biomass relationships)",
        caption = paste("sage cover converted to biomass w/ Scott Carpenters equations",
-                       "\nafg and pfg converted to biomass based on RAP relationships"))
+                       "\npfg converted to biomass based on RAP relationships",
+                       "\nafg cover to biomass from Mahood et al 2021"))
 
 g2 +
   geom_line(aes(x = biomass))
