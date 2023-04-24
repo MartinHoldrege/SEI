@@ -36,12 +36,12 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'vsw2'; //'v11'; //  version (most importantly defines how future SEI was calculated)
-var dateString = '_20230331'; // '_20221010'; //  // for appending to output file names (and reading in files)
+var version = 'vsw3'; //'v11'; //  version (most importantly defines how future SEI was calculated)
+var dateString = '_20230422'; // '_20221010'; //  // for appending to output file names (and reading in files)
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
-var root = 'ClimateOnly_'; // c4on_';
+var root = 'c4on_'; //'ClimateOnly_'; // 
 var RCP =  'RCP85';
 var epoch = '2030-2060';
 
