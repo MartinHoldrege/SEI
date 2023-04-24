@@ -28,7 +28,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js"); // functions and othe
 var addToAnnuals = [0, -5, -10, -15, -100, 5, 10, 15]; // for the sensitivity analysis how much to add/subtract to annual cover 
 // list of strings for naming layers based on the changes in addToAnnuals
 var sList = ['plus0', 'minus5', 'minus10', 'minus15', '0Cover', 'plus5', 'plus10', 'plus15'];
-var includeH = false; // true; //logical, whether to include H (human modification) in the calculation of SEI
+var includeH = true; // true; //logical, whether to include H (human modification) in the calculation of SEI
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -266,8 +266,8 @@ for (var k=0; k<addToAnnuals.length; k++) {
 
 
 // compute difference from normal SEI for Q5s and Q3 (q value for annuals)
-var Q5diff = combImage.select('Q5s_plus0').rename('Q5s');
-
+var Q5diff = combImage
+  .select(['Q5s_plus0', 'Q3raw_plus0']);
 for (var k=1; k<sList.length; k++) { 
     
     var str = String(sList[k]);
@@ -291,6 +291,7 @@ if (includeH) {
 } else {
   var hString = "no-H_";
 }
+
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
     assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_' + hString + 'v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230424',
