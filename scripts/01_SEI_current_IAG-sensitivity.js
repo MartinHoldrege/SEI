@@ -151,7 +151,13 @@ for (var k=0; k<addToAnnuals.length; k++) {
     var addNum = addToAnnuals[k];
     var addImage = ee.Image(addNum);
     //adding fixed amount to annual cover
-    var rapAnnualG560m = rapAnnualG.add(addImage).reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+    var rapAnnualG560m = rapAnnualG
+      .add(addImage)
+      // adding these so that even with additions/subtactions the resulting
+      // cover is between 0 and 100
+      .max(ee.Image(0))
+      .min(ee.Image(100))
+      .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
       .divide(100.0)
       .unmask(0.0);
       
