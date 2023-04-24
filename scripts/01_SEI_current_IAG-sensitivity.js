@@ -206,7 +206,8 @@ for (var k=0; k<addToAnnuals.length; k++) {
 
   var Q3y = Q2y.multiply(Q3);
 
-  var Q4y = Q3y.multiply(Q4);
+  //var Q4y = Q3y.multiply(Q4); // not including Hmod
+  var Q4y = Q3y
 
   // I only left the clip statement in this last multiply
   var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
@@ -254,7 +255,7 @@ for (var k=0; k<addToAnnuals.length; k++) {
 
 
 // compute difference from normal SEI for Q5s and Q3 (q value for annuals)
-var Q5diff = ee.Image();
+var Q5diff = combImage.select('Q5s_plus0').rename('Q5s');
 
 for (var k=1; k<sList.length; k++) { 
     
@@ -272,12 +273,11 @@ for (var k=1; k<sList.length; k++) {
 }
 
 
-var Q5diff = Q5diff.select("Q.*"); // removing the empty 'constant' band
 print(Q5diff);
 
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
-    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230422',
+    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_no-H_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230424',
     description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
