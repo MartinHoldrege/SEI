@@ -9,7 +9,7 @@
  * Author: Martin Holdrege
  * 
  *  Notes
- * This script does not create any output, and is meant to be for examination
+ * 
  * 
 * 
  * *******************************************************
@@ -18,13 +18,16 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var versions = ['vsw1', 'vsw2', 'vsw3']; // version
+var versions = ['vsw1', 'vsw2', 'vsw2']; // version
+var sampleSize = 1e4; // for random sample 
+// if set to true, random sample is taken of the bands and exported to csv
+// so can compare observed and sw SEI
+var exportSamples = true; 
 // date identifier
 var dateStrings = [
   '_20230308', // q curves created from quantile matching
-  '_20230327', // biomass-cover equations used to create q curves, RAP for annuals and perennials
-  '_20230331', // same as '_20230327' except quantile matched q curve used for annuals
-  '_20230422' // samed as 20230327 except for annuals equationrom Mahood et al
+  '_20230327', // biomass-cover equations used to create q curves
+  '_20230331' // samed as 20230327 except quantile matched q curve used for annuals
   ];  
 
 // which stepwat output to read in?
@@ -58,13 +61,15 @@ var cur1 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 Map.centerObject(cur1, 6);
 Map.addLayer(cur1.select('Q5s'), visSEI, 'SEI observed current', false);
 
+// objects for sampling pixels
+var one = ee.Image(1).rename('one');
+var sampleFc = ee.FeatureCollection([]);
 
 // loop through versions
 for (var i=0; i<versions.length; i++) {
   var version = versions[i];
   var dateString = dateStrings[i];
   var s = ' (' + version + dateString + ')';
-  // var s = ' (' + version + ')';
 
 // Read in diagnostic images 
   var diag = ee.Image(path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString);
@@ -93,4 +98,39 @@ for (var i=0; i<versions.length; i++) {
   Map.addLayer(diag.select('diffQ2RawMed'), visQDiff, 'Q2 (perennial) diff median' + s, false);
   Map.addLayer(diag.select('diffQ3RawMed'), visQDiff, 'Q3 (annual) diff median' + s, false);
   
+  // sampling points --------------------------------------------------------
+
+  if (exportSamples) {
+    var sample = diag
+      .addBands(cur1.select('Q5s').rename('Q5s_current_observed'))
+      .addBands(one)
+      .stratifiedSample({
+        numPoints: sampleSize,
+        classBand: 'one',
+        region: SEI.region,
+        scale: resolution,
+        projection: SEI.crs,
+        seed: 123
+      }).map(function(x) {
+          var out = ee.Feature(x).set({
+            version: version,
+            date: dateString
+          });
+          return out;
+      });
+      
+    var sampleFc = sampleFc.merge(ee.FeatureCollection(sample));
+  }
 }
+
+if(exportSamples) {
+  Export.table.toDrive({
+    collection: sampleFc,
+    description: 'diagnostics_' + sampleSize + 'obs_'+ resolution + 'm' + dateStrings.slice(-1),
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
+}
+
+
+// print(sampleFc);
