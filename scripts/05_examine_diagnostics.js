@@ -18,12 +18,13 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var versions = ['vsw1', 'vsw2', 'vsw2']; // version
+var versions = ['vsw1', 'vsw2', 'vsw3']; // version
 // date identifier
 var dateStrings = [
   '_20230308', // q curves created from quantile matching
-  '_20230327', // biomass-cover equations used to create q curves
-  '_20230331' // samed as 20230327 except quantile matched q curve used for annuals
+  '_20230327', // biomass-cover equations used to create q curves, RAP for annuals and perennials
+  '_20230331', // same as '_20230327' except quantile matched q curve used for annuals
+  '_20230422' // samed as 20230327 except for annuals equationrom Mahood et al
   ];  
 
 // which stepwat output to read in?
@@ -63,6 +64,7 @@ for (var i=0; i<versions.length; i++) {
   var version = versions[i];
   var dateString = dateStrings[i];
   var s = ' (' + version + dateString + ')';
+  // var s = ' (' + version + ')';
 
 // Read in diagnostic images 
   var diag = ee.Image(path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString);
