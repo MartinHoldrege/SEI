@@ -28,6 +28,7 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js"); // functions and othe
 var addToAnnuals = [0, -5, -10, -15, -100, 5, 10, 15]; // for the sensitivity analysis how much to add/subtract to annual cover 
 // list of strings for naming layers based on the changes in addToAnnuals
 var sList = ['plus0', 'minus5', 'minus10', 'minus15', '0Cover', 'plus5', 'plus10', 'plus15'];
+var includeH = false; // true; //logical, whether to include H (human modification) in the calculation of SEI
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -212,8 +213,12 @@ for (var k=0; k<addToAnnuals.length; k++) {
 
   var Q3y = Q2y.multiply(Q3);
 
-  //var Q4y = Q3y.multiply(Q4); // not including Hmod
-  var Q4y = Q3y
+  if (includeH) {
+    var Q4y = Q3y.multiply(Q4); 
+  } else {
+    var Q4y = Q3y; // not including Hmod
+  }
+  
 
   // I only left the clip statement in this last multiply
   var Q5y = Q4y.multiply(Q5).clip(biome); // MH this is the final multiple (i.e. SEI560)
@@ -281,10 +286,15 @@ for (var k=1; k<sList.length; k++) {
 
 print(Q5diff);
 
+if (includeH) {
+  var hString = "";
+} else {
+  var hString = "no-H_";
+}
 Export.image.toAsset({ 
     image: Q5diff, //single image with multiple bands
-    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_no-H_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230424',
-    description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution + s,
+    assetId: 'users/MartinHoldrege/SEI/' + 'v' + version + '/sensitivity/IAG_' + hString + 'v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + s + '_20230424',
+    description: 'SEI' + hString +  yearStart + '_' + yearEnd + '_' + resolution + s,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
 })
