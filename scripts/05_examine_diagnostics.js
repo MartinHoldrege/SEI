@@ -27,8 +27,11 @@ var exportSamples = true;
 var dateStrings = [
   '_20230308', // q curves created from quantile matching
   '_20230327', // biomass-cover equations used to create q curves
-  '_20230331' // samed as 20230327 except quantile matched q curve used for annuals
+  '_20230331', // samed as 20230327 except quantile matched q curve used for annuals
+  '_20230422' // samed as 20230327 except annual cover vs biomass from mahood
   ];  
+  
+var versions = ['vsw1', 'vsw2', 'vsw2', 'vsw3'];
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
