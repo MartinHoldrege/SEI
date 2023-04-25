@@ -5,6 +5,9 @@
 *.jpg
 *.pdf
 
+# data
+*.csv
+
 # word
 *.docx
 

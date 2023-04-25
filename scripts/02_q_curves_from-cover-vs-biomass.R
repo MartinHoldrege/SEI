@@ -13,6 +13,7 @@ download <- FALSE # download files from drive (use true only if new
 
 # dependencies ------------------------------------------------------------
 library(tidyverse)
+library(patchwork)
 theme_set(theme_classic())
 library('mgcv')
 source("src/general_functions.R")
@@ -94,6 +95,12 @@ mod_afg <- gam(Biomass ~ s(Cover, bs = 'cs'), data = rap_l1$AFG)
 rap_l1$AFG$phat <- predict(mod_afg)
 plot(phat ~ Cover, data = rap_l1$AFG)
 
+# cover vs biomass from mahood
+cov2bio_afg_mahood <- function(cover) {
+  # from Mahood et al 2021
+  (2.67*cover^0.5 + 1.53)^2
+}
+
 # function factory
 cov2bio_factory <- function(model) {
   out_function <- function(cover) {
@@ -106,16 +113,19 @@ cov2bio_factory <- function(model) {
   out_function
 }
 
-# prediction function for annuals
-# cov2bio_afg <- cov2bio_factory(mod_afg) # based on gam from RAP data
-
-cov2bio_afg <- function(cover) {
-  # from Mahood et al 2021
-  biomass <- (2.67*cover^0.5 + 1.53)^2
+# predict cover from biomass, by 'inversing' the cover to biomass equations
+bio2cov_factory <- function(f, cover = seq(0, 100, by = 0.1)) {
+  biomass <- f(cover)
+  approxfun(biomass, cover)
 }
 
+# prediction function for annuals based on rap
+cov2bio_afg_rap <- cov2bio_factory(mod_afg) # based on gam from RAP data
+bio2cov_afg_rap <- bio2cov_factory(cov2bio_afg_rap)
+bio2cov_afg_mahood <- bio2cov_factory(cov2bio_afg_mahood)
 
-plot(cov2bio_afg(x), x)
+
+plot(cov2bio_afg_mahood(x), x)
 
 # *pfg --------------------------------------------------------------------
 
@@ -135,8 +145,7 @@ plot(x, cov2bio_pfg(x))
 q2 <- q1
 
 fns <- list(sage = cov2bio_sage,
-            pfg = cov2bio_pfg,
-            afg = cov2bio_afg)
+            pfg = cov2bio_pfg)
 
 # convert cover to biomass
 q2 <- map2(q1[names(fns)], fns, function(df, f) {
@@ -145,22 +154,114 @@ q2 <- map2(q1[names(fns)], fns, function(df, f) {
 })
 q2
 
+# dealing with annuals seperately
+q_afg <- q1$afg
+# "RAP biomass"
+q_afg$biomass_rap <- cov2bio_afg_rap(q_afg$cover*100)
+# mahood biomass (which we think should be comparable to stepwat biomass)
+q_afg$biomass_mahood <- cov2bio_afg_mahood(q_afg$cover*100)
+
+# linear interpolation function for figures (cov2bio_afg_rap is a gamm
+# and not fully monotonic I guess)
+cov2bio_afg_rap_lin <- approxfun(q_afg$cover, q_afg$biomass_rap, 
+                              rule = 1)
+
+# correction factor for stepwat biomass (multiplier)
+q_afg$correction_multiplier <- q_afg$biomass_rap/q_afg$biomass_mahood
+
+# linear interpolation of the correction multiplier
+correction_multiplier <- approxfun(q_afg$biomass_mahood, q_afg$correction_multiplier,
+                                   rule = 1)
+
+q_afg
+q2$afg <- q_afg
+
+df_correction <- tibble(biomass = 0:164) %>% 
+  mutate(cover_rap = bio2cov_afg_rap(biomass),
+         cover_mahood = bio2cov_afg_mahood(biomass),
+         correction_multiplier2 = cover_rap/cover_mahood)
+
+# linear interpolation of the correction multiplier
+correction_multiplier2 <- approxfun(df_correction$cover_mahood, 
+                                    df_correction$correction_multiplier2,
+                                    rule = 1)
+
 q2_long <- q2 %>% 
   bind_rows(.id = "PFT") %>% 
   pivot_longer(c(great_basin, intermountain, great_plains),
                values_to = "q", names_to = "region")
 
 
-  
+# * correction multiplier 2 -----------------------------------------------
+
+
+
 # figures  -----------------------------------------------------------
+
+# converting biomass to be 'rap' equivelant]
+x <- 1:1000
+plot(x, correction_multiplier(x))
+
+sw_afg <- sw_bio_cur %>% 
+  filter(PFT == "afg") %>% 
+  mutate(correction_multiplier = correction_multiplier(biomass),
+         # rap equivelat biomass
+         biomass_rap_eq = biomass*correction_multiplier,
+         # rap equivelant cover
+         cover_rap_eq = bio2cov_afg_rap(biomass_rap_eq),
+         # convert to cover (based on mahood relationship)
+         cover_mahood_eq = bio2cov_afg_mahood(biomass),
+         correction_multiplier2 = correction_multiplier2(cover_mahood_eq),
+         # this should be equivelant/comparable to the cover in the q table
+         cover_rap_eq2 = cover_mahood_eq*correction_multiplier2)
+
+hist(sw_afg$cover_rap_eq2)
+# separate figure for annuals
+a <- q2_long %>% 
+  filter(PFT == "afg") %>% 
+  ggplot(aes(x = cover, y = q, color = region)) +
+  geom_line() +
+  scale_color_manual(values = cols_region) +
+  labs(title = 'afg')
+
+a1 <- a  +
+  scale_x_continuous(sec.axis = sec_axis(trans = cov2bio_afg_rap_lin,
+                                         name = "Biomass (RAP)")) 
+a1
+a2 <- a  +
+  scale_x_continuous(sec.axis = sec_axis(trans = ~cov2bio_afg_mahood(.*100),
+                                         name = "Biomass (Mahood)"))
+a2
+wrap_plots(a1, a2, guides = 'collect')
+
+a +
+  geom_histogram(data = sw_afg, 
+                 aes(x = cover_rap_eq2/100, y = after_stat(density)/30),
+                 bins = 100, color = 'gray') 
+
+a1 +
+  geom_histogram(data = sw_afg, 
+                 aes(x = cover_rap_eq/100, y = after_stat(density)/30),
+                 bins = 100, color = 'gray') 
+
+x <- sort(sw_afg$cover_rap_eq) %>% 
+  unique()
+y <- cov2bio_afg_rap_lin(x/100)
+sum(diff(y) <=0)
+
+q2_long %>% 
+  filter(PFT != "afg")
+
 
 
 g <- ggplot(q2_long, aes(y = q, color = region)) +
   facet_wrap(~PFT, ncol = 2, scales = 'free') +
   labs(y = "Q Value") +
-  scale_color_manual(values = cols_region)
+  scale_color_manual(values = cols_region) +
+  geom_histogram(data = sw_bio_cur, 
+                 aes(biomass, y = after_stat(density)*20), color = 'gray')
 
-pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v2.pdf",
+pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v3.pdf",
     width = 6, height = 4)
 g +
   geom_line(aes(x = cover)) +
@@ -170,8 +271,7 @@ g2 <- g +
   labs(x =  lab_bio0,
        subtitle = "Cover converted to biomass (using cover-biomass relationships)",
        caption = paste("sage cover converted to biomass w/ Scott Carpenters equations",
-                       "\npfg converted to biomass based on RAP relationships",
-                       "\nafg cover to biomass from Mahood et al 2021"))
+                       "\npfg converted to biomass based on RAP relationships"))
 
 g2 +
   geom_line(aes(x = biomass))
