@@ -115,7 +115,7 @@ cov2bio_afg <- function(cover) {
 }
 
 
-plot(cov2bio_sage(x), x)
+plot(cov2bio_afg(x), x)
 
 # *pfg --------------------------------------------------------------------
 
