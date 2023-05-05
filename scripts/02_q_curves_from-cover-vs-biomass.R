@@ -53,6 +53,26 @@ p1 <- newest_file_path('data_processed/cover_vs_biomass',
 rap1 <- read_csv(p1, show_col_types = FALSE)
 
 
+# functions ---------------------------------------------------------------
+
+# function factory
+cov2bio_factory <- function(model) {
+  out_function <- function(cover) {
+    df <- data.frame(Cover = cover)
+    biomass <- predict(model, newdata = df)
+    
+    out <- ifelse(biomass < 0, 0, biomass) # avoiding negative predictions
+    as.numeric(out)
+  }
+  out_function
+}
+
+# predict cover from biomass, by 'inversing' the cover to biomass equations
+bio2cov_factory <- function(f, cover = seq(0, 100, by = 0.1)) {
+  biomass <- f(cover)
+  approxfun(biomass, cover)
+}
+
 # clean rap data ----------------------------------------------------------
 
 rap2 <- rap1 %>% 
@@ -101,29 +121,12 @@ cov2bio_afg_mahood <- function(cover) {
   (2.67*cover^0.5 + 1.53)^2
 }
 
-# function factory
-cov2bio_factory <- function(model) {
-  out_function <- function(cover) {
-    df <- data.frame(Cover = cover)
-    biomass <- predict(model, newdata = df)
-    
-    out <- ifelse(biomass < 0, 0, biomass) # avoiding negative predictions
-    as.numeric(out)
-  }
-  out_function
-}
-
-# predict cover from biomass, by 'inversing' the cover to biomass equations
-bio2cov_factory <- function(f, cover = seq(0, 100, by = 0.1)) {
-  biomass <- f(cover)
-  approxfun(biomass, cover)
-}
-
 # prediction function for annuals based on rap
 cov2bio_afg_rap <- cov2bio_factory(mod_afg) # based on gam from RAP data
+
+# reverse predictions so cover is predicted from biomass
 bio2cov_afg_rap <- bio2cov_factory(cov2bio_afg_rap)
 bio2cov_afg_mahood <- bio2cov_factory(cov2bio_afg_mahood)
-
 
 plot(cov2bio_afg_mahood(x), x)
 
@@ -170,6 +173,7 @@ cov2bio_afg_rap_lin <- approxfun(q_afg$cover, q_afg$biomass_rap,
 q_afg$correction_multiplier <- q_afg$biomass_rap/q_afg$biomass_mahood
 
 # linear interpolation of the correction multiplier
+# for converting mahood biomass rap biomass (not really useful)
 correction_multiplier <- approxfun(q_afg$biomass_mahood, q_afg$correction_multiplier,
                                    rule = 1)
 
@@ -193,8 +197,6 @@ q2_long <- q2 %>%
 
 
 # * correction multiplier 2 -----------------------------------------------
-
-
 
 # figures  -----------------------------------------------------------
 
@@ -221,8 +223,7 @@ a <- q2_long %>%
   filter(PFT == "afg") %>% 
   ggplot(aes(x = cover, y = q, color = region)) +
   geom_line() +
-  scale_color_manual(values = cols_region) +
-  labs(title = 'afg')
+  scale_color_manual(values = cols_region)
 
 a1 <- a  +
   scale_x_continuous(sec.axis = sec_axis(trans = cov2bio_afg_rap_lin,
@@ -232,26 +233,30 @@ a2 <- a  +
   scale_x_continuous(sec.axis = sec_axis(trans = ~cov2bio_afg_mahood(.*100),
                                          name = "Biomass (Mahood)"))
 a2
-wrap_plots(a1, a2, guides = 'collect')
 
-a +
+
+a3 <- a +
   geom_histogram(data = sw_afg, 
                  aes(x = cover_rap_eq2/100, y = after_stat(density)/30),
-                 bins = 100, color = 'gray') 
+                 bins = 300, color = 'gray') +
+  labs(caption = 'Stepwat biomass converted to cover based on 
+       Rap cover vs biomass',
+       subtitle = "RAP equivelant cover")
 
-a1 +
+a4 <- a +
   geom_histogram(data = sw_afg, 
-                 aes(x = cover_rap_eq/100, y = after_stat(density)/30),
-                 bins = 100, color = 'gray') 
+                 aes(x = cover_mahood_eq/100, y = after_stat(density)/60),
+                 bins = 300, color = 'gray') +
+  labs(caption = 'Stepwat biomass converted to cover based on 
+       mahood equation',
+       subtitle = "Mahood equivelant cover")
 
-x <- sort(sw_afg$cover_rap_eq) %>% 
-  unique()
-y <- cov2bio_afg_rap_lin(x/100)
-sum(diff(y) <=0)
-
-q2_long %>% 
-  filter(PFT != "afg")
-
+pdf("figures/q_curves/q_curves_mahood-vs-rap-biomass_v1.pdf",
+    width = 8, height = 6)
+wrap_plots(a1, a2, a3, a4, guides = 'collect', ncol = 2) +
+  plot_annotation(title = "annuals")
+  
+dev.off()
 
 
 g <- ggplot(q2_long, aes(y = q, color = region)) +
@@ -261,8 +266,8 @@ g <- ggplot(q2_long, aes(y = q, color = region)) +
   geom_histogram(data = sw_bio_cur, 
                  aes(biomass, y = after_stat(density)*20), color = 'gray')
 
-pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v3.pdf",
-    width = 6, height = 4)
+ # pdf("figures/q_curves/q_curves_from-cover-vs-biomass_v3.pdf",
+#     width = 6, height = 4)
 g +
   geom_line(aes(x = cover)) +
   labs(subtitle = "Original Q curve (Theobald 2022)")
@@ -317,4 +322,4 @@ q2write <- c("//Note: this is an automatically created file, do not edit",
              "\n", 
              afg_js, pfg_js, sage_js)
 cat(q2write)
-write_lines(q2write, "src/qCurves4StepwatOutput2.js")
+# write_lines(q2write, "src/qCurves4StepwatOutput2.js")
