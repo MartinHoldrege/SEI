@@ -128,8 +128,16 @@ cov2bio_afg_rap <- cov2bio_factory(mod_afg) # based on gam from RAP data
 bio2cov_afg_rap <- bio2cov_factory(cov2bio_afg_rap)
 bio2cov_afg_mahood <- bio2cov_factory(cov2bio_afg_mahood)
 
-plot(cov2bio_afg_mahood(x), x)
 
+jpeg("figures/q_curves/afg_RAP_vs_mahood_relaionship.jpeg")
+plot(cov2bio_afg_mahood(x), x, type = 'l', xlim = c(0, 400), 
+     col = 'red', xlab = "Biomass of annuals (g/m2)", ylab = "Cover of annuals (%)")
+lines(cov2bio_afg_rap(x), x, col = 'blue')
+legend("topright",                    # Add legend to plot
+       legend = c("Mahood et al. 2021 (plot level)", "RAP cover vs biomass"),
+       col = c("red", "blue"),
+       lty= 1)
+dev.off()
 # *pfg --------------------------------------------------------------------
 
 mod_pfg <- gam(Biomass ~ s(Cover, bs = 'cs'), data = rap_l1$PFG)

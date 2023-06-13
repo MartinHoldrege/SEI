@@ -14,3 +14,9 @@ or
 `git pull usgs_gee master`
 
 This is after the usgs_gee alias has been created. 
+
+
+## Notes for next steps for updating to SEI V3:
+
+Use the non-connectivity buffer.
+Most recent time period 2018-2021
