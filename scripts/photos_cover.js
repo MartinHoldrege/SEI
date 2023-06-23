@@ -19,7 +19,7 @@
 var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017-2020 would= 2020
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
-var resolution = 30     // output resolution, 90 initially, 30 m eventually
+var resolution = 90     // 
 
 var radius = 560;    // used to set radius of Gaussian smoothing kernel
 
@@ -28,29 +28,22 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js"); // functions and othe
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
-var biome = SEI.biome;
-var region = SEI.region;
-var WAFWAecoregions = SEI.WAFWAecoregions; // polygons outlining the 3 regions
 var H = SEI.H2019; // human modification dataset from 2019
 
 
-
+var photos1 = ee.FeatureCollection(path + 'photo_coords_v1'); // coordinates of photo locations
 
 // MH--this currently loads v2, there is now a v3 that came out that we may want to use. 
-var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2') //
+var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2'); //
 
-var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean() // ??? use median instead?
+var rap = ic.filterDate(yearStart + '-01-01',  yearEnd + '-12-31').mean(); // ??? use median instead?
 
 
 /**
-* Model overview with steps: 
+* Overview of steps: 
 * 1. get 4 year average of % cover from RAP, adjusted by fire perimeters
 * 2. smooth % cover from RAP by "ecological" context using Gaussian kernel radius
-* 3. convert smoothed % cover to "quality" through HSI curves
-* 4. combine resources (sage, perennial) and threats (annual grass, tree, human modification) by multiplication
-* 5. smooth quality by "management" level context using Gaussian kernel radius
-* 6. find deciles and then reclass to 3-classes: core, grow, treat
-* 7. export image with data layers as bands in an image asset
+* 3. extract smoothed cover at photo points
 */
 
 
@@ -109,19 +102,48 @@ var nlcdSage = nlcdSage.select('nlcdSage')
  * Step 2. smooth raw data
  */
  
-// MH--I think this works by averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
-//the weights are derived from a normal distribution with a sd of 560. 
 var nlcdSage560m = nlcdSage.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0) // MH convert from % cover to proportion
 
 var rapPerennialG560m = rapPerennialG.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0);
+
+var rapAnnualG560m = rapAnnualG.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
+  .divide(100.0)
   
 var H560m = H.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'));
 
 var rapTree560m = rapTree.reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(560,560 * 1,'meters'))
   .divide(100.0);
   
-print(rapTree560m)
 
-// Next steps extract cover at the individual points
+/*
+  Step 3. Extract data at photo locations
+*/
+
+var cover560 = nlcdSage560m.rename('sage560')
+  .addBands(rapPerennialG560m.rename('pft560'))
+  .addBands(rapAnnualG560m.rename('afg560'))
+  .addBands(H560m.rename('hmod560'))
+  .addBands(rapTree560m.rename('tree560'));
+
+
+var photoStats1 = cover560.reduceRegions(photos1, ee.Reducer.mean(), resolution);
+
+Export.table.toDrive({
+  collection: photoStats1, 
+  description: 'photos_cover560_v1',
+  folder: 'SEI',
+  fileFormat: 'CSV'
+});
+
+
+
+
+
+
+
+
+
+
+
