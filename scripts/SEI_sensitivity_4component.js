@@ -53,7 +53,6 @@ var Q5y_original = Q1
   .multiply(Q3)
   .multiply(Q4)
   .multiply(Q5)
-  .clip(biome)
   .rename('original');
   
 var Q5y = Q5y_original;
@@ -62,7 +61,8 @@ var Q5y = Q5y
   .addBands(Q5y_original.divide(Q2).rename('noPfg'))
   .addBands(Q5y_original.divide(Q3).rename('noAfg'))
   .addBands(Q5y_original.divide(Q4).rename('noH'))
-  .addBands(Q5y_original.divide(Q5).rename('noTree'));
+  .addBands(Q5y_original.divide(Q5).rename('noTree'))
+  .clip(biome);
 
   /**
    * Step 5. Smooth quality values to reflect "management" scale
@@ -89,6 +89,12 @@ var Q5scdeciles = SEI.decileFixedClasses(Q5s);
 
 var Q5sc3 = SEI.remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
 
+Map.addLayer(cur.select('Q5sc3'), {}, 'c3 published', false)
+Map.addLayer(cur.select('Q5s'), {min:0, max:1}, 'Q5s published', false)
+print(cur.select('Q5s'))
+print(Q5sc3.select('original').byte())
+Map.addLayer(Q5sc3.select('original').byte(), {min:1, max:3}, 'c3 re-calculated', false)
+Map.addLayer(Q5s.select('original'), {min:0, max:1}, 'q5s re-calculated')
 // calculating class transisition from original SEI to SEI with one component removed
 var bandNames = ee.List(['noSage', 'noPfg', 'noAfg', 'noH', 'noTree']);
 var c9List = bandNames
@@ -116,11 +122,14 @@ var newNamesQ5s = outputs.bandNames().map(function(x) {
 var outputs = outputs.rename(newNamesQ5s)
   .addBands(c9Image);
 
-Export.image.toAsset({ 
-    image: outputs, //single image with multiple bands
-    assetId: path + 'v' + version + '/sensitivity/SEI4component_' + 'v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_20230627',
-    description: 'SEI4component_' + 'v' + version + '_' + yearStart + '_' + yearEnd,
-    maxPixels: 1e13, scale: resolution, region: region,
-    crs: 'EPSG:4326'    // set to WGS84, decimal degrees
-});
+
+
+
+// Export.image.toAsset({ 
+//     image: outputs, //single image with multiple bands
+//     assetId: path + 'v' + version + '/sensitivity/SEI4component_' + 'v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_20230627',
+//     description: 'SEI4component_' + 'v' + version + '_' + yearStart + '_' + yearEnd,
+//     maxPixels: 1e13, scale: resolution, region: region,
+//     crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+// });
 
