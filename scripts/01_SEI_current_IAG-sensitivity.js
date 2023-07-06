@@ -20,7 +20,7 @@ var yearEnd = 2020  // this value is changed to make multi-year runs, e.g., 2017
 var yearStart = yearEnd - 3 // inclusive, so if -3 then 2017-2020, inclusive
 
 var resolution = 90;     // output resolution, 90 initially, 30 m eventually
-var sampleResolution = 270 // MH--this is only used in one place, with no downstream affects
+
 var radius = 560;    // used to set radius of Gaussian smoothing kernel
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = '11'
@@ -239,10 +239,6 @@ for (var k=0; k<addToAnnuals.length; k++) {
    * Calculate and classify Q5s into decile classes.
    */
    
-  // MH-- the actually calculated deciles were not used, instead the derived/hard coded ones (below)
-  // are used. 
-  var Q5s_deciles = Q5s.reduceRegion({reducer: ee.Reducer.percentile([1,10,20,30,40,50,60,70,80,90,100]),
-      maxPixels: 1e13, geometry: biome.geometry(), scale: sampleResolution});
 
   // decile-based classes, derived and hard-coded from Q5s_deciles
   var Q5scdeciles = SEI.decileFixedClasses(Q5s);
