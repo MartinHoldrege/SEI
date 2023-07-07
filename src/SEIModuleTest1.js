@@ -1,3 +1,6 @@
+// version of the SEIMOdule.js script from July 17, 2022
+// commit 05b29a7
+
 /**
  * The SEI module contains functions, lists, and other objects
  * These are functions and objects that are re-used in multiple
