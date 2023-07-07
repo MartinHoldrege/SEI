@@ -1,3 +1,4 @@
+// trying to reproduce creation of this file
 var cur = ee.Image('projects/usgs-gee-drylandecohydrology/assets/SEI/v11/current/SEIv11_2017_2020_30_Current_20220717');
 
 Map.addLayer(cur.select('Q5sc3'), {min:1, max: 3}, 'c3')
