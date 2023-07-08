@@ -1,6 +1,6 @@
 // Calculating daymet monthly normals
 
-// This is code provided to me by Rachel Renne and modified by Martin Holdrege (7/7/2023)
+// This is written by by Rachel Renne and modified by Martin Holdrege 
 
 // Note: The Daymet calendar is based on a standard calendar year. All Daymet years have 1 - 365 days, 
 //including leap years. For leap years, the Daymet database includes leap day. Values for December 31 
