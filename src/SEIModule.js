@@ -338,8 +338,6 @@ exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); /
 exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebrush');
 
 
-// For setting the projection
-// This is adapted from what Geoffrey B. figured out so
-// that GEE output matches albers equal area usgs version projections
-exports.crs = 'EPSG:5070';
-exports.crsTransform = [30,0,-2363085,0,-30,3178905];
+// For setting the projection (albers conical equal area)
+exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
+

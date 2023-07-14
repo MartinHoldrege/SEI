@@ -31,14 +31,14 @@
 // User-defined variables.
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
-var yearEnd = 2020;  // relavent for RAP tree cover
+var yearEnd = 2021;  // relavent for defining 'current' time period
 var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'vsw3'; // first version calculating sei directly from stepwat output
-var dateString = '_20230422'; // for appending to output file names
+var version = 'vsw4'; // first version calculating sei directly from stepwat output
+var dateString = '_20230714'; // for appending to output file names
 
 // which stepwat output to read in?
-var rootList = ['c4on_', 'c4on_'];
+var rootList = ['fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_'];
 var RCPList =  ['Current', 'RCP85'];
 var epochList = ['Current', '2030-2060'];
 var grazeList = ['Light', 'Light'];
@@ -68,52 +68,8 @@ var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"pal
 
 Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
 
-// Prepare tree dover data ----------------------------------------------------
-
-// changed logic of years to incorporate fires
-// select RAP year images, but remove years prior if a fire occured in years 1, 2, or 3
-// DT has made this file public, and I ran into issue exporting it (contains both polygons and lines which
-// can't both be in a shapefile)
-var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History'); 
-var ic = ee.ImageCollection('projects/rangeland-analysis-platform/vegetation-cover-v2'); //
-
-var ones = ee.Image(1);
-var lstTree = ee.List([]);
-
-// step 1
-for (var y=yearEnd; y>=yearStart; y--) {
-  var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd));
-  
-  // MH creates a raster where 0 is area of fire, 1 is no fire (that year)
-  var imageWildfire = ones.paint(wildfiresF, 0); // if a fire occurs, then remove 
-
-  // MH mean across layers of ic. then multiply to remove areas that are fire
-  var tree1 = ic.filterDate(y + '-01-01',  y + '-12-31')
-    .select('TREE')
-    .mean()
-    .multiply(imageWildfire.selfMask()); // remove,  
-
-  var lstTree = lstTree.add(tree1);
-}
-
-
-var tree = ee.ImageCollection(lstTree).mean(); // replace rap collection with mean of wildfire filtered images
-Map.addLayer(tree,{min:0, max:75, palette: ['white', 'darkgreen']},'tree all 4 years',false);
-
-
-var rapTree = tree1 // trees
-  .multiply(tundra); // not sure if this actually needed here
-
-// smooth within 560 radius (step 2)
-var rapTree560m = SEI.mean560(tree)
-  .divide(100.0)
-  .unmask(0.0);
-  
-// prepare HMod data ---------------------------------------------------
-
-// smooth to 560 meters (step 2)
-var H560m = SEI.mean560(H)
-  .unmask(0.0); 
+// current SEI version 3 from Theobald
+var cur = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + yearStart + '_' + yearEnd + '_90_20230322');
 
 // Loop over climate scenarios ------------------------------------------------------
 
@@ -236,18 +192,14 @@ for (var j=0; j<RCPList.length; j++) {
         
       var Q3 = Q3.max(Q3x);
     
-      var Q4x = SEI.raw2HSI(H560m, SEI.lstH2Q, e)
-        .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
-      var Q4 = Q4.max(Q4x);
-    
-      var Q5x = SEI.raw2HSI(rapTree560m, SEI.lstTree2Q, e)
-        .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
-      var Q5 = Q5.max(Q5x);
     }
     
     // Display Q images
     // Step 4. is integrated here, multiplying each factor by the earlier one
     // this multiplication is calculating the SEI (continuous), variable
+    
+    var Q4 = cur.select('Q4raw');
+    var Q5 = cur.select('Q5raw');
     
     var Q2y = Q1.multiply(Q2); 
     var Q3y = Q2y.multiply(Q3);
@@ -313,10 +265,8 @@ for (var j=0; j<RCPList.length; j++) {
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/sw_SEI/' + fileName,
     description: fileName,
-    maxPixels: 1e13, scale: resolution, region: region 
-    // not setting crs (temporarily) b/ of (I think) I bug on google's side
-    //crs: SEI.crs,
-    //crsTransform: SEI.crsTransform
+    maxPixels: 1e13, scale: resolution, region: region,
+    crs: 'EPSG:4326'
   });
   
 }// end loop over scenario
