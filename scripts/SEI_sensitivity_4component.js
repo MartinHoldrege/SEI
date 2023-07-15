@@ -88,7 +88,7 @@ var Q5y = Q5y
    
 var Q5s = Q5y // this is SEI2000
   .unmask(0)
-  Q5sc3
+  .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
   .multiply(rangeMaskx);
   
 var newNames = Q5s.bandNames().map(function(x) {
