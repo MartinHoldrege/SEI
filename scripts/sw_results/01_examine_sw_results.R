@@ -12,18 +12,19 @@ library(terra)
 library(tidyverse)
 library(stars)
 source("../grazing_effects/src/general_functions.R")
-source("src/basemaps.R")
-
+source("../grazing_effects/src/fig_params.R")
+source("src/figure_functions.R")
+source("src/Functions__DisplayItems.R")
 
 # params ------------------------------------------------------------------
 
 graze_levels <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
-PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
+PFTs <- c("Sagebrush", 'C4Pgrass', "C3Pgrass", "PGrass", "Pforb", "Pherb", "Cheatgrass", "Aforb")
 # PFTs for which to plot (herb calculated in code below)
-PFTs2plot <-  c("Sagebrush", "Pherb", "Aherb")
+PFTs2plot <- c(PFTs, "Aherb")
 runs <- c('fire1_eind1_c4grass1_co20')
-
+date <- "20230726"
 # Read in data ------------------------------------------------------------
 
 # selecting which rasters to load
@@ -81,14 +82,12 @@ stopifnot( # confirm adding the matching layers together
             info1_cheat[, c("run2", "type", "RCP", "years")])
 )
 
-r_ahorb <- r2[[info1_cheat$id]] + r2[[info1_aforb$id]]
+r_aherb <- r2[[info1_cheat$id]] + r2[[info1_aforb$id]]
 
-
-
-names(r_ahorb) <- names(r_ahorb) %>% 
+names(r_aherb) <- names(r_aherb) %>% 
   str_replace("Cheatgrass", "Aherb")
 
-r3 <- c(r2, r_ahorb)
+r3 <- c(r2, r_aherb)
 info2 <- create_rast_info(r3, into = into)
 
 # biomass difference raster
@@ -105,12 +104,12 @@ stopifnot( # confirm adding the matching layers together
             info_rdiff_aforb[, c("run2", "type", "RCP", "years")])
 )
 
-rdiff_aforb <- rdiff1[[info_rdiff_cheat$id]] + rdiff1[[info_rdiff_aforb$id]]
+rdiff_aherb <- rdiff1[[info_rdiff_cheat$id]] + rdiff1[[info_rdiff_aforb$id]]
 
-names(rdiff_aforb) <- names(rdiff_aforb) %>% 
-  str_replace("Cheatgrass", "Aforb")
+names(rdiff_aherb) <- names(rdiff_aherb) %>% 
+  str_replace("(Cheatgrass)|(Aforb)", "Aherb")
 
-rdiff2 <- c(rdiff1, rdiff_aforb) 
+rdiff2 <- c(rdiff1, rdiff_aherb) 
 info_rdiff2 <- create_rast_info(rdiff2, into = into) 
 
 # Figures -----------------------------------------------------------------
@@ -125,19 +124,82 @@ info_c1 <- bind_rows(info2, info_rdiff2) %>%
 
 r_c1 <- c(r3, rdiff2) # combined raster
 
-s <- st_as_stars(rdiff2[[1]], ignore_file = TRUE, as_attributes = FALSE)
+
+# maps of biomass and raw difference --------------------------------------
+# One big map on the left of historical biomass, and 4 panels on the left
+# showing the change in biomass uncere multiple RCP*time periods
+info_c_l <- info_c1 %>% 
+  group_by(PFT, run2) %>% 
+  group_split() # split into list
+
+# using cair_pdf so 'delta' symbol printed
+cairo_pdf(paste0("figures/stepwat_maps/sw_maps_bio-rdiff-cref_", date, ".pdf"),
+          width = 11, height = 7, onefile = TRUE)
+for(df in info_c_l){
+  print(df$id[1])
+  bio_id <- df$id[df$type == 'biomass']
+  diff_id <- df$id[df$type != 'biomass']
+  stopifnot(length(diff_id) == 4)
+  
+  r_bio <- r_c1[[bio_id]]
+  s_bio <- st_as_stars(r_bio)
+  r_diff <- r_c1[[diff_id]]
+  
+  
+  range_d <- range(as.numeric(minmax(r_diff)))
+  m <- max(abs(range_d)) # for colour gradient b/ can't sent midpoint
+  title_diff <- "\u0394 Biomass" # delta
+  
+  # plot of biomass
+  p <- plot_map(s_bio, st_geom_state = states,
+           add_coords = TRUE) +
+    ggplot2_map_theme() +
+    scale_fill_gradientn(na.value = 'transparent',
+                          name = lab_bio0,
+                          colors = cols_map_bio(10)) + 
+    add_tag_as_label("Biomass (historical)")
+  
+
+  inset_bio <- inset_densitycountplot(as.numeric(values(r_bio)),
+                                  add_vertical0 = FALSE)
+  
+  p <- (p + inset_element2(inset_bio)) & theme(legend.position = 'bottom')
+  
+  # maps of biomass difference (for each time period)
+  maps_diff1 <- map(diff_id, function(id) {
+    
+    inset <- inset_densitycountplot(as.numeric(values(r_diff[[id]])),
+                           limits = range_d,
+                           add_vertical0 = TRUE)
+    
+    d <- create_rast_info(id, into = into)
+    
+    s <- st_as_stars(r_diff[[id]])
+    map <- plot_map(s, 
+                    st_geom_state = states,
+                    add_coords = TRUE) +
+      ggplot2_map_theme() +
+      scale_fill_gradientn(name = lab_bio1,
+                           limits = c(-m, m),
+                           na.value = 'transparent',
+                           colors = cols_map_bio_d) + 
+      add_tag_as_label(paste0(title_diff, " (",d$RCP,", ",d$years, ")")) 
+    
+    map + inset_element2(inset)
+  })
+  
+  # combining difference maps
+  maps_diff2 <- patchwork::wrap_plots(maps_diff1, nrow = 2,
+                                   guides = 'collect')&
+    theme(legend.position = 'bottom')
+  
+  
+  comb <- p + maps_diff2 +
+    patchwork::plot_annotation(df$PFT[1], 
+                               caption = paste('simulation parameters:', 
+                                               df$run2))
+  print(comb)
+}
 
 
-ggplot() +
-  geom_stars(data = s) +
-  basemap1()
-
-bio_maps1 <- map(info_c1$id[info_c1$type == 'biomass'], function(id) {
-  s <- st_as_stars(r_c1[[id]])
-  ggplot() +
-    geom_stars(data = s)+
-    basemap1()+
-    labs(subtitle = id) +
-    theme(legend.title = element_text())
-})
-bio_maps1
+dev.off()

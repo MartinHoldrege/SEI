@@ -847,7 +847,9 @@ ggplot2_clean_theme <- function() {
       line = ggplot2::element_line(color = line_color),
       rect = ggplot2::element_rect(fill = NA, color = NA),
       text = ggplot2::element_text(color = "black"),
-      axis.ticks = ggplot2::element_line(color = line_color),
+      axis.ticks = ggplot2::element_blank(), # modified by MH
+      axis.text.y = ggplot2::element_blank(),# modified by MH
+      axis.text.x = ggplot2::element_blank(),# modified by MH
       legend.key = ggplot2::element_rect(color = NA, fill = NA),
       #legend.key.height = ggplot2::unit(3, "mm"),
       panel.border = ggplot2::element_rect(color = line_color, fill = NA),
@@ -867,15 +869,17 @@ ggplot2_map_theme <- function(legend_xoffset = 0, legend_yoffset = 0) {
     # remove axis title label
     axis.title = ggplot2::element_blank(),
     # rotate y-axis tick mark labels to be vertical
-    axis.text.y = ggplot2::element_text(angle = 90, hjust = 0.5),
+    axis.ticks = ggplot2::element_blank(), # modified by MH
+    axis.text.y = ggplot2::element_blank(),# modified by MH
+    axis.text.x = ggplot2::element_blank(),# modified by MH
     # remove area around a plot
     plot.margin = ggplot2::margin(0, 0, 0, 0),
     # set "tag" to bold text in top-left corner
     plot.tag = ggplot2::element_text(face = "bold", hjust = 0, vjust = 0),
     plot.tag.position = c(0.1, 0.95),
     # beautify legends: larger font, white background, lower-right corner
-    legend.title = ggplot2::element_text(size = ggplot2::rel(1.25)),
-    legend.text = ggplot2::element_text(size = ggplot2::rel(1.25)),
+    legend.title = ggplot2::element_text(size = ggplot2::rel(1)),
+    legend.text = ggplot2::element_text(size = ggplot2::rel(1)),
     legend.position = c(0.8 + legend_xoffset, 0.4 + legend_yoffset), # lower-right corner of map
     legend.justification = c("left", "top"),
     legend.background = ggplot2::element_rect(fill = "white", linewidth = 0),
@@ -1222,7 +1226,7 @@ inset_densitycountplot <- function(
       # zoom (and not clip) into `limits`
       ggplot2::coord_cartesian(xlim = limits) +
       # beautify plot theme
-      newRR3::ggplot2_clean_theme() +
+      ggplot2_clean_theme() +
       ggplot2::theme(
         # remove most area around a plot (but leave small space for text at x-axis ticks)
         plot.margin = ggplot2::margin(0, 5.5, 0, 5.5),
