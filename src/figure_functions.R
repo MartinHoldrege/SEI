@@ -19,8 +19,8 @@ bbox1 <- sf::st_bbox(c(xmin = -2240000,
 
 # polygons for basemaps ---------------------------------------------------
 
-states <- st_as_sf(spData::us_states) %>% 
-  st_transform(crs = crs_scd)
+states <- sf::st_as_sf(spData::us_states) %>% 
+  sf::st_transform(crs = crs_scd)
 
 # ggplot basemap objects --------------------------------------------------
 
@@ -60,4 +60,3 @@ inset_element2 <- function(x) {
   )
 }
 
-states <- st_transform(spData::us_states, crs_scd)

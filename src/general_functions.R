@@ -191,4 +191,51 @@ create_js_q_curve_code <- function(df, name) {
 }
 
 
+# raster manipulation -----------------------------------------------------
 
+# calculate total annual herbaceous biomass
+calc_aherb <- function(r, into) {
+  info <- create_rast_info(r, into = into)
+  
+  info_cheat <- info %>% 
+    filter(PFT == 'Cheatgrass') %>% 
+    arrange(id)
+  
+  info_aforb <- info %>% 
+    filter(PFT == 'Aforb') %>% 
+    arrange(id)
+  
+  stopifnot( # confirm adding the matching layers together
+    all.equal(info_aforb[, c("run2", "type", "RCP", "years")], 
+              info_cheat[, c("run2", "type", "RCP", "years")])
+  )
+  
+  aherb <- r[[info_cheat$id]] + r[[info_aforb$id]]
+  names(aherb) <- names(aherb) %>% 
+    str_replace("(Cheatgrass)|(Aforb)", "Aherb")
+  
+  out <- c(r, aherb)
+  out
+}
+
+#' calculate the percentile for each cell, based on the other values
+#' in the layer
+#'
+#' @param x spatraster
+#'
+#' @return spatraster with cells replaced by their percentile
+rast2percentile <- function(x) {
+  df <- values(x) %>% 
+    # first calling values keeps the NAs in place
+    as.data.frame()
+  
+  cdfs <- purrr::map(df, ecdf)
+  percentiles <- map2_dfc(cdfs, df, function(f, x) {
+    f(x)
+  }) %>% 
+    as.matrix()
+  
+  out <- x
+  values(out) <- percentiles*100
+  out
+}

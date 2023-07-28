@@ -68,48 +68,16 @@ info_rdiff1 <- create_rast_info(rdiff1, into = into)%>%
 
 # calculate total annual herbacious ---------------------------------------
 
-# raw biomass raster
-info1_cheat <- info1 %>% 
-  filter(PFT == 'Cheatgrass') %>% 
-  arrange(id)
 
-info1_aforb <- info1 %>% 
-  filter(PFT == 'Aforb') %>% 
-  arrange(id)
 
-stopifnot( # confirm adding the matching layers together
-  all.equal(info1_aforb[, c("run2", "type", "RCP", "years")], 
-            info1_cheat[, c("run2", "type", "RCP", "years")])
-)
+# sum cheatgrass and aforb to get total aherb
 
-r_aherb <- r2[[info1_cheat$id]] + r2[[info1_aforb$id]]
-
-names(r_aherb) <- names(r_aherb) %>% 
-  str_replace("Cheatgrass", "Aherb")
-
-r3 <- c(r2, r_aherb)
+# biomass raster
+r3 <- calc_aherb(r2, into = into) 
 info2 <- create_rast_info(r3, into = into)
 
 # biomass difference raster
-info_rdiff_cheat <- info_rdiff1 %>% 
-  filter(PFT == 'Cheatgrass') %>% 
-  arrange(id)
-
-info_rdiff_aforb <- info_rdiff1 %>% 
-  filter(PFT == 'Aforb') %>% 
-  arrange(id)
-
-stopifnot( # confirm adding the matching layers together
-  all.equal(info_rdiff_cheat[, c("run2", "type", "RCP", "years")], 
-            info_rdiff_aforb[, c("run2", "type", "RCP", "years")])
-)
-
-rdiff_aherb <- rdiff1[[info_rdiff_cheat$id]] + rdiff1[[info_rdiff_aforb$id]]
-
-names(rdiff_aherb) <- names(rdiff_aherb) %>% 
-  str_replace("(Cheatgrass)|(Aforb)", "Aherb")
-
-rdiff2 <- c(rdiff1, rdiff_aherb) 
+rdiff2<- calc_aherb(rdiff1, into = into)
 info_rdiff2 <- create_rast_info(rdiff2, into = into) 
 
 # Figures -----------------------------------------------------------------
