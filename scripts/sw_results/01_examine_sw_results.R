@@ -101,7 +101,7 @@ info_c_l <- info_c1 %>%
   group_split() # split into list
 
 # using cair_pdf so 'delta' symbol printed
-cairo_pdf(paste0("figures/stepwat_maps/sw_maps_bio-rdiff-cref_", date, ".pdf"),
+cairo_pdf(paste0("figures/stepwat/sw_maps_bio-rdiff-cref_", date, ".pdf"),
           width = 11, height = 7, onefile = TRUE)
 for(df in info_c_l){
   print(df$id[1])

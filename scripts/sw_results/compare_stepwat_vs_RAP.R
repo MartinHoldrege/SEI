@@ -17,6 +17,8 @@ source("../grazing_effects/src/fig_params.R")
 source("src/paths.R")
 source("src/figure_functions.R")
 source("src/Functions__DisplayItems.R")
+
+
 # read in data ------------------------------------------------------------
 
 # params ------------------------------------------------------------------
@@ -26,7 +28,8 @@ graze_level <- c("grazL" = "Light")
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
 run <- c('fire1_eind1_c4grass1_co20')
 date <- "20230727"
-
+cap1 <- paste0('simulation settings: ', 
+              run, "_", names(graze_level))
 # Read in data ------------------------------------------------------------
 
 # selecting which rasters to load
@@ -96,6 +99,11 @@ sc3a <- vrt(files_sc3)
 names(sc3a) <- "sc3"
 
 
+# climate data ------------------------------------------------------------
+
+cellnums1 <- rast("../grazing_effects/data_processed/interpolation_data/cellnumbers.tif")
+clim_df1 <- read_csv("../grazing_effects/data_processed/interpolation_data/clim_for_interpolation.csv")
+
 # prepare rasters ---------------------------------------------------------
 
 
@@ -144,11 +152,14 @@ perc_sw1 <- rast2percentile(sw6)
 perc_comb1 <- c(perc_cov1, perc_sw1)
 perc_df1 <- as.data.frame(perc_comb1)
 perc_diff1 <- perc_sw1 - perc_cov1
-
+perc_diff_df1 <- as.data.frame(perc_diff1)
+names(perc_diff_df1) <- str_replace(names(perc_diff_df1), "sw_", "")
 
 # Maps percentiles --------------------------------------------------------
 
-# side by side maps of stewpat biomass and RAP/RCMAP cover
+# side by side maps of stewpat biomass and RAP/RCMAP cover percentiles,
+# percentile difference and a scatterplot
+
 PFTnames <- c('sagebrush' = 'sagebrush',  'pfg' = 'perennial grasses and forbs',
              'afg' = 'annual grasses and forbs')
 PFTabbr <- names(PFTnames)
@@ -243,10 +254,9 @@ for (i in seq_along(perc_maps1)) {
   bottom <- xy + (out$diff & theme(legend.position = "right")) 
   comb <- top / bottom +
     patchwork::plot_annotation(PFTnames[pft], 
-                               caption = paste('simulation settings:', 
-                                               run))
+                               caption = cap1)
 
-  jpeg(paste0("figures/stepwat_maps/percentiles_sw_vs_RAP_", pft, "_", run, 
+  jpeg(paste0("figures/stepwat/percentiles_sw_vs_RAP_", pft, "_", run, 
               "_", date, ".jpeg"),
        width = 11, height = 7, units = 'in', res = 600)
   
@@ -256,5 +266,64 @@ for (i in seq_along(perc_maps1)) {
 }
 
 
+# prepare climate data ----------------------------------------------------
 
 
+cell_df <- values(cellnums1) %>% 
+  as.data.frame()
+names(cell_df) <- "cellnumber"
+
+clim_df2 <- cell_df %>% 
+  left_join(clim_df1, by = "cellnumber") %>% 
+  select(-site_id)
+
+clim1 <- rast(cellnums1, nlyrs = ncol(clim_df2))
+
+values(clim1) <- as.matrix(clim_df2)
+names(clim1) <- names(clim_df2)
+
+clim2 <- crop(clim1, sw6) %>% 
+  mask(sw6[[1]])
+
+clim_df3 <- as.data.frame(clim2) %>% 
+  select(bio1, bio12, bio15, bio18) %>% 
+  rename("MAT" = "bio1",
+         "MAP" = "bio12",
+         "ppt_cv_intra" = "bio15",
+         "ppt_warm_quart" = "bio18")
+
+# compare climate data to percentile difference ---------------------------
+
+stopifnot(row.names(clim_df3) == row.names(perc_diff_df1))
+
+clim_df4 <- bind_cols(clim_df3, perc_diff_df1) 
+
+clim_df5 <- clim_df4 %>% 
+  pivot_longer(cols = all_of(names(clim_df3)),
+               names_to = "climate_var")
+
+clim_df_samp <- clim_df5 %>% 
+  slice_sample(n = 1e5)
+
+clim_figs1 <- map(PFTabbr, function(pft) {
+  ggplot(data = clim_df_samp, 
+         aes(x  = .data[['value']], y = .data[[pft]], )) +
+    geom_point(alpha = 0.05, size = 0.7) +
+    geom_smooth() +
+    facet_wrap(~climate_var, scales = "free_x") +
+    labs(x = "Climate variable",
+         y = "Percentile difference (STEPWAT - RAP/RCMAP)",
+         subtitle = "Percentile difference by climate variable",
+         title = PFTnames[pft],
+         caption = cap1) +
+    theme_classic()
+})
+
+
+pdf(paste0("figures/stepwat/percentile_diffs_vs_climate_", run, 
+            "_", date, ".pdf"),
+     width = 8, height = 7)
+
+clim_figs1
+
+dev.off()
