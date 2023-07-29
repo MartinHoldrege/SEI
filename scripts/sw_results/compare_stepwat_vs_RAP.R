@@ -285,6 +285,7 @@ names(clim1) <- names(clim_df2)
 clim2 <- crop(clim1, sw6) %>% 
   mask(sw6[[1]])
 
+compareGeom(clim1, sw6)
 clim_df3 <- as.data.frame(clim2) %>% 
   select(bio1, bio12, bio15, bio18) %>% 
   rename("MAT" = "bio1",
