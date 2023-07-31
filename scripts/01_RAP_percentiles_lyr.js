@@ -65,4 +65,11 @@ print(rcmapSmooth1);
 var comb1 = rapSmooth2.addBands(rcmapSmooth1);
 
 // write output -----------------------------------------------
-
+var fileName = 'cover_rap-rcmap_' + yearStart + '_' + yearEnd + '_' + resolution + 'm_' + radius + 'msmooth_' + dateString;
+  Export.image.toAsset({ 
+    image: comb1, //single image with multiple bands
+    assetId: SEI.path + 'cover/' +  fileName,
+    description: fileName,
+    maxPixels: 1e13, scale: resolution, region: SEI.region,
+    crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+  })
