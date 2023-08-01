@@ -27,7 +27,7 @@ graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
 run <- c('fire1_eind1_c4grass1_co20')
-date <- "20230727"
+date <- "20230801"
 cap1 <- paste0('simulation settings: ', 
               run, "_", names(graze_level))
 # Read in data ------------------------------------------------------------
@@ -61,59 +61,28 @@ sw2 <- sw1[[info1$id]]
 # *RAP/RCMAP --------------------------------------------------------------
 
 # smoothed cover for the 2017-2020 time period. These are the layers
-# from which 
-files_cov <- list.files(
-  path = file.path(path_large, "SEI_rasters/WAFWA30mdata"),
-  pattern = "2017_2020.*560m",
-  full.names = TRUE
-)
+# from Dave T. that I aggregated to 1km in the 00_aggregate_cover.R script
+cov3 <- rast("data_processed/cover/cover_SEIv11_2017_2020_1km_560msmooth_20211228.tif")
 
-rap_aherb1 <- files_cov %>% 
-  str_subset("annual") %>% 
-  vrt()
+# historical median and 95 percentile cover (i.e. over years), smoothed over 2km, taking the neighborhood
+# median and 95th percentile, respectively. created in the 01_RAP_percentiles_lyr.js
 
-cov_pft <- c("sagebrush" = "sage", "pfg" = "perennial", "afg" = "annual")
-
-# list of rasters
-cov_l1 <- map2(cov_pft, names(cov_pft), function(pft, pft_name) {
-  out <- files_cov %>% 
-    str_subset(pft) %>% 
-    vrt()
-  names(out) <- pft_name
-  out
-})
-
-cov1 <- rast(cov_l1)
-
-
-
-# *SEI classification -----------------------------------------------------
-# also using this as a mask
-files_sc3 <- list.files(
-  path = file.path(path_large, "SEI_rasters/WAFWA30mdata"),
-  pattern = "2017_2020.*Q5sc3",
-  full.names = TRUE
-)
-
-sc3a <- vrt(files_sc3)
-names(sc3a) <- "sc3"
+smooth <- 2000 # how big the neighborhood was
+year_start <- 1986
+year_end <- 2021
+perc1 <- rast(paste0("data_processed/cover/cover_rap-rcmap_", 
+                     year_start, "_", year_end, "_1000m_",
+                     smooth, "msmooth_20230728.tif"))
 
 
 # climate data ------------------------------------------------------------
 
 cellnums1 <- rast("../grazing_effects/data_processed/interpolation_data/cellnumbers.tif")
-clim_df1 <- read_csv("../grazing_effects/data_processed/interpolation_data/clim_for_interpolation.csv")
+clim_df1 <- read_csv("../grazing_effects/data_processed/interpolation_data/clim_for_interpolation.csv",
+                     show_col_types = FALSE)
 
 # prepare rasters ---------------------------------------------------------
 
-
-# * cover -----------------------------------------------------------------
-
-# masking before projecting to a coarser resolution, so that only rangeland
-# 30m pixels are aggregated into 1km grid-cells. 
-cov2 <- terra::mask(cov1, sc3a, maskvalues = c(NA, 0))
-cov3 <- project(cov2, sw2[[1]], method = 'average', threads = TRUE)
-names(cov3) <- paste0(c("cov_", "cov_", "cov_"), names(cov2))
 # *stepwat ----------------------------------------------------------------
 
 # calculate annual herbaceous
@@ -127,49 +96,78 @@ names(sw4) <- names(sw3) %>%
   str_extract('[[:alpha:]]+(?=_biomass)')  
 
 sw5 <- sw4[[c('Sagebrush', 'Pherb', 'Aherb')]]
-names(sw5) <- paste0("sw_", c("sagebrush", "pfg", "afg"))
+PFTabbr <- c("sagebrush", "pfg", "afg")
+names(PFTabbr) <- PFTabbr
+
+names(sw5) <- paste0("sw_", PFTabbr)
 
 sw6 <- mask(sw5, cov3[[1]]) # so rasters have the same masks
+
+
+# * percentile cover ------------------------------------------------------
+
+names(perc1) <- names(perc1) %>% 
+  str_to_lower %>% 
+  paste0('cov_', .)
+
+perc2 <- project(perc1, sw6[[1]], threads = TRUE)
+
+perc3 <- mask(perc2, sw6[[1]])
+sw6 <- mask(sw6, perc3[[1]])
 cov4 <- mask(cov3, sw6[[1]])
 
 # check cells in both  rasters are identical
-stopifnot(cells(sw6[[1]]) == cells(cov4[[1]]))
+stopifnot(cells(sw6[[1]]) == cells(cov4[[1]]) &  
+                                     cells(sw6[[1]])== cells(perc3[[1]]))
 
 # combine dataframes ------------------------------------------------------
 
-sw_df1 <- as.data.frame(sw6)
-cov_df1 <- as.data.frame(cov4)
-nrow(cov_df1); nrow(sw_df1)
-stopifnot(row.names(sw_df1) == row.names(cov_df1))
-
-comb_df1 <- bind_cols(sw_df1, cov_df1)
+comb_r1 <- c(sw6, cov4, perc3)
+comb_df1 <- as.data.frame(comb_r1)
 
 
 # percentiles -------------------------------------------------------------
 
-perc_cov1 <- rast2percentile(cov4)
-perc_sw1 <- rast2percentile(sw6)
-perc_comb1 <- c(perc_cov1, perc_sw1)
+perc_comb1 <- rast2percentile(comb_r1)
 perc_df1 <- as.data.frame(perc_comb1)
-perc_diff1 <- perc_sw1 - perc_cov1
+perc_diff1 <- perc_comb1[[paste0('sw_', PFTabbr)]] - perc_comb1[[paste0('cov_', PFTabbr)]]
+names(perc_diff1) <- PFTabbr
 perc_diff_df1 <- as.data.frame(perc_diff1)
-names(perc_diff_df1) <- str_replace(names(perc_diff_df1), "sw_", "")
 
-# Maps percentiles --------------------------------------------------------
+
+# same rasters but percentile based cover
+pcents <- c(95, 95, 50) # percentiles calculated
+names_perc <- paste0('cov_', PFTabbr, "_p", c(95, 95, 50))
+names(names_perc) <- PFTabbr
+
+# for figure captions
+perc_descript <- paste0('Cover summarized by calculating the ', pcents, 
+                     ' percentile through time \n(', year_start, "-", year_end,
+                     ') and space (', smooth/1000, ' km radius)')
+names(perc_descript) <- PFTabbr
+
+perc_diffp1 <- perc_comb1[[paste0('sw_', PFTabbr)]] - perc_comb1[[names_perc]]
+names(perc_diffp1) <- PFTabbr
+perc_diff_dfp1 <- as.data.frame(perc_diffp1)
+
+
+# Maps percentiles -------------------------------------------------
 
 # side by side maps of stewpat biomass and RAP/RCMAP cover percentiles,
 # percentile difference and a scatterplot
 
 PFTnames <- c('sagebrush' = 'sagebrush',  'pfg' = 'perennial grasses and forbs',
              'afg' = 'annual grasses and forbs')
-PFTabbr <- names(PFTnames)
-names(PFTabbr) <- PFTabbr
-# lists of rasters needed in the next steps
+
+
+# lists of rasters needed in the next steps (and also in the next section)
 perc_l1 <- map(PFTabbr, function(pft) {
   out <- list()
   out$sw <- perc_comb1[[paste0('sw_', pft)]]
   out$cov <- perc_comb1[[paste0('cov_', pft)]]
-  out$diff <- perc_diff1[[paste0('sw_', pft)]]
+  out$covp <- perc_comb1[[names_perc[pft]]]
+  out$diff <- perc_diff1[[pft]]
+  out$diffp <- perc_diffp1[[pft]]
   out
 })
 
@@ -185,6 +183,10 @@ perc_maps1 <- modify_depth(perc_l1, .depth = 2, .f = function(r) {
   plot_map(xstars = s, st_geom_state = states, add_coords = TRUE) +
     ggplot2_map_theme() 
 }) 
+
+
+# * SEI cover -------------------------------------------------------------
+# 560 m smoothed cover from 2017-2022 (i.e. what is used for calculating SEI)
 
 set.seed(123)
 perc_df2 <- perc_df1 %>% 
@@ -266,6 +268,84 @@ for (i in seq_along(perc_maps1)) {
 }
 
 
+# * historic 2km cover-------------------------------------------------
+
+# RAP/RCMAP cover calculated
+# by taking a the percentile through time and through space (e.g. 95th percentile)
+
+# scatter plots of percentiles
+perc_scatterp1 <- map(PFTabbr, function(pft) {
+  
+  x <- names_perc[pft]
+  y <- paste0('sw_', pft)
+  
+  ggplot(perc_df2, aes(.data[[x]], .data[[y]])) +
+    geom_point(alpha = 0.01, size = 0.7) +
+    geom_smooth() +
+    labs(x = "RAP/RCMAP percentile",
+         y = "STEPWAT percentile") +
+    theme_classic()
+})
+
+
+for (i in seq_along(perc_maps1)) {
+  
+  x <- perc_maps1[[i]] # maps
+  pft <- names(perc_maps1)[[i]]
+  insets <- perc_inset[[i]] # insets for map
+  xy <- perc_scatterp1[[i]] # scatterplots
+  print(pft)
+  # adding labels/colors to the main maps
+  
+  x$sw <- x$sw +
+    scale_fill_gradientn(na.value = 'transparent',
+                         name = "Percentile",
+                         limits = c(0, 100),
+                         colors = cols_map_bio(10)) + 
+    add_tag_as_label("STEPWAT biomass percentile")
+  
+  x$covp <- x$covp +
+    scale_fill_gradientn(na.value = 'transparent',
+                         name = "Percentile",
+                         limits = c(0, 100),
+                         colors = cols_map_bio(10)) + 
+    add_tag_as_label("RAP/RCMAP cover percentile")
+  
+  x$diffp <- x$diffp +
+    scale_fill_gradientn(na.value = 'transparent',
+                         name = "Percentile difference",
+                         limits = c(-100, 100),
+                         colors = cols_map_bio_d) + 
+    add_tag_as_label("STEPWAT - RAP/RCMAP percentile")
+  
+  # adding the insets in
+  out <- map2(insets, x, function(inset, main_map) {
+    main_map +
+      inset_element2(inset)
+  })
+  
+  # top row of maps
+  top <-  patchwork::wrap_plots(out[c('sw', 'covp')], nrow = 1,
+                                guides = 'collect') &
+    theme(legend.position = 'right')
+  
+  bottom <- xy + (out$diffp & theme(legend.position = "right")) 
+  comb <- top / bottom +
+    patchwork::plot_annotation(PFTnames[pft], 
+                               caption = paste(perc_descript[[pft]], 
+                                                "\n", cap1))
+  
+  jpeg(paste0("figures/stepwat/percentiles_sw_vs_historic-RAP_", pft, "_", run, 
+              "_", date, ".jpeg"),
+       width = 11, height = 7, units = 'in', res = 600)
+  
+  print(comb)
+  
+  dev.off()
+}
+
+
+
 # prepare climate data ----------------------------------------------------
 
 
@@ -297,7 +377,7 @@ clim_df3 <- as.data.frame(clim2) %>%
 
 stopifnot(row.names(clim_df3) == row.names(perc_diff_df1))
 
-clim_df4 <- bind_cols(clim_df3, perc_diff_df1) 
+clim_df4 <- bind_cols(clim_df3, perc_diff_dfp1) 
 
 clim_df5 <- clim_df4 %>% 
   pivot_longer(cols = all_of(names(clim_df3)),
@@ -316,7 +396,8 @@ clim_figs1 <- map(PFTabbr, function(pft) {
          y = "Percentile difference (STEPWAT - RAP/RCMAP)",
          subtitle = "Percentile difference by climate variable",
          title = PFTnames[pft],
-         caption = cap1) +
+         caption = paste(perc_descript[[pft]], 
+                         "\n", cap1)) +
     theme_classic()
 })
 
