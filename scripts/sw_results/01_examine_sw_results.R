@@ -15,6 +15,7 @@ source("../grazing_effects/src/general_functions.R")
 source("../grazing_effects/src/fig_params.R")
 source("src/figure_functions.R")
 source("src/Functions__DisplayItems.R")
+source("src/general_functions.R")
 
 # params ------------------------------------------------------------------
 
@@ -23,8 +24,8 @@ graze_levels <- c("grazL" = "Light")
 PFTs <- c("Sagebrush", 'C4Pgrass', "C3Pgrass", "PGrass", "Pforb", "Pherb", "Cheatgrass", "Aforb")
 # PFTs for which to plot (herb calculated in code below)
 PFTs2plot <- c(PFTs, "Aherb")
-runs <- c('fire1_eind1_c4grass1_co20')
-date <- "20230726"
+runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
+date <- "20230802"
 # Read in data ------------------------------------------------------------
 
 # selecting which rasters to load
@@ -113,8 +114,22 @@ for(df in info_c_l){
   s_bio <- st_as_stars(r_bio)
   r_diff <- r_c1[[diff_id]]
   
+  # ids for all runs for this PFT
+  bio_id_all <- info_c1 %>% 
+    filter(df$PFT[[1]] == PFT,
+           type == "biomass") %>% 
+    pull(id)
   
-  range_d <- range(as.numeric(minmax(r_diff)))
+  diff_id_all <- info_c1 %>% 
+    filter(df$PFT[[1]] == PFT,
+           type != "biomass") %>% 
+    pull(id)
+  
+  # want to get range across run types so that figures will
+  # have comparable colors across runs for given pft
+  range_b <- range(as.numeric(minmax(r_c1[[bio_id_all]])))
+  range_d <- range(as.numeric(minmax(r_c1[[diff_id_all]])))
+  
   m <- max(abs(range_d)) # for colour gradient b/ can't sent midpoint
   title_diff <- "\u0394 Biomass" # delta
   
@@ -123,6 +138,7 @@ for(df in info_c_l){
            add_coords = TRUE) +
     ggplot2_map_theme() +
     scale_fill_gradientn(na.value = 'transparent',
+                         limits = range_b,
                           name = lab_bio0,
                           colors = cols_map_bio(10)) + 
     add_tag_as_label("Biomass (historical)")
@@ -164,10 +180,11 @@ for(df in info_c_l){
   
   comb <- p + maps_diff2 +
     patchwork::plot_annotation(df$PFT[1], 
-                               caption = paste('simulation parameters:', 
+                               caption = paste('simulation settings:', 
                                                df$run2))
   print(comb)
 }
 
 
 dev.off()
+
