@@ -98,8 +98,10 @@ names(sw4) <- names(sw3) %>%
 sw5 <- sw4[[c('Sagebrush', 'Pherb', 'Aherb')]]
 PFTabbr <- c("sagebrush", "pfg", "afg")
 names(PFTabbr) <- PFTabbr
+names_sw <- paste0('sw_', PFTabbr)
+names(names_sw) <- PFTabbr
 
-names(sw5) <- paste0("sw_", PFTabbr)
+names(sw5) <- names_sw
 
 sw6 <- mask(sw5, cov3[[1]]) # so rasters have the same masks
 
@@ -130,7 +132,7 @@ comb_df1 <- as.data.frame(comb_r1)
 
 perc_comb1 <- rast2percentile(comb_r1)
 perc_df1 <- as.data.frame(perc_comb1)
-perc_diff1 <- perc_comb1[[paste0('sw_', PFTabbr)]] - perc_comb1[[paste0('cov_', PFTabbr)]]
+perc_diff1 <- perc_comb1[[names_sw]] - perc_comb1[[paste0('cov_', PFTabbr)]]
 names(perc_diff1) <- PFTabbr
 perc_diff_df1 <- as.data.frame(perc_diff1)
 
@@ -138,15 +140,16 @@ perc_diff_df1 <- as.data.frame(perc_diff1)
 # same rasters but percentile based cover
 pcents <- c(95, 95, 50) # percentiles calculated
 names_perc <- paste0('cov_', PFTabbr, "_p", c(95, 95, 50))
+
 names(names_perc) <- PFTabbr
 
 # for figure captions
 perc_descript <- paste0('Cover summarized by calculating the ', pcents, 
-                     ' percentile through time \n(', year_start, "-", year_end,
+                     'th percentile through time \n(', year_start, "-", year_end,
                      ') and space (', smooth/1000, ' km radius)')
 names(perc_descript) <- PFTabbr
 
-perc_diffp1 <- perc_comb1[[paste0('sw_', PFTabbr)]] - perc_comb1[[names_perc]]
+perc_diffp1 <- perc_comb1[[names_sw]] - perc_comb1[[names_perc]]
 names(perc_diffp1) <- PFTabbr
 perc_diff_dfp1 <- as.data.frame(perc_diffp1)
 
@@ -268,6 +271,7 @@ for (i in seq_along(perc_maps1)) {
 }
 
 
+
 # * historic 2km cover-------------------------------------------------
 
 # RAP/RCMAP cover calculated
@@ -345,6 +349,46 @@ for (i in seq_along(perc_maps1)) {
 }
 
 
+# SW & RAP biomass maps ---------------------------------------------------
+# side by side maps SW biomass and RAP (historic) biomass
+
+pdf(paste0("figures/stepwat/sw_and_rap_bio-maps_", run, 
+            "_", date, ".pdf"),
+     width = 11, height = 7)
+
+for (pft in PFTabbr) {
+
+  rsw <- comb_r1[[names_sw[pft]]]
+  rp <- comb_r1[[names_perc[pft]]]
+  
+  msw <-  plot_map(xstars = stars::st_as_stars(rsw), 
+                   st_geom_state = states, add_coords = TRUE) +
+    ggplot2_map_theme() +
+    scale_fill_gradientn(na.value = 'transparent',
+                         name = lab_bio0,
+                         colors = cols_map_bio(10)) + 
+    add_tag_as_label("STEPWAT biomass") +
+    inset_element2(inset_densitycountplot(as.numeric(values(rsw)), 
+                                          add_vertical0 = FALSE))
+    
+  mp <- plot_map(xstars = stars::st_as_stars(rp), 
+                 st_geom_state = states, add_coords = TRUE) +
+    ggplot2_map_theme() +
+    scale_fill_gradientn(na.value = 'transparent',
+                         name = "Cover",
+                         colors = cols_map_bio(10)) + 
+    add_tag_as_label("RAP/RCMAP cover") +
+    inset_element2(inset_densitycountplot(as.numeric(values(rp)), 
+                                          add_vertical0 = FALSE))
+    
+    
+  tmp <- (msw + mp) +
+    patchwork::plot_annotation(PFTnames[pft], 
+                               caption = paste(perc_descript[[pft]], 
+                                               "\n", cap1))
+  print(tmp)
+}
+dev.off()
 
 # prepare climate data ----------------------------------------------------
 
@@ -406,6 +450,8 @@ pdf(paste0("figures/stepwat/percentile_diffs_vs_climate_", run,
             "_", date, ".pdf"),
      width = 8, height = 7)
 
-clim_figs1
+for (fig in clim_figs1) {
+  print(fig)
+}
 
 dev.off()
