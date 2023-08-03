@@ -24,7 +24,9 @@ graze_levels <- c("grazL" = "Light")
 PFTs <- c("Sagebrush", 'C4Pgrass', "C3Pgrass", "PGrass", "Pforb", "Pherb", "Cheatgrass", "Aforb")
 # PFTs for which to plot (herb calculated in code below)
 PFTs2plot <- c(PFTs, "Aherb")
-runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
+runs <- c('fire0_eind1_c4grass1_co20',
+          'fire1_eind1_c4grass1_co20', 
+          'fire1_eind1_c4grass1_co21')
 date <- "20230802"
 # Read in data ------------------------------------------------------------
 
