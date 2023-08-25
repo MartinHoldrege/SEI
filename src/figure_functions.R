@@ -22,6 +22,17 @@ bbox1 <- sf::st_bbox(c(xmin = -2240000,
 states <- sf::st_as_sf(spData::us_states) %>% 
   sf::st_transform(crs = crs_scd)
 
+
+# label functions ---------------------------------------------------------
+
+rcp_label <- function(rcp, years) {
+  if (rcp == "Current") {
+    "(Historical)"
+  } else {
+    paste0("(",rcp,", ",years, ")")
+  }
+}
+
 # ggplot basemap objects --------------------------------------------------
 
 # basemap for ggplot maps
@@ -60,3 +71,38 @@ inset_element2 <- function(x) {
   )
 }
 
+# this function relies on 
+# source("src/Functions__DisplayItems.R") (Daniels functions)
+plot_map_inset <- function(r,
+                           colors = colors,
+                           tag_label = "",
+                           scale_name = NULL,
+                           limits = NULL,
+                           add_vertical0 = FALSE
+)  {
+  
+  
+  limits_inset <- if(is.null(limits))  {
+    c(NA, NA)
+  }  else 
+    limits
+  
+  inset <- inset_densitycountplot(as.numeric(values(r)),
+                                  limits = limits_inset,
+                                  add_vertical0 = add_vertical0)
+  
+  s <- st_as_stars(r)
+  
+  map <- plot_map(s, 
+                  st_geom_state = states,
+                  add_coords = TRUE) +
+    ggplot2_map_theme() +
+    scale_fill_gradientn(na.value = 'transparent',
+                         limits = limits,
+                         name = scale_name,
+                         colors = colors) +
+  add_tag_as_label(tag_label) 
+  
+  map + inset_element2(inset)
+  
+}

@@ -11,6 +11,7 @@
 library(terra)
 library(tidyverse)
 library(stars)
+library(patchwork)
 source("../grazing_effects/src/general_functions.R")
 source("../grazing_effects/src/fig_params.R")
 source("src/figure_functions.R")
@@ -27,7 +28,9 @@ PFTs2plot <- c(PFTs, "Aherb")
 runs <- c('fire0_eind1_c4grass1_co20',
           'fire1_eind1_c4grass1_co20', 
           'fire1_eind1_c4grass1_co21')
-date <- "20230802"
+date <- "20230822"
+
+
 # Read in data ------------------------------------------------------------
 
 # selecting which rasters to load
@@ -36,7 +39,6 @@ path_r <- "../grazing_effects/data_processed/interpolated_rasters"
 
 
 # * median biomass (across GCMs) --------------------------------------------
-
 
 paths <- list.files(path_r, full.names = TRUE,
                     pattern = 'bio_future_median_across_GCMs.tif') %>% 
@@ -67,7 +69,10 @@ rdiff1 <- rast(paths_rdiff)
 
 info_rdiff1 <- create_rast_info(rdiff1, into = into)%>% 
   filter(graze %in% graze_levels,
-         PFT %in% PFTs)
+         PFT %in% PFTs) %>% 
+  # for exploratory reasons just looking at the most and least
+  # extreme scenarios
+  filter_clim_extremes()
 
 # calculate total annual herbacious ---------------------------------------
 
@@ -87,18 +92,18 @@ info_rdiff2 <- create_rast_info(rdiff2, into = into)
 
 # combining difference and absolute biomass
 info_c1 <- bind_rows(info2, info_rdiff2) %>% 
-  filter((type == "biomass" & RCP == "Current")|
-           (type != "biomass" & RCP != "Current"),
-         PFT %in% PFTs2plot) %>% 
+  filter_clim_extremes() %>% 
+  filter(PFT %in% PFTs2plot) %>% 
   mutate(type = fct_rev(factor(type))) %>% 
-  arrange(run, PFT, type, RCP, years)
+  arrange(run, PFT, RCP, type, years)
 
 r_c1 <- c(r3, rdiff2) # combined raster
 
 
 # maps of biomass and raw difference --------------------------------------
 # One big map on the left of historical biomass, and 4 panels on the left
-# showing the change in biomass uncere multiple RCP*time periods
+# showing 2 future time periods and for each time period 1 map shows
+# biomass the other shows delta biomass
 info_c_l <- info_c1 %>% 
   group_by(PFT, run2) %>% 
   group_split() # split into list
@@ -110,12 +115,9 @@ for(df in info_c_l){
   print(df$id[1])
   bio_id <- df$id[df$type == 'biomass']
   diff_id <- df$id[df$type != 'biomass']
-  stopifnot(length(diff_id) == 4)
-  
-  r_bio <- r_c1[[bio_id]]
-  s_bio <- st_as_stars(r_bio)
-  r_diff <- r_c1[[diff_id]]
-  
+  stopifnot(length(bio_id) == 3)
+  stopifnot(length(diff_id) == 2)
+
   # ids for all runs for this PFT
   bio_id_all <- info_c1 %>% 
     filter(df$PFT[[1]] == PFT,
@@ -135,56 +137,43 @@ for(df in info_c_l){
   m <- max(abs(range_d)) # for colour gradient b/ can't sent midpoint
   title_diff <- "\u0394 Biomass" # delta
   
-  # plot of biomass
-  p <- plot_map(s_bio, st_geom_state = states,
-           add_coords = TRUE) +
-    ggplot2_map_theme() +
-    scale_fill_gradientn(na.value = 'transparent',
-                         limits = range_b,
-                          name = lab_bio0,
-                          colors = cols_map_bio(10)) + 
-    add_tag_as_label("Biomass (historical)")
-  
-
-  inset_bio <- inset_densitycountplot(as.numeric(values(r_bio)),
-                                  add_vertical0 = FALSE)
-  
-  p <- (p + inset_element2(inset_bio)) & theme(legend.position = 'bottom')
-  
-  # maps of biomass difference (for each time period)
-  maps_diff1 <- map(diff_id, function(id) {
-    
-    inset <- inset_densitycountplot(as.numeric(values(r_diff[[id]])),
-                           limits = range_d,
-                           add_vertical0 = TRUE)
+  # plots of biomass
+  maps_bio1 <- map(bio_id, function(id) {
     
     d <- create_rast_info(id, into = into)
     
-    s <- st_as_stars(r_diff[[id]])
-    map <- plot_map(s, 
-                    st_geom_state = states,
-                    add_coords = TRUE) +
-      ggplot2_map_theme() +
-      scale_fill_gradientn(name = lab_bio1,
-                           limits = c(-m, m),
-                           na.value = 'transparent',
-                           colors = cols_map_bio_d) + 
-      add_tag_as_label(paste0(title_diff, " (",d$RCP,", ",d$years, ")")) 
+    plot_map_inset(r = r_c1[[id]],
+                   colors = cols_map_bio(10),
+                   tag_label = paste("Biomass", rcp_label(d$RCP, d$years)),
+                   limits = range_b,
+                   scale_name = lab_bio0)
     
-    map + inset_element2(inset)
+  })
+
+  # maps of biomass difference (for each time period)
+  maps_diff1 <- map(diff_id, function(id) {
+
+    d <- create_rast_info(id, into = into)
+    
+    plot_map_inset(r = r_c1[[id]],
+                   colors = cols_map_bio_d,
+                   tag_label = paste(title_diff, rcp_label(d$RCP, d$years)),
+                   limits = c(-m, m),
+                   scale_name = lab_bio1)
+
   })
   
-  # combining difference maps
-  maps_diff2 <- patchwork::wrap_plots(maps_diff1, nrow = 2,
-                                   guides = 'collect')&
+  # combining the plots
+  p <- maps_bio1[[1]] + ((maps_bio1[[2]] + maps_diff1[[1]])/(maps_bio1[[3]] + maps_diff1[[2]])) 
+  
+  p2 <- (p + plot_layout(guides = 'collect'))&
     theme(legend.position = 'bottom')
   
-  
-  comb <- p + maps_diff2 +
+  p3 <- p2+
     patchwork::plot_annotation(df$PFT[1], 
                                caption = paste('simulation settings:', 
                                                df$run2))
-  print(comb)
+  print(p3)
 }
 
 

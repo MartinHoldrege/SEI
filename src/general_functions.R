@@ -239,3 +239,5 @@ rast2percentile <- function(x) {
   values(out) <- percentiles*100
   out
 }
+
+
