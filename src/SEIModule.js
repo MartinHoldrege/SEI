@@ -331,8 +331,27 @@ exports.mask = rangeMask.eq(0)
   .clip(biome);
 
 // misc datasets commonly used other scripts--so just defining here
+
 // polygons outlining the 3 regions
-exports.WAFWAecoregions = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
+// here adding a 'ecoregion' name to the ecoregion featurecollection for
+// easier subsetting
+var ecoregions1 = ee.FeatureCollection(path + "WAFWAecoregionsFinal"); // provided by DT
+var ecoregionDict = ee.Dictionary({'00000000000000000000': 'GreatBasin',
+  '00000000000000000001': 'Intermountain',
+  '00000000000000000002': 'Plains'});
+
+var ecoregions2 = ecoregions1.map(function(x) {
+  var feat = ee.Feature(x);
+  var index = feat.get("system:index");
+  var region = ecoregionDict.values(ee.List([ee.String(index)])); // use dictionary as a lookup table
+  // region is a list of length 1
+  var out = feat.set('ecoregion', ee.String(region.get(0))); // set ecoregion property
+  return out;
+});
+
+// Map.addLayer(ecoregions2.filter(ee.Filter.eq('ecoregion', 'Intermountain')), {}, 'Plains')
+  
+exports.WAFWAecoregions = ecoregions2;
 
 // human modification dataset
 exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebrush');
@@ -341,3 +360,15 @@ exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebru
 // For setting the projection (albers conical equal area)
 exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
 
+// SEI raster from Theobald for current time period
+var curYearEnd= 2018;
+exports.curYearStart = curYearEnd;
+var curYearStart = curYearEnd - 3;
+exports.curYearStart = curYearStart;
+exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + curYearStart + '_' + curYearEnd + '_90_20230322');
+
+// GCMs
+exports.GCMList = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
+      'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4'];
+      
+      
