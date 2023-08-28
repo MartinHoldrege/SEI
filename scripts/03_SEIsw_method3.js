@@ -48,7 +48,6 @@ var mask = SEI.mask;
 var imageVisQ = {"opacity":1,"min":0.1,"max":1.0,"palette":['9b9992','f1eb38','ff7412','d01515','521203']};
 var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"palette":["e7ed8b","23b608","107a0e","082b08"]};
 
-Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
 
 // current SEI version 3 from Theobald, also contains smoothed cover
 var cur = SEI.cur;
@@ -78,12 +77,11 @@ for (var j=0; j<RCPList.length; j++) {
   // masking so when take max only taking max of appropriate pixels
     .updateMask(mask);
   
-  // max biomass values of each pft. 
-  var swMax = swCur1.reduceRegion({
-    reducer: ee.Reducer.max(),
-    geometry: region,
-    scale: 1000 // this is the resolution of the underlying data
-  });
+  var swCurLocalMax = swCur1
+    .reduceNeighborhood(ee.Reducer.max(),ee.Kernel.circle(radiusMax, 'meters'),null, false);
+    
+  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal')
+  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max')
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
@@ -109,12 +107,12 @@ for (var j=0; j<RCPList.length; j++) {
     // calculate scaled percent change in stepwat biomass
     // (future- current/(max current)) + 1
     // as in Dohert et al 2022
-    var delta = sw1.subtract(swCur1); // diffierence between future and current
-    
+    var deltaS = sw1.subtract(swCur1).divide(swCurLocalMax); // diffierence between future and current, divided by local max
+     
     // now dividing by max and adding 1
-    var deltaSAnnual = delta.select('afg').divide(ee.Number(swMax.values(['afg']).get(0))).add(1);
-    var deltaSPerennial = delta.select('pfg').divide(ee.Number(swMax.values(['pfg']).get(0))).add(1);
-    var deltaSSage = delta.select('sage').divide(ee.Number(swMax.values(['sage']).get(0))).add(1);
+    var deltaSAnnual = deltaS.select('afg');
+    var deltaSPerennial = deltaS.select('pfg');
+    var deltaSSage = deltaS.select('sage');
     
     /**
      * Multiply smoothed cover data from rap by stepwat scaled percent change. 
