@@ -210,7 +210,7 @@ exports.repeatelemList = function(elemList, nList) {
  */
 exports.readImages2Bands = function(genericPath, nameList, combineRename) {
     sw1 = ee.Image(0);
-    for (var i=0; i<nameList.length(); i++) {
+    for (var i=0; i<nameList.length; i++) {
       var name = nameList[i];
       var newPath = genericPath.replace('ZZZZ', name);
       var image = ee.Image(newPath)
