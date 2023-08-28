@@ -208,16 +208,37 @@ exports.repeatelemList = function(elemList, nList) {
  * the file path
  * @ returns an image where each band has a name from nameList
  */
-exports.readImages2Bands = function(genericPath, nameList) {
-    out = ee.Image(0);
+exports.readImages2Bands = function(genericPath, nameList, combineRename) {
+    sw1 = ee.Image(0);
     for (var i=0; i<nameList.length; i++) {
       var name = nameList[i];
       var newPath = genericPath.replace('ZZZZ', name);
       var image = ee.Image(newPath)
         .rename(name);
         
-      var out = out.addBands(image);
+      var sw1 = out.addBands(image);
     
+    }
+    // set default to true;
+    if (combineRename === undefined || combineRename === null){
+      var combineRename = true;
+    }
+    if(combineRename){
+      var annual = sw1.select('Aforb')
+        .add(sw1.select('Cheatgrass'))
+        .rename('afg');
+        
+      // perennial forb and grass aboveground biomass (simulated)
+      var perennial = sw1.select('Pherb')
+        .rename('pfg');  
+        
+      // sagebrush aboveground biomass (simulated)
+      var sage = sw1.select('Sagebrush')
+        .rename('sage');
+        
+      out = annual.addBands(perennial).addBands(sage);
+    } else {
+      var out = sw1;
     }
     return out;
   };
