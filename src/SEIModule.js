@@ -236,7 +236,7 @@ exports.readImages2Bands = function(genericPath, nameList, combineRename) {
       var sage = sw1.select('Sagebrush')
         .rename('sage');
         
-      out = annual.addBands(perennial).addBands(sage);
+      var out = annual.addBands(perennial).addBands(sage);
     } else {
       var out = sw1;
     }
