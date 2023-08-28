@@ -216,7 +216,7 @@ exports.readImages2Bands = function(genericPath, nameList, combineRename) {
       var image = ee.Image(newPath)
         .rename(name);
         
-      var sw1 = out.addBands(image);
+      var sw1 = sw1.addBands(image);
     
     }
     // set default to true;
