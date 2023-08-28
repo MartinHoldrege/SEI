@@ -30,7 +30,7 @@
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
-var minorV = '4'; // minor version 4 refers to 'method 4' of calculating SEI in the same manner as Doherty et al 2022 (scaled percent change)
+var minorV = '4'; // minor version 4 refers to 'method 4' of calculating SEI directly from stepwat biomass, which is then convertet to cover
 var patch = '0'; // increment minor changes
 
 // which stepwat output to read in?
@@ -100,21 +100,18 @@ for (var j=0; j<RCPList.length; j++) {
     // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
     // assets for each PFT
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
-    var sw1 = SEI.readImages2Bands(genericPath, pftList);
     
-   
-    // annual forb and grass aboveground biomass (simulated)
-    var annual = sw1.select('Aforb')
-      .add(sw1.select('Cheatgrass'))
-      .rename('afg');
+    // this function also sums cheatgrass and aforb to get aft
+    var sw1 = SEI.readImages2Bands(genericPath, pftList, true);
+    
+       // annual forb and grass aboveground biomass (simulated)
+    var annual = sw1.select('afg');
       
     // perennial forb and grass aboveground biomass (simulated)
-    var perennial = sw1.select('Pherb')
-      .rename('pfg');  
+    var perennial = sw1.select('pfg');
       
     // sagebrush aboveground biomass (simulated)
-    var sage = sw1.select('Sagebrush')
-      .rename('sage');
+    var sage = sw1.select('sage');
       
     Map.addLayer(annual, {min:0, max:100, palette:['white', 'darkgreen']},  'annuals' + s, false);
     Map.addLayer(perennial, {min:0, max:150, palette:['white', 'darkgreen']},  'perennial' + s, false);
@@ -258,7 +255,7 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-
+  print(outputByGCM);
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/sw_SEI/' + fileName,
