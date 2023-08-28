@@ -361,7 +361,7 @@ exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebru
 exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
 
 // SEI raster from Theobald for current time period
-var curYearEnd= 2018;
+var curYearEnd= 2021;
 exports.curYearStart = curYearEnd;
 var curYearStart = curYearEnd - 3;
 exports.curYearStart = curYearStart;
