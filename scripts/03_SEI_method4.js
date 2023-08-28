@@ -6,6 +6,7 @@
  * values from stepwat (annuals, perennials, sagebrush biomass) used
  * in the formuala directly. In iteration using q curves that are derived from cover-biomass relationship
  * for sage (from Scott C.) and perennials (gamm fit to RAP), and annuals (from Mahood et al). 
+ * this is method 4 for calculation stepwat based SEI
  * 
  * Script Started: 1/25/2023
  * 
@@ -16,10 +17,6 @@
  * 
  *    
  * Model overview with steps: 
- * 1. get 4 year average of % cover from Rap tree cover, adjusted by fire perimeters
- * 2. smooth % cover from Trees (RAP), simulated biomass (annuals, perennials, sagebrush) and human modification
- *    by "ecological" context using Gaussian kernel radius
- * 3. convert smoothed values to "quality" through HSI curves
  * 4. combine resources (sage, perennial) and threats (annual grass, tree, human modification) by multiplication (SEI560)
  * 5. smooth quality by "management" level context using Gaussian kernel radius (SEI2000)
  * 6. find deciles and then reclass to 3-classes: core, grow, treat
@@ -31,16 +28,15 @@
 // User-defined variables.
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
-var yearEnd = 2021;  // relavent for defining 'current' time period
-var yearStart = yearEnd - 3;
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var version = 'vsw4'; // first version calculating sei directly from stepwat output
-var dateString = '_20230714'; // for appending to output file names
+var majorV = '4'; // major version
+var minorV = '4'; // minor version 4 refers to 'method 4' of calculating SEI in the same manner as Doherty et al 2022 (scaled percent change)
+var patch = '0'; // increment minor changes
 
 // which stepwat output to read in?
 var rootList = ['fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_'];
-var RCPList =  ['Current', 'RCP85'];
-var epochList = ['Current', '2030-2060'];
+var RCPList =  ['Current', 'RCP45'];
+var epochList = ['Current', '2070-2100'];
 var grazeList = ['Light', 'Light'];
 
 // Load module with functions 
@@ -69,7 +65,7 @@ var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"pal
 Map.addLayer(mask.selfMask(),{min:1,max:1},'rangeMask from NLCD with playas',false);
 
 // current SEI version 3 from Theobald
-var cur = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + yearStart + '_' + yearEnd + '_90_20230322');
+var cur = SEI.cur;
 
 // Loop over climate scenarios ------------------------------------------------------
 
@@ -87,8 +83,7 @@ for (var j=0; j<RCPList.length; j++) {
   if(RCP == 'Current') {
     var GCMList = ['Current'];
   } else {
-    var GCMList = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
-      'HadGEM2-CC','HadGEM2-ES','IPSL-CM5A-MR','MIROC-ESM','MIROC5','MRI-CGCM3','inmcm4'];
+    var GCMList = SEI.GCMList;
   }
   
   // Loop over GCMs ---------------------------------------------------------------------
@@ -164,10 +159,10 @@ for (var j=0; j<RCPList.length; j++) {
     var Q4 = ee.Image(0.0).float();
     var Q5 = ee.Image(0.0).float();
     
-    var lstEcoregionIds = ['00000000000000000000','00000000000000000001','00000000000000000002']; // GB, IM, Pl
+    var ecoregionNms = ['GreatBasin', 'Intermountain', 'Plains']; // GB, IM, Pl
     
-    for (var e=1; e<=lstEcoregionIds.length; e++) {
-      var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('system:index', lstEcoregionIds[e-1])); //
+    for (var e=1; e<=ecoregionNms.length; e++) {
+      var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('ecoregion', ecoregionNms[e-1])); //
       var Q1x = SEI.raw2HSI(sage560m, Q.sageQBio1, e)
         .max(0.001) // eplaces values less than 0.001 with 0.001
         .multiply(mask) // values that are not rangeland become zero, 
@@ -260,7 +255,10 @@ for (var j=0; j<RCPList.length; j++) {
   var bandsToKeep = outputByGCM.bandNames().removeAll(['empty']);
   var outputByGCM = outputByGCM.select(bandsToKeep);
   
-  var fileName = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+  var version = 'vsw' + majorV + '-' + minorV;
+  var versionFull = version + '-' + patch;
+  var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
+
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/sw_SEI/' + fileName,
