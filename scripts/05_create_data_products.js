@@ -37,13 +37,20 @@
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
 var version = 'vsw3'; //'v11'; //  version (most importantly defines how future SEI was calculated)
-var dateString = '_20230422'; // '_20221010'; //  // for appending to output file names (and reading in files)
+var majorV = '4'; // major version
+var minorV = '2'; // minor version (1 = original implimentation, 2 = divide delta s by local max,
+// 3 = add delta stepwat cover to rap cover, 4 calculate current and future SEI from stepwat directly)
+var patch = '0'; // increment minor changes
 
 // which stepwat output to read in?
-// (this is in addition to 'Current' conditions)
-var root = 'c4on_'; //'ClimateOnly_'; // 
-var RCP =  'RCP85';
-var epoch = '2030-2060';
+var rootList = ['fire1_eind1_c4grass1_co20_'];
+var RCPList =  ['RCP45'];
+var epochList = ['2070-2100'];
+var dateString = '_20230422'; // '_20221010'; //  // for appending to output file names (and reading in files)
+
+var root = 'fire1_eind1_c4grass1_co20_';
+var RCP =  'RCP45';
+var epoch = '2070-2100';
 
 // the change in SEI from current to future that is deemed significant or 'substantial':
 var sigDelta = 0.05; // (just using a place holder value for now)
@@ -62,7 +69,7 @@ var region = SEI.region;
 
 // current SEI (update which file is used, as needed)
 // band Q5 is SEI560, and Q5s is SEI2000
-var cur1 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
+var cur1 = SEI.cur;
 
 // future SEI
 // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
@@ -74,7 +81,7 @@ if(version == 'v11') {
   var resolutionInput = resolution;
 }
 
-var assetName = 'SEI' + version + '_2017_2020_' + resolutionInput + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+var assetName = 'SEI' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
 
 
 
