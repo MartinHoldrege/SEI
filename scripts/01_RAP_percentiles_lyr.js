@@ -7,6 +7,11 @@ Author: Martin Holdrege
 Date started: July 28, 2023
 */
 
+
+// Dependencies ---------------------------------
+
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+
 // Params ---------------------------------------
 
 var resolution = 90;
@@ -14,10 +19,8 @@ var yearEnd = 2021;
 var yearStart = 1986;
 var radius = 2000; // how much to smooth (meters)
 var dateString = '20230728';
-
-// Dependencies ---------------------------------
-
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+// var path = SEI.path;
+var path = 'users/MartinHoldrege/SEI/';
 
 // Read in data -------------------------------------
 
@@ -66,10 +69,16 @@ var comb1 = rapSmooth2.addBands(rcmapSmooth1);
 
 // write output -----------------------------------------------
 var fileName = 'cover_rap-rcmap_' + yearStart + '_' + yearEnd + '_' + resolution + 'm_' + radius + 'msmooth_' + dateString;
-  Export.image.toAsset({ 
-    image: comb1, //single image with multiple bands
-    assetId: SEI.path + 'cover/' +  fileName,
-    description: fileName,
-    maxPixels: 1e13, scale: resolution, region: SEI.region,
-    crs: 'EPSG:4326'    // set to WGS84, decimal degrees
-  })
+  
+  
+Export.image.toAsset({ 
+  image: comb1, //single image with multiple bands
+  assetId: path + 'cover/' +  fileName,
+  description: fileName,
+  maxPixels: 1e13, scale: resolution, region: SEI.region,
+  crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+});
+
+
+  
+  
