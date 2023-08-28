@@ -4,17 +4,13 @@
  * Purpose:
  * Calculate the Sagebrush Ecosystem Integrity with
  * values from stepwat (annuals, perennials, sagebrush biomass) used
- * in the formuala directly. In iteration using q curves that are derived from cover-biomass relationship
- * for sage (from Scott C.) and perennials (gamm fit to RAP), and annuals (from Mahood et al). 
- * this is method 4 for calculation stepwat based SEI
+ * in the formuala directly. This method 1 refers to calculating
+ * future SEI by multiplying rap cover by delta S as in Doherty et al 2022
  * 
  * Script Started: 1/25/2023
  * 
  * Author: Martin Holdrege
- * (this script borrows heavily from original SEI code written
- * by Dave Theobald)
- * 
- * 
+ * This script borrows from code written by Dave Theobald (for Doherty et al 2022)
  *    
  * Model overview with steps: 
  * 4. combine resources (sage, perennial) and threats (annual grass, tree, human modification) by multiplication (SEI560)
@@ -69,72 +65,73 @@ for (var j=0; j<RCPList.length; j++) {
   var epoch = epochList[j];
   var graze = grazeList[j];
   
+  
+  // read in current stepwat biomass -------------------------------------------------
+  // this is needed for calculating scaled % change
+
+ // plant functional types for which stepwat output is being loaded in
+    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
+  // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
+    // assets for each PFT
+
+  var c = '_Current';
+
+  var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' + graze + c;
+  // this function also sums cheatgrass and aforb to get aft
+  var swCur1 = SEI.readImages2Bands(genericPathCur, pftList, true)
+  // masking so when take max only taking max of appropriate pixels
+    .updateMask(mask);
+  
+  // max biomass values of each pft. 
+  var swMax = swCur1.reduceRegion({
+    reducer: ee.Reducer.max(),
+    geometry: region,
+    scale: 1000 // this is the resolution of the underlying data
+  });
+
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
   
-  
-  
+   var GCMList = SEI.GCMList;
 
-  var GCMList = SEI.GCMList;
-
-  
   // Loop over GCMs ---------------------------------------------------------------------
   for (var g=0; g<GCMList.length; g++) {
     var GCM = GCMList[g];
   
   // read in stepwat vegetation data
   
-    // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
-    
     var s = '_' + RCP + '_' + epoch  + '_' + graze + '_' + GCM;
     
     // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
     // assets for each PFT
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
-    // this function also sums cheatgrass and aforb to get aft
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true);
-    
-       // annual forb and grass aboveground biomass (simulated)
-    var annual = sw1.select('afg');
+    // this function also sums cheatgrass and aforb to get afg
+    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+      .updateMask(mask);
       
-    // perennial forb and grass aboveground biomass (simulated)
-    var perennial = sw1.select('pfg');
-      
-    // sagebrush aboveground biomass (simulated)
-    var sage = sw1.select('sage');
-      
-    Map.addLayer(annual, {min:0, max:100, palette:['white', 'darkgreen']},  'annuals' + s, false);
-    Map.addLayer(perennial, {min:0, max:150, palette:['white', 'darkgreen']},  'perennial' + s, false);
-    Map.addLayer(sage, {min:0, max:600, palette:['white', 'darkgreen']},  'sage' + s, false);
+    // calculate scaled percent change in stepwat biomass
+    // (future- current/(max current)) + 1
+    // as in Dohert et al 2022
+    var delta = sw1.subtract(swCur1); // diffierence between future and current
     
-    
-    // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
-    var annual = annual // AFG
-      .multiply(tundra); 
-    var perennial = perennial // PFG 
-      .multiply(tundra); 
-    var sage = sage
-      .multiply(tundra); 
+    // now dividing by max and adding 1
+    var deltaSAnnual = delta.select('afg').divide(ee.Number(swMax.values(['afg']).get(0))).add(1);
+    var deltaSPerennial = delta.select('pfg').divide(ee.Number(swMax.values(['pfg']).get(0))).add(1);
+    var deltaSSage = delta.select('sage').divide(ee.Number(swMax.values(['sage']).get(0))).add(1);
     
     /**
-     * Step 2. smooth raw data
+     * Multiply smoothed cover data from rap by stepwat scaled percent change. 
      * 
-     * averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
-     * the weights are derived from a normal distribution with a sd of 560. 
-     * 
-     * It may not be relevant to smooth the stepwat data b/ it has a native resolution of 560 m (perhaps it makes
-     * a difference at the pixel edges when downsampling to 30 meters)
      */
      
-    var sage560m = sage
-      .unmask(0.0); // masked pixels converted to 0
-    
-    var annual560m = annual
+    var sage560m = cur.select('sage560m').multiply(deltaSSage)
       .unmask(0.0);
       
-    var perennial560m = perennial
+    var annual560m = cur.select('annualG560m').multiply(deltaSAnnual)
+      .unmask(0.0);
+      
+    var perennial560m = cur.select('perennialG560m').multiply(deltaSPerennial)
       .unmask(0.0);
       
         /**
@@ -152,7 +149,7 @@ for (var j=0; j<RCPList.length; j++) {
     
     for (var e=1; e<=ecoregionNms.length; e++) {
       var ecoregion = WAFWAecoregions.filter(ee.Filter.eq('ecoregion', ecoregionNms[e-1])); //
-      var Q1x = SEI.raw2HSI(sage560m, Q.sageQBio1, e)
+      var Q1x = SEI.raw2HSI(sage560m, SEI.lstSage2Q, e)
         .max(0.001) // eplaces values less than 0.001 with 0.001
         .multiply(mask) // values that are not rangeland become zero, 
         .clip(ecoregion) // clip to the ecoregion being looped through
@@ -160,7 +157,7 @@ for (var j=0; j<RCPList.length; j++) {
          
       var Q1 = Q1.max(Q1x); // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
     
-      var Q2x = SEI.raw2HSI(perennial560m, Q.perennialQBio1, e)
+      var Q2x = SEI.raw2HSI(perennial560m, SEI.lstPerennialG2Q, e)
         .max(0.001)
         .multiply(mask)
         .clip(ecoregion)
@@ -168,7 +165,7 @@ for (var j=0; j<RCPList.length; j++) {
       
       var Q2 = Q2.max(Q2x);
     
-      var Q3x = SEI.raw2HSI(annual560m, Q.annualQBio1, e)
+      var Q3x = SEI.raw2HSI(annual560m, SEI.lstAnnualG2Q, e)
         .max(0.001)
         .multiply(mask)
         .clip(ecoregion)
@@ -255,5 +252,6 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
+
   
 }// end loop over scenario
