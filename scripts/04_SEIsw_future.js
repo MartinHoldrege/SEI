@@ -41,12 +41,15 @@
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
 var version = 'vsw2'; // first version calculating sei directly from stepwat output
 var dateString = '_20230331'; //'_20230308'; //  for appending to output file names (and reading in files)
+var majorV = '4'; // major version
+var minorV = '4'; // minor version (i.e., method for calculating sei using stepwat data)
+var patch = '0'; // increment minor changes
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
-var root = 'c4on_';
-var RCP =  'RCP85';
-var epoch = '2030-2060';
+var root = 'fire1_eind1_c4grass1_co20_';
+var RCP =  'RCP45';
+var epoch = '2070-2100';
 var graze = 'Light';
 
 // export asset showing layers used for later exploration (not recommended at high res b/ of space):
@@ -69,23 +72,27 @@ var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
 var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
 // Read in SEI images -------------------------------------------------------
-
-// Read in current stepwat SEI
-
-var fileName = 'SEI' + version + '_' + resolution + "_" + root +  'Current_Current_by-GCM' + dateString;
-var curSw1 = ee.Image(path + version + '/sw_SEI/' + fileName) // 'stepwat current'
-  .mask(mask);
-var curSeiSw1 = curSw1.select('Q5s_Current'); // SEI2000 band, 
+// versions strings
+var version = 'vsw' + majorV + '-' + minorV;
+var versionFull = version + '-' + patch;
 
 // Read in current actual observed SEI
 
 // band Q5 is SEI560, and Q5s is SEI2000
-var cur1 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
+var cur1 = SEI.cur;
+
 //print(cur1.bandNames())
+
+// Read in current stepwat SEI (this only applies to minor version (method) 4)
+
+var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  'Current_Current_by-GCM';
+var curSw1 = ee.Image(path + version + '/sw_SEI/' + fileName) // 'stepwat current'
+  .mask(mask);
+var curSeiSw1 = curSw1.select('Q5s_Current'); // SEI2000 band, 
 
 // Read in Future stepwat SEI 
 
-var fileNameFut = 'SEI' + version + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+var fileNameFut = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
 var futSw1 = ee.Image(path + version + '/sw_SEI/' + fileNameFut)
   .mask(mask); 
 var futSeiSw1 = futSw1.select('Q5s_.*'); // SEI2000 bands, (future stepwat SEI)
@@ -182,7 +189,7 @@ var diagnostics = curSeiSw1 // current sei calculated from stepwat biomass
 
 // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
 // (and should be update if a new observed SEI layer is used)
-var assetName = 'SEI' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
+var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
 
 Export.image.toAsset({ 
   image: fut2, //single image with multiple bands, 1 SEI (Q5s) and 3 class (Q5sc3) band for each GCM.
@@ -200,8 +207,8 @@ Export.image.toAsset({
 if (export_diagnostics) {
   Export.image.toAsset({ 
     image: diagnostics, //single image with multiple bands (1 for each GCM)
-    assetId: path + version + '/diagnostics_' + version + "_" + root +  RCP + '_' + epoch + dateString,
-    description: 'diagnostics_' + version + "_" + root +  RCP + '_' + epoch  + dateString,
+    assetId: path + version + '/diagnostics_' + versionFull + "_" + root +  RCP + '_' + epoch,
+    description: 'diagnostics_' + versionFull + "_" + root +  RCP + '_' + epoch  + dateString,
     maxPixels: 1e13, 
     scale: resolution, 
     region: region 
