@@ -3,11 +3,10 @@
 /********************************************************
  * Purpose:
  * Calculate the Sagebrush Ecosystem Integrity with
- * values from stepwat (annuals, perennials, sagebrush biomass) used
- * in the formuala directly. This method 1 refers to calculating
+ * Using method 1. This method 1 refers to calculating
  * future SEI by multiplying rap cover by delta S as in Doherty et al 2022
  * 
- * Script Started: 1/25/2023
+ * Script Started: 8/28/2023
  * 
  * Author: Martin Holdrege
  * This script borrows from code written by Dave Theobald (for Doherty et al 2022)
@@ -245,7 +244,7 @@ for (var j=0; j<RCPList.length; j++) {
 
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
-    assetId: path + version + '/sw_SEI/' + fileName,
+    assetId: path + version + '/forecasts/' + fileName,
     description: fileName,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
