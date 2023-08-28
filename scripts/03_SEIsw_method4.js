@@ -102,7 +102,9 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get aft
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true);
+    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
+      .multiply(tundra);
     
        // annual forb and grass aboveground biomass (simulated)
     var annual = sw1.select('afg');
@@ -117,23 +119,11 @@ for (var j=0; j<RCPList.length; j++) {
     Map.addLayer(perennial, {min:0, max:150, palette:['white', 'darkgreen']},  'perennial' + s, false);
     Map.addLayer(sage, {min:0, max:600, palette:['white', 'darkgreen']},  'sage' + s, false);
     
-    
-    // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
-    var annual = annual // AFG
-      .multiply(tundra); 
-    var perennial = perennial // PFG 
-      .multiply(tundra); 
-    var sage = sage
-      .multiply(tundra); 
-    
     /**
      * Step 2. smooth raw data
      * 
-     * averaging the cells within 560 m of a given focal cell, but weighting the further cells less.
-     * the weights are derived from a normal distribution with a sd of 560. 
-     * 
-     * It may not be relevant to smooth the stepwat data b/ it has a native resolution of 560 m (perhaps it makes
-     * a difference at the pixel edges when downsampling to 30 meters)
+     * Not actually smoothing here b/ the stepwat data has a resolution of 1000m and smoothing at a finer resolution
+     * (560 m) shouldn't actually do much
      */
      
     var sage560m = sage
@@ -145,7 +135,7 @@ for (var j=0; j<RCPList.length; j++) {
     var perennial560m = perennial
       .unmask(0.0);
       
-        /**
+    /**
      * Step 3. convert smoothed % cover to quality using HSI curves
      * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
      */
