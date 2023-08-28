@@ -20,7 +20,6 @@
 */
 
 
-
 // User-defined variables.
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
@@ -199,7 +198,6 @@ for (var j=0; j<RCPList.length; j++) {
     
     // here the updateMask call dictates that 0 SEI values aren't shown 
     Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)' + s,false);
-    
     
     /**
      * Step 6. Classify
