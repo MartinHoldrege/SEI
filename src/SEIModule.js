@@ -323,7 +323,7 @@ exports.calcTransitions = function(current, future) {
  * @param {string} replacementt string that replace text that matches regex
  * @return {ee.Image} Image with same bands but renamed bandnames
 */
-var bandNamesReplace = function(x, regex, replacement) {
+exports.bandNamesReplace = function(x, regex, replacement) {
   var newNames = x.bandNames().map(function(name) {
     return ee.String(name).replace(regex, replacement);
   });
