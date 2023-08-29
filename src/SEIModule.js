@@ -315,13 +315,30 @@ exports.calcTransitions = function(current, future) {
   return(out);
 };
 
-/*
 
-Commonly used mask (of the sagebrush region) and outline of the sagebrush region
+/**
+ * Replace portion of bandnames in an image
+ * @param {ee.Image} x The multiband image you wan't to rename
+ * @param {string} regex to match
+*   @param {string} replacementt string that replace text that matches regex
+ * @return {ee.Image} Image with same bands but renamed bandnames
+*/
+var bandNamesReplace = function(x, regex, replacement) {
+  var newNames = x.bandNames().map(function(name) {
+    return ee.String(name).replace(regex, replacement);
+  });
+  return x.rename(newNames);
+};
+
+
+/*
+ 
+ Datasets 
+
 
 */
 
-
+// Commonly used mask (of the sagebrush region) and outline of the sagebrush region
 var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 exports.path = path;
 
