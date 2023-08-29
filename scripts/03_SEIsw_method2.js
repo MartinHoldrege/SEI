@@ -1,10 +1,8 @@
 /********************************************************
  * Purpose:
- * Calculate the Sagebrush Ecosystem Integrity with
- * Using method 1. This method 1 refers to calculating
- * future SEI by multiplying rap cover by delta S. However, here deltaS
+ * Calculate future SEI by multiplying rap cover by delta S. However, here deltaS
  * is calculateed in different way than in doherty et al 2022 (i.e. method 1).
- * The biomass delta is devided by the local maximum biomass (within a difined radius)
+ * The biomass delta is devided by the local maximum biomass (within a defined radius)
  * instead of dividing by the global maximum (i.e. max biomass across the whole region)
  * 
  * Script Started: 8/28/2023
@@ -14,13 +12,11 @@
  *    
 */
 
-
-
 // User-defined variables.
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var radiusMax = 200e3 // 
+var radiusMax = 200e3; // 
 var majorV = '4'; // major version
 var minorV = '2'; // modified method 1 where deltaS is calculated by dividing by local max;
 var patch = '0'; // increment minor changes
@@ -239,7 +235,7 @@ for (var j=0; j<RCPList.length; j++) {
 
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
-    assetId: path + version + '/sw_SEI/' + fileName,
+    assetId: path + version + '/forecasts/' + fileName,
     description: fileName,
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
