@@ -1,10 +1,9 @@
 /********************************************************
  * Purpose:
- * Calculate the Sagebrush Ecosystem Integrity with
- * Using method 1. This method 1 refers to calculating
- * future SEI by multiplying rap cover by delta S. However, here deltaS
+ * Calculate future SEI by taking rap cover and adding a delta cover value (method 3).
+ * Delta cover However, here deltaS
  * is calculateed in different way than in doherty et al 2022 (i.e. method 1).
- * The biomass delta is devided by the local maximum biomass (within a difined radius)
+ * The biomass delta is devided by the local maximum biomass (within a defined radius)
  * instead of dividing by the global maximum (i.e. max biomass across the whole region)
  * 
  * Script Started: 8/28/2023
@@ -90,8 +89,7 @@ for (var j=0; j<RCPList.length; j++) {
   for (var g=0; g<GCMList.length; g++) {
     var GCM = GCMList[g];
   
-  // read in stepwat vegetation data
-  
+    // read in stepwat vegetation data
     var s = '_' + RCP + '_' + epoch  + '_' + graze + '_' + GCM;
     
     // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
@@ -234,7 +232,7 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-
+/*
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -242,6 +240,6 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
-
+*/
   
 }// end loop over scenario
