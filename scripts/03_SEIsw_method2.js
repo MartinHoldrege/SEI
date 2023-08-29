@@ -105,9 +105,8 @@ for (var j=0; j<RCPList.length; j++) {
       .updateMask(mask);
       
     // calculate scaled percent change in stepwat biomass
-    // (future- current/(max current)) + 1
-    // as in Dohert et al 2022
-    var deltaS = sw1.subtract(swCur1).divide(swCurLocalMax); // diffierence between future and current, divided by local max
+    // (future- current/(local current max)) + 1
+    var deltaS = sw1.subtract(swCur1).divide(swCurLocalMax).add(ee.Image(1)); 
      
     // now dividing by max and adding 1
     var deltaSAnnual = deltaS.select('afg');
