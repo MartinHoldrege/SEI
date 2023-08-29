@@ -382,14 +382,15 @@ exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebru
 exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
 
 // SEI raster from Theobald for current time period
-var curYearEnd= 2020; // change to 2021 when have v30 asset. 
+var curYearEnd= 2021; // change to 2021 when have v30 asset. 
 exports.curYearStart = curYearEnd;
 var curYearStart = curYearEnd - 3;
 exports.curYearStart = curYearStart;
 
-// at the meoment I don't have access to v30 asset so using v11 asset. 
-// exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + curYearStart + '_' + curYearEnd + '_90_20230322');
-exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_' + curYearStart + '_' + curYearEnd + '_90_20211228');
+// this is SEI v3.0
+exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + curYearStart + '_' + curYearEnd + '_90_20230828');
+// old (v1) version (2017-2020)
+//exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_' + curYearStart + '_' + curYearEnd + '_90_20211228');
 
 // GCMs
 exports.GCMList = ['CESM1-CAM5','CSIRO-Mk3-6-0','CanESM2','FGOALS-g2','FGOALS-s2','GISS-E2-R',
