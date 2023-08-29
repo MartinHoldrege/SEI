@@ -316,11 +316,11 @@ exports.calcTransitions = function(current, future) {
 };
 
 
-/**
+/*
  * Replace portion of bandnames in an image
  * @param {ee.Image} x The multiband image you wan't to rename
  * @param {string} regex to match
-*   @param {string} replacementt string that replace text that matches regex
+ * @param {string} replacementt string that replace text that matches regex
  * @return {ee.Image} Image with same bands but renamed bandnames
 */
 var bandNamesReplace = function(x, regex, replacement) {
