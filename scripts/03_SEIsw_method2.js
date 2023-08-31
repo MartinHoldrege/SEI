@@ -60,8 +60,6 @@ for (var j=0; j<RCPList.length; j++) {
   // read in current stepwat biomass -------------------------------------------------
   // this is needed for calculating scaled % change
 
- // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
   // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
     // assets for each PFT
 
@@ -69,7 +67,7 @@ for (var j=0; j<RCPList.length; j++) {
 
   var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' + graze + c;
   // this function also sums cheatgrass and aforb to get aft
-  var swCur1 = SEI.readImages2Bands(genericPathCur, pftList, true)
+  var swCur1 = SEI.readImages2Bands(genericPathCur)
   // masking so when take max only taking max of appropriate pixels
     .updateMask(mask);
   
@@ -97,7 +95,7 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get afg
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    var sw1 = SEI.readImages2Bands(genericPath)
       .updateMask(mask);
       
     // calculate scaled percent change in stepwat biomass
