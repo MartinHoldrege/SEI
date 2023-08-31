@@ -329,7 +329,7 @@ exports.calcTransitions = function(current, future) {
 */
 exports.bio2covLin = function(image, b0, b1) {
 
-  var bandsImage = image.bandNames().getValue();
+  var bandsImage = image.bandNames().getInfo(); // using getInfo() might be slow?
   
   // want to make sure band names match so that 
   // multiplication is don correctly for multi band images
@@ -337,8 +337,8 @@ exports.bio2covLin = function(image, b0, b1) {
     
     // multiply just needs them to have same band names to work
     // don't need to be in the same order
-    var bands0 = b0.bandNames().getValue().sort().join(',');
-    var bands1 = b1.bandNames().getValue().sort().join(',');
+    var bands0 = b0.bandNames().getInfo().sort().join(',');
+    var bands1 = b1.bandNames().getInfo().sort().join(',');
 
     if(bands0 != bandsImage.sort().join(',') | bands1 != bandsImage.sort().join(',')) {
       throw new Error("band names do not match");
