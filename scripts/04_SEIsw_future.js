@@ -2,7 +2,8 @@
 /********************************************************
  * Purpose:
  * Use SEI calculated from stepwat biomass for current and future
- * scenarios, then calculate a delta (% change) and multiply that
+ * scenarios (i.e., stepwat sei calculated by method 4),
+ * then calculate a delta (% change) and multiply that
  * delta by the current actual observed SEI to get a 'future' SEI
  * 
  * Script Started: March 8, 2023
@@ -39,9 +40,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'vsw2'; // first version calculating sei directly from stepwat output
-var dateString = '_20230331'; //'_20230308'; //  for appending to output file names (and reading in files)
 var majorV = '4'; // major version
+// this script is currently only designed to with minor version 4
 var minorV = '4'; // minor version (i.e., method for calculating sei using stepwat data)
 var patch = '0'; // increment minor changes
 
@@ -109,12 +109,9 @@ var futSeiSwMed1 = futSeiSw1.reduce('median');
 
 // Calculate sw SEI diff -------------------------------------------------------
 
-var diff1 = futSeiSw1.subtract(curSeiSw1); // change in SEI
+var diff1 = futSeiSw1.subtract(curSeiSw1)
+  .regexpRename('Q5s_', '' ); // remove `Q5s_` from bandNames
 
-var GCMNames = diff1.bandNames().map(function(string) {
-  return ee.String(string).replace('Q5s_', '');
-});
-var diff1 = diff1.rename(GCMNames);
 var diffMed1 = diff1.reduce('median');
 
 // sw proportion change SEI ------------------------------------------------------------
@@ -123,7 +120,7 @@ var delta1 = diff1.divide(curSeiSw1); // proportion change in SEI
 var deltaMed1 = delta1.reduce('median');
 
 // maps of all the bands (one for each GCM)
-var bands = GCMNames.getInfo();
+//var bands = diff1.bandNames().getInfo();
 // for (var i=0; i<bands.length; i++) {
 //   var band = bands[i];
 //   Map.addLayer(delta1.select(band), visQDiff, 'delta ' + band, false);
@@ -190,6 +187,8 @@ var diagnostics = curSeiSw1 // current sei calculated from stepwat biomass
 // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
 // (and should be update if a new observed SEI layer is used)
 var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
+//print(fut2.bandNames())
+// print(diagnostics.bandNames())
 
 Export.image.toAsset({ 
   image: fut2, //single image with multiple bands, 1 SEI (Q5s) and 3 class (Q5sc3) band for each GCM.
@@ -204,11 +203,12 @@ Export.image.toAsset({
 });
 
 
+
 if (export_diagnostics) {
   Export.image.toAsset({ 
     image: diagnostics, //single image with multiple bands (1 for each GCM)
     assetId: path + version + '/diagnostics_' + versionFull + "_" + root +  RCP + '_' + epoch,
-    description: 'diagnostics_' + versionFull + "_" + root +  RCP + '_' + epoch  + dateString,
+    description: 'diagnostics_' + versionFull + "_" + root +  RCP + '_' + epoch,
     maxPixels: 1e13, 
     scale: resolution, 
     region: region 
@@ -217,4 +217,5 @@ if (export_diagnostics) {
     //crsTransform: SEI.crsTransform
   });
 }
+
 
