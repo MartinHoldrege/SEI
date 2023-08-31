@@ -92,9 +92,7 @@ for (var j=0; j<RCPList.length; j++) {
   
   // read in stepwat vegetation data
   
-    // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
-    
+
     var s = '_' + RCP + '_' + epoch  + '_' + graze + '_' + GCM;
     
     // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
@@ -102,7 +100,7 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get aft
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    var sw1 = SEI.readImages2Bands(genericPath)
     // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
       .multiply(tundra);
     
