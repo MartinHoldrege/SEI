@@ -334,9 +334,13 @@ var bio2covLinear = function(image, b0, b1) {
   // want to make sure band names match so that 
   // multiplication is don correctly for multi band images
   if(bandsImage.length > 1){
-    var bands0 = b0.bandNames().getValue();
-    var bands1 = b1.bandNames().getValue();
-    if(bands0 != bandsImage | bands1 != bandsImage) {
+    
+    // multiply just needs them to have same band names to work
+    // don't need to be in the same order
+    var bands0 = b0.bandNames().getValue().sort().join(',');
+    var bands1 = b1.bandNames().getValue().sort().join(',');
+
+    if(bands0 != bandsImage.sort().join(',') | bands1 != bandsImage.sort().join(',')) {
       throw new Error("band names do not match");
     }
   }
