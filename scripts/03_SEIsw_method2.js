@@ -74,8 +74,8 @@ for (var j=0; j<RCPList.length; j++) {
   var swCurLocalMax = swCur1
     .reduceNeighborhood(ee.Reducer.max(),ee.Kernel.circle(radiusMax, 'meters'),null, false);
     
-  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal')
-  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max')
+  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal', false)
+  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max', false)
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
@@ -113,12 +113,15 @@ for (var j=0; j<RCPList.length; j++) {
      */
      
     var sage560m = cur.select('sage560m').multiply(deltaSSage)
+      .divide(100)
       .unmask(0.0);
       
     var annual560m = cur.select('annualG560m').multiply(deltaSAnnual)
+      .divide(100)
       .unmask(0.0);
       
     var perennial560m = cur.select('perennialG560m').multiply(deltaSPerennial)
+      .divide(100)
       .unmask(0.0);
       
         /**
