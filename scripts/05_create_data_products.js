@@ -36,18 +36,14 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var version = 'vsw3'; //'v11'; //  version (most importantly defines how future SEI was calculated)
 var majorV = '4'; // major version
 var minorV = '2'; // minor version (1 = original implimentation, 2 = divide delta s by local max,
 // 3 = add delta stepwat cover to rap cover, 4 calculate current and future SEI from stepwat directly)
 var patch = '0'; // increment minor changes
 
-// which stepwat output to read in?
-var rootList = ['fire1_eind1_c4grass1_co20_'];
-var RCPList =  ['RCP45'];
-var epochList = ['2070-2100'];
-var dateString = '_20230422'; // '_20221010'; //  // for appending to output file names (and reading in files)
+var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-0', 'vsw4-4-0', 'vsw4-4-1'];
 
+// which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
 var RCP =  'RCP45';
 var epoch = '2070-2100';
@@ -71,6 +67,10 @@ var region = SEI.region;
 // band Q5 is SEI560, and Q5s is SEI2000
 var cur1 = SEI.cur;
 
+
+// loop through version
+
+for ()
 // future SEI
 // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
 // (and should be update if a new observed SEI layer is used)
