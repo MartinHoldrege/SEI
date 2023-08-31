@@ -190,6 +190,16 @@ create_js_q_curve_code <- function(df, name) {
   out           
 }
 
+#' generate string that is valid js code defining function parameters
+#'
+#' @param b0 intercept
+#' @param b1 slope
+#' @param name name to give js list
+#'
+#' @return string that is valid js code, two part list with b0 and b1
+create_js_b0b1_code <- function(b0, b1, name) {
+  paste0("\nexports.b0b1", name, " = [", b0, ",", b1, "]\n")
+}
 
 # raster manipulation -----------------------------------------------------
 
