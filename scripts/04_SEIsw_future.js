@@ -43,7 +43,7 @@ var resolution = 1000;     // output (and input) resolution, 30 m eventually
 var majorV = '4'; // major version
 // this script is currently only designed to with minor version 4
 var minorV = '4'; // minor version (i.e., method for calculating sei using stepwat data)
-var patch = '0'; // increment minor changes
+var patch = '1'; // increment minor changes
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
