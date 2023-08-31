@@ -318,6 +318,8 @@ exports.calcTransitions = function(current, future) {
   return(out);
 };
 
+
+
 /**
  * convert biomass to cover using linear function
  * @param {ee.Image} image 
