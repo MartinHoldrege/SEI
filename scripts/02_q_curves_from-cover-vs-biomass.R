@@ -337,7 +337,7 @@ q2write <- c("//Note: this is an automatically created file, do not edit",
              "\n", 
              afg_js, afg_js2, pfg_js, sage_js)
 cat(q2write)
-write_lines(q2write, "src/qCurves4StepwatOutput.js")
+write_lines(q2write, "src/qCurves4StepwatOutput2.js")
 
 
 # biomass-cover tables---------------------------------------------------------
@@ -365,4 +365,4 @@ lin2write <- c("/*",
                b0b1pfg1
                )
 
-write_lines(lin2write, "src/qCurves4StepwatOutput.js", append = TRUE)
+write_lines(lin2write, "src/qCurves4StepwatOutput2.js", append = TRUE)
