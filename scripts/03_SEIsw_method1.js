@@ -122,12 +122,15 @@ for (var j=0; j<RCPList.length; j++) {
      */
      
     var sage560m = cur.select('sage560m').multiply(deltaSSage)
+      .divide(100)
       .unmask(0.0);
       
     var annual560m = cur.select('annualG560m').multiply(deltaSAnnual)
+      .divide(100)
       .unmask(0.0);
       
     var perennial560m = cur.select('perennialG560m').multiply(deltaSPerennial)
+      .divide(100)
       .unmask(0.0);
       
         /**
