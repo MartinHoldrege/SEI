@@ -209,6 +209,9 @@ exports.repeatelemList = function(elemList, nList) {
  * @ returns an image where each band has a name from nameList
  */
 exports.readImages2Bands = function(genericPath, nameList, combineRename) {
+    if (nameList === undefined || nameList === null){
+      var nameList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
+    }
     sw1 = ee.Image(0);
     for (var i=0; i<nameList.length; i++) {
       var name = nameList[i];
