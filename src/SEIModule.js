@@ -331,13 +331,13 @@ var bio2covLinear = function(image, b0, b1) {
   
   // want to make sure band names match so that 
   // multiplication is don correctly for multi band images
-  if(bandsImage.length > 1)
+  if(bandsImage.length > 1){
     var bands0 = b0.bandNames().getValue();
     var bands1 = b1.bandNames().getValue();
     if(bands0 != bandsImage | bands1 != bandsImage) {
       throw new Error("band names do not match");
     }
-  };
+  }
   // y = b0 + b1*x
   var out = b0.add(b1.multiply(image));
   // correction in case cover is outside of 0-100 range
