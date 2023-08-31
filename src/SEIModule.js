@@ -327,7 +327,7 @@ exports.calcTransitions = function(current, future) {
   * @param {ee.Image} slopes of linear functions (as many bands as image and with the same names)
  * @return {ee.Image} Image with percent cover (0-100)
 */
-var bio2covLinear = function(image, b0, b1) {
+var bio2covLin = function(image, b0, b1) {
 
   var bandsImage = image.bandNames().getValue();
   
