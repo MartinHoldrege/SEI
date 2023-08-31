@@ -1,6 +1,7 @@
 /********************************************************
  * Purpose:
- * Examine the products image created in the 05_create_data_products.js
+ * Examine the products image created in the 05_create_data_products.js 
+ * and 03_SEIsw_method{1-3}.js scripts
  * script. These are the fundamental data products that are being created
  * by this project. Here, maps made to compare different versions of the products
  * 
@@ -21,18 +22,13 @@
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
 
-var versions = ['vsw2', 'vsw2']; // version
-// date identifier
-var dateStrings = [
-  '_20230327', // biomass-cover equations used to create q curves
-  '_20230331' // samed as 20230327 except quantile matched q curve used for annuals
-  ];  
+var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-0', 'vsw4-4-0', 'vsw4-4-1']; 
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
-var root = 'c4on_';
-var RCP =  'RCP85';
-var epoch = '2030-2060';
+var root = 'fire1_eind1_c4grass1_co20_';
+var RCP =  'RCP45';
+var epoch = '2070-2100';
 var graze = 'Light';
 
 // dependencies -----------------------------------------------------------
