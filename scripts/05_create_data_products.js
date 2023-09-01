@@ -210,7 +210,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     .addBands(c9); // p7
     
   //
-  Map.addLayer(comb1.select('p6_c9Med'), {min: 1, max: 9, palette: fig.c9Palette}, versionFull + ' c9Med', false)
+  Map.addLayer(comb1.select('p6_c9Med'), fig.visc9, versionFull + ' c9Med', false)
   // Map.addLayer(comb1.select('p6_c9Med').updateMask(comb1.select('p6_c9Med').remap([1, 5, 9], [0, 0, 0])), 
   //   {min: 1, max: 9, palette: fig.c9Palette}, 
   //   versionFull + ' c9Med change', false)
