@@ -219,8 +219,8 @@ for (var i = 0; i < versionsFull.length; i++) {
   // export assets -------------------------------------------------------------------------------
   
 
-  var cur_years = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
-  var productName = 'products_' + versionFull + cur_years + resolution + "_" + root +  RCP + '_' + epoch;
+  var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
+  var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
 
   Export.image.toAsset({ 
     image: comb1, 
