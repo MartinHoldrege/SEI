@@ -429,7 +429,7 @@ exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().pro
 
 // SEI raster from Theobald for current time period
 var curYearEnd= 2021; // change to 2021 when have v30 asset. 
-exports.curYearStart = curYearEnd;
+exports.curYearEnd = curYearEnd;
 var curYearStart = curYearEnd - 3;
 exports.curYearStart = curYearStart;
 
