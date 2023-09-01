@@ -350,6 +350,16 @@ exports.bio2covLin = function(image, b0, b1) {
   return out.max(ee.Image(0)).min(ee.Image(100));
 };
 
+/**
+ * convert biomass to cover using linear function
+ * @param {string} client side string, of a version number
+ * @return {ee.Image} string with patch (last number in version) removed
+*/
+exports.removePatch = function(string) {
+  var regex = /[-.]\d+$/;
+  return string.replace(regex, '')
+}
+
 /*
  
  Datasets 
