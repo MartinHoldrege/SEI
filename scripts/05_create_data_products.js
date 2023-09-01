@@ -36,7 +36,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-0', 'vsw4-4-0', 'vsw4-4-1'];
+var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
+//var versionsFull = ['vsw4-4-1'] // select just one for testing
 
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
@@ -51,7 +52,7 @@ var sigDelta = 0.05; // (just using a place holder value for now)
 // odule with functions etc.
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-
+var fig = require("users/mholdrege/SEI:src/fig_params.js");
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
 var region = SEI.region;
@@ -61,28 +62,17 @@ var region = SEI.region;
 // current SEI (update which file is used, as needed)
 // band Q5 is SEI560, and Q5s is SEI2000
 var cur1 = SEI.cur;
-
+print(cur1.bandNames())
 
 // loop through version
 
-for (var i = 0; year < versionsFull.length; i++) {
+for (var i = 0; i < versionsFull.length; i++) {
   
   var versionFull = versionsFull[i];
-  var version = versionFull.replace('-[[:digit:]]+$', '')
+  var version = SEI.removePatch(versionFull); // version name with patch removed
 
   // future SEI
-  // the _2017_2020_ corresponds to the current years from which the current observed SEI is based on
-  // (and should be update if a new observed SEI layer is used)
-  // temporary fix, b/ some older assets are not at a consistent resolution
-  if(version == 'v11') {
-    var resolutionInput = 90;
-  } else {
-    var resolutionInput = resolution;
-  }
-  
-  var assetName = 'SEI' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM' + dateString;
-  
-  
+  var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
   
   // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
   var fut1 = ee.Image(path + version + '/forecasts/' + assetName);
@@ -219,10 +209,19 @@ for (var i = 0; year < versionsFull.length; i++) {
     .addBands(c9Med) // p6
     .addBands(c9); // p7
     
+  //
+  Map.addLayer(comb1.select('p6_c9Med'), {min: 1, max: 9, palette: fig.c9Palette}, versionFull + ' c9Med', false)
+  // Map.addLayer(comb1.select('p6_c9Med').updateMask(comb1.select('p6_c9Med').remap([1, 5, 9], [0, 0, 0])), 
+  //   {min: 1, max: 9, palette: fig.c9Palette}, 
+  //   versionFull + ' c9Med change', false)
+  Map.addLayer(comb1.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, versionFull + ' diffQ5sMed', false)
+  
   // export assets -------------------------------------------------------------------------------
   
-  var productName = 'products_' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + dateString;
-  /*
+
+  var cur_years = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
+  var productName = 'products_' + versionFull + cur_years + resolution + "_" + root +  RCP + '_' + epoch;
+
   Export.image.toAsset({ 
     image: comb1, 
     assetId: path + version + '/products/' + productName,
@@ -234,6 +233,7 @@ for (var i = 0; year < versionsFull.length; i++) {
     //crs: SEI.crs,
     //crsTransform: SEI.crsTransform
   });
-  */
+  
 }
 
+//Map.add(fig.legendc9)
