@@ -1,6 +1,6 @@
 /*
-Purpose: create a smoothed layer of RAP/RCMAP cover, that gives the 95th percentile
-over time and over space, to create a measure of 'maximum potential' cover in a given area
+Purpose: create a smoothed layer of RAP/RCMAP cover, that gives the a given percentile
+over time and over space, to create a measure of 'potential' cover in a given area
 
 Author: Martin Holdrege
 
@@ -17,10 +17,13 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var resolution = 90;
 var yearEnd = 2021;
 var yearStart = 1986;
-var radius = 2000; // how much to smooth (meters)
-var dateString = '20230728';
+var radiusL = [707, 2000, 5000, 10000]; // how much to smooth spatially (meters), 707 is distance from the center to
+// the corner of a 1 km grid cell
+var dateString = '20230905';
 // var path = SEI.path;
-var path = 'users/MartinHoldrege/SEI/';
+var path = SEI.path;
+
+
 
 // Read in data -------------------------------------
 
@@ -40,7 +43,7 @@ var rcmapIc = ee.ImageCollection("USGS/NLCD_RELEASES/2019_REL/RCMAP/V5/COVER")
   
 // summarize across years -------------------------------------
 
-var reducer = ee.Reducer.percentile([50, 95]); //calculating median and 95 percentile
+var reducer = ee.Reducer.percentile([5, 50, 95]); //calculating 5th, median and 95 percentile
 var rap1 = rapIc.reduce(reducer);
 var rcmap1 = rcmapIc.reduce(reducer);
 
@@ -49,15 +52,18 @@ Map.addLayer(rap1.select("PFG_p95"), {min:0, max: 75, palette: ['white', 'green'
 
 // smooth spatially ---------------------------------------------
 
-var rapSmooth1 = rap1
-  .reduceNeighborhood(reducer,ee.Kernel.gaussian(radius, radius,'meters'),null, false);
+// iterate over spatial smoothing
+for ( var i = 0; i < radiusL.length; i++){
   
-var rapSmooth2 = rapSmooth1.select(['PFG_p50_p50', 'PFG_p95_p95', 'AFG_p50_p50'], 
-                                    ['PFG_p50', 'PFG_p95', 'AFG_p50']);
+var radius = radiusL[i];
+var rapSmooth1 = rap1
+  .reduceNeighborhood(reducer,ee.Kernel.circle(radius,'meters'),null, false);
+  
+var rapSmooth2 = rapSmooth1.select(['PFG_p50_p50', 'PFG_p50_p95', 'AFG_p50_p50', 'AFG_p50_p5']);
                                     
 var rcmapSmooth1 = rcmap1
-  .reduceNeighborhood(reducer,ee.Kernel.gaussian(radius, radius,'meters'),null, false)
-  .select(['sagebrush_p50_p50', 'sagebrush_p95_p95'], ['sagebrush_p50', 'sagebrush_p95']);
+  .reduceNeighborhood(reducer,ee.Kernel.circle(radius,'meters'),null, false)
+  .select(['sagebrush_p50_p50', 'sagebrush_p50_p95']);
                                
 
 print(rapSmooth2);
@@ -76,9 +82,9 @@ Export.image.toAsset({
   assetId: path + 'cover/' +  fileName,
   description: fileName,
   maxPixels: 1e13, scale: resolution, region: SEI.region,
-  crs: 'EPSG:4326'    // set to WGS84, decimal degrees
+  crs: SEI.crs  
 });
 
-
+}
   
   
