@@ -27,7 +27,7 @@ graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
 run <- c('fire1_eind1_c4grass1_co20')
-date <- "20230801"
+date <- "20230905"
 cap1 <- paste0('simulation settings: ', 
               run, "_", names(graze_level))
 # Read in data ------------------------------------------------------------
@@ -67,12 +67,15 @@ cov3 <- rast("data_processed/cover/cover_SEIv11_2017_2020_1km_560msmooth_2021122
 # historical median and 95 percentile cover (i.e. over years), smoothed over 2km, taking the neighborhood
 # median and 95th percentile, respectively. created in the 01_RAP_percentiles_lyr.js
 
-smooth <- 2000 # how big the neighborhood was
+smooths <- c(707, 2000, 5000, 10000) # how big the neighborhood was
+
+for (smooth in smooths) {
+  
 year_start <- 1986
 year_end <- 2021
 perc1 <- rast(paste0("data_processed/cover/cover_rap-rcmap_", 
                      year_start, "_", year_end, "_1000m_",
-                     smooth, "msmooth_20230728.tif"))
+                     smooth, "msmooth_20230905.tif"))
 
 
 # climate data ------------------------------------------------------------
@@ -138,15 +141,16 @@ perc_diff_df1 <- as.data.frame(perc_diff1)
 
 
 # same rasters but percentile based cover
-pcents <- c(95, 95, 50) # percentiles calculated
-names_perc <- paste0('cov_', PFTabbr, "_p", c(95, 95, 50))
+pcents <- c(95, 95, 50) # percentiles calculated through space
+pcent_time <- 50 # percentile calculated over years
+names_perc <- paste0('cov_', PFTabbr, "_p", pcent_time, "_p", c(95, 95, 50))
 
 names(names_perc) <- PFTabbr
 
 # for figure captions
-perc_descript <- paste0('Cover summarized by calculating the ', pcents, 
+perc_descript <- paste0('Cover summarized by calculating the ', pcent_time, 
                      'th percentile through time \n(', year_start, "-", year_end,
-                     ') and space (', smooth/1000, ' km radius)')
+                     ') and ', pcents, 'th percentile through space (', smooth/1000, ' km radius)')
 names(perc_descript) <- PFTabbr
 
 perc_diffp1 <- perc_comb1[[names_sw]] - perc_comb1[[names_perc]]
@@ -189,7 +193,6 @@ perc_maps1 <- modify_depth(perc_l1, .depth = 2, .f = function(r) {
 
 
 # * SEI cover -------------------------------------------------------------
-# 560 m smoothed cover from 2017-2022 (i.e. what is used for calculating SEI)
 
 set.seed(123)
 perc_df2 <- perc_df1 %>% 
@@ -262,7 +265,7 @@ for (i in seq_along(perc_maps1)) {
                                caption = cap1)
 
   jpeg(paste0("figures/stepwat/percentiles_sw_vs_RAP_", pft, "_", run, 
-              "_", date, ".jpeg"),
+              "_", date, "_", smooth, "msmooth.jpeg"),
        width = 11, height = 7, units = 'in', res = 600)
   
   print(comb)
@@ -270,9 +273,10 @@ for (i in seq_along(perc_maps1)) {
   dev.off()
 }
 
+} # end looping over smooths
 
 
-# * historic 2km cover-------------------------------------------------
+# * historic cover-------------------------------------------------
 
 # RAP/RCMAP cover calculated
 # by taking a the percentile through time and through space (e.g. 95th percentile)
