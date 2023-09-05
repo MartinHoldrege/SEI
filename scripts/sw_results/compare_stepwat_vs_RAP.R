@@ -191,92 +191,10 @@ perc_maps1 <- modify_depth(perc_l1, .depth = 2, .f = function(r) {
     ggplot2_map_theme() 
 }) 
 
-
-# * SEI cover -------------------------------------------------------------
-
+# * historic cover-------------------------------------------------
 set.seed(123)
 perc_df2 <- perc_df1 %>% 
   slice_sample(n = 100000)
-
-# scatter plots of percentiles
-perc_scatter1 <- map(names(PFTnames), function(pft) {
-
-    x <- paste0('cov_', pft)
-    y <- paste0('sw_', pft)
-    
-    ggplot(perc_df2, aes_string(x, y)) +
-      geom_point(alpha = 0.01, size = 0.7) +
-      geom_smooth() +
-      labs(x = "RAP/RCMAP percentile",
-           y = "STEPWAT percentile") +
-      theme_classic()
-      
-})
-
-# perc_maps2 <- pmap(perc_maps1, names(perc_maps1), perc_inset,
-#                    perc_scatter1, .f = function(x, pft, insets, xy)
-
-
-
-for (i in seq_along(perc_maps1)) {
-  
-  x <- perc_maps1[[i]] # maps
-  pft <- names(perc_maps1)[[i]]
-  insets <- perc_inset[[i]] # insets for map
-  xy <- perc_scatter1[[i]] # scatterplots
-  print(pft)
-  # adding labels/colors to the main maps
-
-  x$sw <- x$sw +
-    scale_fill_gradientn(na.value = 'transparent',
-                         name = "Percentile",
-                         limits = c(0, 100),
-                         colors = cols_map_bio(10)) + 
-    add_tag_as_label("STEPWAT biomass percentile")
-  
-  x$cov <- x$cov +
-    scale_fill_gradientn(na.value = 'transparent',
-                         name = "Percentile",
-                         limits = c(0, 100),
-                         colors = cols_map_bio(10)) + 
-    add_tag_as_label("RAP/RCMAP cover percentile")
-  
-  x$diff <- x$diff +
-    scale_fill_gradientn(na.value = 'transparent',
-                         name = "Percentile difference",
-                         limits = c(-100, 100),
-                         colors = cols_map_bio_d) + 
-    add_tag_as_label("STEPWAT - RAP/RCMAP percentile")
-  
-  # adding the insets in
-  out <- map2(insets, x, function(inset, main_map) {
-    main_map +
-      inset_element2(inset)
-  })
-  
-  # top row of maps
-  top <-  patchwork::wrap_plots(out[c('sw', 'cov')], nrow = 1,
-                                guides = 'collect') &
-    theme(legend.position = 'right')
-  
-  bottom <- xy + (out$diff & theme(legend.position = "right")) 
-  comb <- top / bottom +
-    patchwork::plot_annotation(PFTnames[pft], 
-                               caption = cap1)
-
-  jpeg(paste0("figures/stepwat/percentiles_sw_vs_RAP_", pft, "_", run, 
-              "_", date, "_", smooth, "msmooth.jpeg"),
-       width = 11, height = 7, units = 'in', res = 600)
-  
-  print(comb)
-  
-  dev.off()
-}
-
-} # end looping over smooths
-
-
-# * historic cover-------------------------------------------------
 
 # RAP/RCMAP cover calculated
 # by taking a the percentile through time and through space (e.g. 95th percentile)
@@ -343,15 +261,15 @@ for (i in seq_along(perc_maps1)) {
                                caption = paste(perc_descript[[pft]], 
                                                 "\n", cap1))
   
-  jpeg(paste0("figures/stepwat/percentiles_sw_vs_historic-RAP_", pft, "_", run, 
-              "_", date, ".jpeg"),
+  jpeg(paste0("figures/stepwat/percentiles/percentiles_sw_vs_historic-RAP_", pft, "_", run, 
+              "_", date, "_", smooth, "msmooth.jpeg"),
        width = 11, height = 7, units = 'in', res = 600)
   
   print(comb)
   
   dev.off()
 }
-
+} # end looping over smooths
 
 # SW & RAP biomass maps ---------------------------------------------------
 # side by side maps SW biomass and RAP (historic) biomass
