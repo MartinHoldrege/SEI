@@ -370,20 +370,12 @@ write_lines(lin2write, "src/qCurves4StepwatOutput2.js", append = TRUE)
 
 # write coefficients to rds objects ---------------------------------------
 
-# create simple predictor function that takes a input vector
-# of biomass and returns cover 
-create_bio2cov_lin <- function(mod) {
-  b0 = mod$coefficients['(Intercept)']
-  b1 = mod$coefficients['Biomass']
-  
-  out <- function(biomass) {
-    b0 + b1*biomass
-  }
-  out
-}
 
-bio2cov_lin_l <- list('bio2cov_sage1' = function(biomass) b0_sage + b1_sage*biomass,
-                      'bio2cov_afg1' = create_bio2cov_lin(mod_afg_cov_lin),
-                      'bio2cov_pfg1' = create_bio2cov_lin(mod_pfg_cov_lin))
+bio2cov_b0b1 <- list(
+  'b0b1_sage1' = c(b0 = b0_sage, b1 = b1_sage),
+  'b0b1_afg1' = c(b0 = unname(mod_afg_cov_lin$coefficients['(Intercept)']), 
+                  b1 = unname(mod_afg_cov_lin$coefficients['Biomass'])),
+  'b0b1_pfg1' = c(b0 = unname(mod_pfg_cov_lin$coefficients['(Intercept)']), 
+                  b1 = unname(mod_pfg_cov_lin$coefficients['Biomass'])))
 
-saveRDS(bio2cov_lin_l, 'models/bio2cov_lin_predict_funs_v1.RDS')
+saveRDS(bio2cov_b0b1, 'models/bio2cov_b0b1_v1.RDS')
