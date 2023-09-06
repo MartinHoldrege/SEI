@@ -251,3 +251,20 @@ rast2percentile <- function(x) {
 }
 
 
+#' create functions the predict cover from biomass
+#' given slope and intercept
+#'
+#' @param b0 intercept
+#' @param b1 slope
+#'
+#' @return a function, that takes biomass as input (biomass can be 
+#' a spatraster or a vector)
+b0b1_factory <- function(b0, b1) {
+  function(biomass) {
+    cover <- b0 + b1*biomass
+    
+    # if linear function predicts cover below or above
+    # the possible range they are replaced by 0 and 100, respectively
+    terra::clamp(cover, lower = 0, upper = 100, values = TRUE)
+  }
+}
