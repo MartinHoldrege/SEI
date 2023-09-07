@@ -38,7 +38,9 @@ cv_factory <- function(cdfo, cdfm, additive) {
 #' @param x_mf modelled future data
 #' @param cdfo the cdf for observed data 
 #' @param cdfm the cdf for modelled data (under current conditions)
-#'
+#' @param additive logical, whether additive or multiplicative qdm is
+#' employed
+#' 
 #' @return vector, with same length as x
 #' @export
 #'
