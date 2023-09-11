@@ -1,7 +1,7 @@
 # Purpose:
 
-# functions for quantile delta mapping and similar
-# see https://doi.org/10.5194/ascmo-9-29-2023 . I'm using similar 
+# functions for quantile delta mapping, quantile mapping and others.
+# see https://doi.org/10.5194/ascmo-9-29-2023 .
 
 #' Title
 #'
@@ -72,5 +72,36 @@ qdm_xcorr <- function(x_mf, cdfo, cdfm, additive = TRUE) {
   }
   
   xcorr
+}
+
+#' quantile mapping bias correction
+#'
+#' @param x_mf vector, modelled future data
+#' @param cdfo, ecdf object, based on current (historical) observed data
+#' @param cdfm ecdf objectct of current (historical) modeled data
+#'
+#' @return vecvtor with same length as x_mf
+#' @export
+#'
+#' @examples
+#' n <- 1000
+#' x <- seq(0, 25, by = 0.1)
+#' o <- abs(rnorm(n, 8, 4)) # 'observed' data
+#' mc <- abs(rnorm(n, 7, 2)) # 'modeled' curren data
+#' mf <- abs(rnorm(n, 10, 2)) # modeled future data
+#' cdfo <- ecdf(o)
+#' cdfm <- ecdf(mc)
+#' xcorr <- qm_xcorr(x_mf = mf, cdfo = cdfo, cdfm = cdfm)
+#' # 'correcting' current model values
+#' xcorr_c <- qm_xcorr(x_mf = mc, cdfo = cdfo, cdfm = cdfm)
+#' plot(x, cdfo(x), col = 'black', type = 'l')
+#' lines(x, cdfm(x), col = 'gold', type = 'l')
+#' lines(x, ecdf(mf)(x), col = 'red', type = 'l')
+#' lines(x, ecdf(xcorr)(x), col = 'blue', type = 'l')
+#' lines(x, ecdf(xcorr_c)(x), col = 'orange', type = 'l')
+qm_xcorr <- function(x_mf, cdfo, cdfm) {
+  xcorr1 <- quantile(cdfo, cdfm(x_mf)) # first time in eq. 12 of Lehner et al
+  xcorr2 <- xcorr1 + x_mf - quantile(cdfm, cdfm(x_mf)) # extrapolation term in eq 12
+  xcorr2 # result of eq 12
 }
 

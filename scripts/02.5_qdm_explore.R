@@ -1,4 +1,4 @@
-# Purpose: Explore quantile delta matching (QDM) as described
+# Purpose: Explore quantile delta matching (QDM) and quantile matching as described
 # by https://doi.org/10.5194/ascmo-9-29-2023.
 # here convert stepwat biomass to cover (both current and futre), and compare
 # CDFs to CDFs of RAP.
@@ -26,7 +26,7 @@ runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
 smooths <- c(707, 2000, 5000, 10000) # how big the neighborhood was for smoothin RAP cover
 additives <- c(TRUE, FALSE)# whether QDM is additive or not (multiplicative)
 
-date <- "20230905"
+date <- "20230911"
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
@@ -198,10 +198,10 @@ additive_name <- if(additive) {
 }
 
 sw_cov_corr1 <- map_dfr(PFTabbr, function(pft) {
-  lyrc <- info2 %>% # current stepwat layer
+  infoc <- info2 %>% # current stepwat layer
     filter(PFT == pft,
-           RCP == 'Current') %>% 
-    pull(id)
+           RCP == 'Current') 
+   lyrc <- infoc$id
   stopifnot(length(lyrc) == 1)
   
   # cdf of modeled data over the current or calibration period
@@ -218,45 +218,85 @@ sw_cov_corr1 <- map_dfr(PFTabbr, function(pft) {
   lyrf <-  infof$id
   
   stopifnot(length(lyrf) == 1)
-  x_mf <- sw_cov_df2[[lyrf]]
+  x_mf <- sw_cov_df2[[lyrf]] # modeled future
+  x_mc <- sw_cov_df2[[lyrf]] # modeled current
   
-  xcorr <- qdm_xcorr(x_mf = x_mf, cdfo = cdfoc, cdfm = cdfmc, additive = additive)
+  # bias correcting future modeled values
+  # quantile delta mapping
+  xcorr_qdm <- qdm_xcorr(x_mf = x_mf, cdfo = cdfoc, cdfm = cdfmc, additive = additive)
+  # correcting curre
   
-  out <- tibble(cover_corr = xcorr) %>% 
+  # quantile mapping
+  xcorr_qm <- qm_xcorr(x_mf = x_mf, cdfo = cdfoc, cdfm = cdfmc)
+  out_f <- tibble(cover_corr_qdm = xcorr_qdm,
+                cover_corr_qm = xcorr_qm) %>% 
     bind_cols(infof) %>% 
     mutate(cellnum = sw_cov_df2$cellnum)
+  
+  # bias correcting current modeled values
+  # this is an exploratory 'off label' use of the qdm and qm methods
+  # that I think might be good
+  out_c <- tibble(cellnum = sw_cov_df2$cellnum)
+  # qdm
+  out_c$cover_corr_qdm <- qdm_xcorr(x_mf = x_mc, cdfo = cdfoc, cdfm = cdfmc, 
+                                    additive = additive)
+
+  # qm
+  out_c$cover_corr_qm  <- qm_xcorr(x_mf = x_mc, cdfo = cdfoc, cdfm = cdfmc)
+
+  out <- bind_cols(out_c, infoc) %>% 
+    bind_rows(out_f)
   out
 })
 
 # fit cdfs to corrected data
-corr_cdf1 <- sw_cov_corr1%>% 
-  select(cover_corr, id, cellnum) %>% 
+corr_cdf_qdm1 <- sw_cov_corr1 %>% 
+  select(cover_corr_qdm, id, cellnum) %>% 
   pivot_wider(id_cols =  cellnum,
-              values_from = 'cover_corr',
+              values_from = 'cover_corr_qdm',
               names_from = 'id') %>% 
   select(-cellnum) %>% 
   map(ecdf)
 
-corr_prob1 <- map(corr_cdf1, \(f) f(cov_vec)) %>% 
+corr_cdf_qm1 <- sw_cov_corr1%>% 
+  select(cover_corr_qm, id, cellnum) %>% 
+  pivot_wider(id_cols =  cellnum,
+              values_from = 'cover_corr_qm',
+              names_from = 'id') %>% 
+  select(-cellnum) %>% 
+  map(ecdf)
+
+corr_prob_qdm1 <- map(corr_cdf_qdm1, \(f) f(cov_vec)) %>% 
   bind_cols() %>% 
   mutate(cover = cov_vec) %>% 
   pivot_longer(cols = -cover,
                values_to = 'prob',
                names_to = "id") %>% 
   left_join(info2, by = 'id') %>% 
-  mutate(description = paste0('STEPWAT (', RCP, ' ', years, ') corrected')) 
+  mutate(description = paste0('STEPWAT (', RCP, ' ', years, ') corrected (qdm)')) 
+
+corr_prob_qm1 <- map(corr_cdf_qm1, \(f) f(cov_vec)) %>% 
+  bind_cols() %>% 
+  mutate(cover = cov_vec) %>% 
+  pivot_longer(cols = -cover,
+               values_to = 'prob',
+               names_to = "id") %>% 
+  left_join(info2, by = 'id') %>% 
+  mutate(description = paste0('STEPWAT (', RCP, ' ', years, ') corrected (qm)')) 
 
 # combine datasets (for visualization) -------------------------------------
 
 # cumulative probability, by cover for observed, current and future (raw)
 # cover and corrected future cover. 
-comb_prob1 <- bind_rows(corr_prob1, sw_prob1) %>% 
-  select(cover, prob, PFT, description) %>% 
+comb_prob1 <- bind_rows(corr_prob_qdm1, corr_prob_qm1) %>% 
+  filter(RCP != "Current") %>% # don't want to show 'corrected' current (b/ same cdf as observed)
+  bind_rows(sw_prob1) %>% 
+    select(cover, prob, PFT, description) %>% 
   bind_rows(cov_prob1) %>% 
   mutate(description = factor(description),
          # re-order for legend
          description = fct_relevel(description,
-                                   levels(description)[c(1,2, 4, 3)])
+                                   levels(description)[c(1,2, 5, 3, 4)])
          )
 
 # filter out the right portions where prob is 1 for all scenarios 
@@ -278,16 +318,36 @@ cap1 <- paste('Simulation settings: ', run,
               '\nQDM done with the', additive_name, 'approach')
 
 
-cols_cdf <- c('black', 'gold', 'red', 'darkblue')
+cols_cdf <- c('black', 'gold', 'red', '#9ebcda', '#8856a7')
 g <- ggplot(comb_prob2, aes(cover, prob, color = description)) +
   geom_line() +
   facet_wrap(~PFT, scales = 'free_x') +
   theme(legend.position = 'bottom') +
+  guides(color=guide_legend(nrow=2, byrow=TRUE)) +
   scale_color_manual(values = cols_cdf,
                      name = "") +
   labs(y = "cumulative probability",
        caption = cap1)
 print(g)
+
+
+# corrected rasters -------------------------------------------------------
+# taking the dataframes and converting back to rasters, of corrected
+# cover values
+
+# r_corr_qdm <- sw_cov_corr1 %>% 
+#   select(cover_corr_qdm, id, cellnum) %>% 
+#   pivot_wider(names_from = 'id',
+#               values_from = 'cover_corr_qdm',
+#               id_cols = 'cellnum') %>% 
+#   fill_raster(., template = sw1)
+# 
+# r_corr_qm <- sw_cov_corr1 %>% 
+#   select(cover_corr_qm, id, cellnum) %>% 
+#   pivot_wider(names_from = 'id',
+#               values_from = 'cover_corr_qm',
+#               id_cols = 'cellnum') %>% 
+#   fill_raster(., template = sw1)
 
 
 } # end additives loop
