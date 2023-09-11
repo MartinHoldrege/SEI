@@ -14,17 +14,22 @@
 
 library(tidyverse)
 library(terra)
+library(patchwork)
 source("src/general_functions.R")
 # for create_rast_info function
 source("../grazing_effects/src/general_functions.R")
 source("src/qdm_functions.R")
+source("src/figure_functions.R")
+source("src/fig_params.R") # for cols_region
+source("../grazing_effects/src/fig_params.R") # for colors, and labels
 theme_set(theme_classic())
 # params ------------------------------------------------------------------
 
 runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
 
-smooths <- c(707, 2000, 5000, 10000) # how big the neighborhood was for smoothin RAP cover
-additives <- c(TRUE, FALSE)# whether QDM is additive or not (multiplicative)
+ smooths <- c(707, 2000, 5000, 10000) # how big the neighborhood was for smoothin RAP cover
+# smooths <- c(707)
+additive <- TRUE # whether QDM is additive or not (multiplicative)
 
 date <- "20230911"
 graze_level <- c("grazL" = "Light")
@@ -51,7 +56,7 @@ iter <- expand_grid(run = runs,
        smooth = smooths)
 
 # start loop
-pdf(paste0('figures/qdm/qdm_CDF-plots_', date, '.pdf'),
+pdf(paste0('figures/qdm/qdm_CDF-plots_maps_', date, '.pdf'),
     width = 11, height = 8)
 
 # this loop isn't very efficient it requires repeating some
@@ -189,8 +194,6 @@ cov_prob1 <- map_dfc(cov_cdf1, \(f) f(cov_vec)) %>%
 # bias correct data ----------------------------------------------------------
 # using QDM to bias correct future stepwat cover
 
-for (additive in additives) {
-  
 additive_name <- if(additive) {
   'additive'
 } else {
@@ -219,7 +222,7 @@ sw_cov_corr1 <- map_dfr(PFTabbr, function(pft) {
   
   stopifnot(length(lyrf) == 1)
   x_mf <- sw_cov_df2[[lyrf]] # modeled future
-  x_mc <- sw_cov_df2[[lyrf]] # modeled current
+  x_mc <- sw_cov_df2[[lyrc]] # modeled current
   
   # bias correcting future modeled values
   # quantile delta mapping
@@ -312,10 +315,12 @@ comb_prob2 <- comb_prob1 %>%
 
 # CDF figures -------------------------------------------------------------
 
-cap1 <- paste('Simulation settings: ', run,
+cap0 <- paste('Simulation settings: ', run,
               '\n RAP data smoothed over', smooth, 'm',
               '(temporal 50th percentile, spatial 95th (except 50th for afg))',
               '\nQDM done with the', additive_name, 'approach')
+
+cap1 <- paste(cap0,'\nQDM done with the', additive_name, 'approach')
 
 
 cols_cdf <- c('black', 'gold', 'red', '#9ebcda', '#8856a7')
@@ -331,26 +336,159 @@ g <- ggplot(comb_prob2, aes(cover, prob, color = description)) +
 print(g)
 
 
-# corrected rasters -------------------------------------------------------
+# create corrected rasters -------------------------------------------------------
 # taking the dataframes and converting back to rasters, of corrected
 # cover values
 
-# r_corr_qdm <- sw_cov_corr1 %>% 
-#   select(cover_corr_qdm, id, cellnum) %>% 
-#   pivot_wider(names_from = 'id',
-#               values_from = 'cover_corr_qdm',
-#               id_cols = 'cellnum') %>% 
-#   fill_raster(., template = sw1)
+r_corr_qdm <- sw_cov_corr1 %>%
+  select(cover_corr_qdm, id, cellnum) %>%
+  pivot_wider(names_from = 'id',
+              values_from = 'cover_corr_qdm',
+              id_cols = 'cellnum') %>%
+  fill_raster(., template = sw1)
+
+r_corr_qm <- sw_cov_corr1 %>%
+  select(cover_corr_qm, id, cellnum) %>%
+  pivot_wider(names_from = 'id',
+              values_from = 'cover_corr_qm',
+              id_cols = 'cellnum') %>%
+  fill_raster(., template = sw1)
+
+
+# maps of corrected values ------------------------------------------------
+
+
+# * qdm/qm ---------------------------------------------------------------------
+
+for (pft in PFTabbr) {
+  infoc <- info2 %>% # current stepwat layer
+    filter(PFT == pft,  RCP == 'Current') 
+  lyrc <- infoc$id
+  
+  stopifnot(length(lyrc) == 1)
+
+  infof <- info2 %>% # future stepwat layer
+    filter(PFT == pft, RCP != 'Current') 
+  
+  lyrf <-  infof$id
+  l <- c(lyrc, lyrf)
+  range <- minmax(rast(list(r_corr_qdm[[l]], r_corr_qm[[l]], sw_cov2[[l]]))) %>% 
+    as.numeric() %>% 
+    range()
+  
+  # create delta layers (change in cover, current vs future)
+  raw_d <- sw_cov2[[lyrf]] - sw_cov2[[lyrc]] # raw delta 
+  
+  # bias corrected deltas
+  qdm_d <- r_corr_qdm[[lyrf]] - r_corr_qdm[[lyrc]]
+  qm_d <- r_corr_qm[[lyrf]] - r_corr_qm[[lyrc]]
+  
+  labc <- rcp_label(infoc$RCP, infoc$years)
+  labf <- rcp_label(infof$RCP, infof$years)
+  
+  # list contain elements for 6 different maps
+  tmp1 <- list(r = list(sw_cov2[[lyrc]],    sw_cov2[[lyrf]], # the rasters
+                        r_corr_qdm[[lyrc]], r_corr_qdm[[lyrf]],
+                        r_corr_qm[[lyrc]],  r_corr_qm[[lyrf]]),
+               # the type of correction
+       type = list("raw", "raw", 
+                   "QDM", "QDM", 
+                   "QM", "QM"),
+       # the time period
+       period = list(labc, labf, 
+                     labc, labf, 
+                     labc, labf)
+       )
+  
+  # maps of cover
+  maps1 <- pmap(tmp1, function(r, type, period) {
+    plot_map_inset(r = r,
+                   colors = cols_map_bio(10),
+                   tag_label = paste('STEPWAT', type, 'cover', period),
+                   limits = range,
+                   scale_name = lab_cov0)
+  })
+  
+  # maps of delta cover
+  delta <- list()
+  delta$raw <- sw_cov2[[lyrf]] - sw_cov2[[lyrc]]   
+  delta$QDM<- r_corr_qdm[[lyrf]] - r_corr_qdm[[lyrc]]  
+  delta$raw_QM <- delta$raw # including 2nd time for different color range
+  delta$QM <- r_corr_qm[[lyrf]] - r_corr_qm[[lyrc]]  
+  
+  # ranges for QM and QDM deltas are quite different so using different scales
+  range_delta1 <- map(delta[c('raw', 'QDM')], minmax) %>% 
+    unlist() %>%  abs() %>%  max() %>% c(-., .)
+  
+  range_delta2 <- map(delta[c('raw', 'QM')], minmax) %>% 
+    unlist() %>%  abs() %>%  max() %>% c(-., .)
+  
+  range_l <- list('raw' = range_delta1,
+                  'QDM' = range_delta1,
+                  'raw_QM' = range_delta2,
+                  'QM' = range_delta2)
+  
+  maps_d1 <- map2(delta, names(delta), function(r, type) {
+    plot_map_inset(r = r,
+                   colors = cols_map_bio_d,
+                   tag_label = paste('Delta', type, 'STEPWAT cover'),
+                   limits = range_l[[type]],
+                   scale_name = lab_cov1)
+  })
+  
+  # combine cover and delta maps
+
+  maps_qdm1 <- (maps1[[1]] + maps1[[2]] + maps_d1$raw)/
+    (maps1[[3]] + maps1[[4]] + maps_d1$QDM) + 
+    plot_layout(guides = 'collect') & 
+    theme(legend.position = 'bottom') 
+  
+  maps_qdm2 <- maps_qdm1 + patchwork::plot_annotation(title = pft,
+                               caption = cap1)
+  
+  maps_qm1 <- ((maps1[[1]] + maps1[[2]] + maps_d1$raw_QM)/
+    (maps1[[5]] + maps1[[6]] + maps_d1$QM) +
+    plot_layout(guides = 'collect') &
+    theme(legend.position = 'bottom'))
+  
+  maps_qm2 <- maps_qm1 + patchwork::plot_annotation(title = pft,
+                             caption = cap0)
+  
+  print(maps_qdm2)
+  
+  print(maps_qm1)
+}
+
+
+# histograms with Q curves superimposed -----------------------------------
+
+# # convert to longer format
+# sw_cov_corr2 <- sw_cov_corr1 %>%
+#   rename_with(.fn = \(x) str_replace(x, 'cover_corr_', '')) %>% 
+#   pivot_longer(cols = matches('qm|qdm'),
+#                names_to = 'method',
+#                values_to = 'cover')
 # 
-# r_corr_qm <- sw_cov_corr1 %>% 
-#   select(cover_corr_qm, id, cellnum) %>% 
-#   pivot_wider(names_from = 'id',
-#               values_from = 'cover_corr_qm',
-#               id_cols = 'cellnum') %>% 
-#   fill_raster(., template = sw1)
+# q1 <- parse_q_curves()[c('sage', 'pfg', 'afg')]
+# names(q1) <- names(q1) %>% 
+#   str_replace("^sage$", "sagebrush")
+# 
+# q2 <- map(q1, \(x) pivot_longer(x, cols = -cover, names_to = "region", 
+#                                 values_to = "q"))
+# 
+# pft <- 'afg'
+# 
+# ggplot() +
+#   # geom_line(data = q2[[pft]],
+#   #           aes(x = cover, y = q, color = region)) +
+#   labs(y = "Q Value") +
+#   scale_color_manual(values = cols_region) +
+#   geom_density(data = sw_cov_corr2[sw_cov_corr2$PFT == pft, ],
+#                aes(x = cover, fill = method, group = method))
+# end loops ---------------------------------------------------------------
 
 
-} # end additives loop
+
 } # end of loop over smooth and run
 dev.off()
 

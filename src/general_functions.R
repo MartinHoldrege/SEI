@@ -268,3 +268,31 @@ b0b1_factory <- function(b0, b1) {
     terra::clamp(cover, lower = 0, upper = 100, values = TRUE)
   }
 }
+
+
+#' fill a template with values
+#' 
+#' @description
+#' Filling a spatraster instead of just using values() because
+#' data (df) doesn't include rows for missing values. 
+#' 
+#'
+#' @param template template raster (terra spatraster)
+#' @param df dataframe with 1 or more data columns and 1 cellnum column
+#' where the cellnums correspond to the cellnumbers of the template raster
+#' 
+#' @return spatraster
+fill_raster <- function(df, template) {
+  full_df <- tibble(cellnum = as.character(1:ncell(template[[1]])))
+  
+  full_df2 <- full_join(full_df, df, by = 'cellnum') %>% 
+    select(-cellnum)
+  
+  stopifnot(nrow(full_df) == nrow(full_df2))
+  
+  r_out <- rast(template[[1]], nlyrs = ncol(full_df2))
+  names(r_out) <- names(full_df2)
+  
+  values(r_out) <- as.matrix(full_df2)
+  r_out
+}

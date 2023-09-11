@@ -1,5 +1,5 @@
 
-
+source("src/Functions__DisplayItems.R")
 
 # crs -----------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ plot_map_inset <- function(r,
                                   limits = limits_inset,
                                   add_vertical0 = add_vertical0)
   
-  s <- st_as_stars(r)
+  s <- stars::st_as_stars(r)
   
   map <- plot_map(s, 
                   st_geom_state = states,
