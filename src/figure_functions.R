@@ -26,11 +26,7 @@ states <- sf::st_as_sf(spData::us_states) %>%
 # label functions ---------------------------------------------------------
 
 rcp_label <- function(rcp, years) {
-  if (rcp == "Current") {
-    "(Historical)"
-  } else {
-    paste0("(",rcp,", ",years, ")")
-  }
+  ifelse(rcp == "Current", "(Historical)", paste0("(",rcp,", ",years, ")"))
 }
 
 # ggplot basemap objects --------------------------------------------------

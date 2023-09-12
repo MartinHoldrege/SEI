@@ -25,10 +25,12 @@ source("../grazing_effects/src/fig_params.R") # for colors, and labels
 theme_set(theme_classic())
 # params ------------------------------------------------------------------
 
-runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
+# runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
+runs <- c('fire1_eind1_c4grass1_co20')
 
- smooths <- c(707, 2000, 5000, 10000) # how big the neighborhood was for smoothin RAP cover
-# smooths <- c(707)
+# how big the neighborhood was for smoothin RAP cover
+# smooths <- c(707, 2000, 5000, 10000)
+smooths <- c(707, 2000)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
 date <- "20230912"
@@ -459,31 +461,72 @@ for (pft in PFTabbr) {
 }
 
 
+# delta cover scatterplots ------------------------------------------------
+# comparing change in cover calculated from raw stepwat cover versus
+# calculated from QDM stepwat cover
+
+# binding together corrected and raw stepwat cover values
+sw_cov_corr2 <- sw_cov_df3 %>% 
+  rename(cover_raw = cover) %>% 
+  right_join(sw_cov_corr1, by = c("cellnum", "id")) %>% 
+  select(cellnum, run, PFT, RCP, years, cover_corr_qdm, cover_raw)
+
+
+delta_df <- sw_cov_corr2 %>% 
+  filter(RCP == .env[['RCP']]) %>% 
+  full_join(filter(sw_cov_corr2, RCP == "Current"), 
+            by = c('cellnum', 'run', 'PFT'),
+            # current and future
+            suffix = c('_f', '_c')) %>% 
+  select(-matches('RCP'), -matches('years')) %>%
+  # change in cover of qdm and raw cover values (current vs future)
+  mutate(delta_qdm = cover_corr_qdm_f - cover_corr_qdm_c,
+         delta_raw = cover_raw_f - cover_raw_c)
+
+g <- delta_df %>% 
+  group_by(PFT) %>% 
+  slice_sample(n = 1e4) %>% 
+  ggplot(aes(delta_raw, delta_qdm)) +
+    geom_point(alpha = 0.1) +
+    facet_wrap(~PFT, scales = 'free')+
+    geom_abline(slope = 1, intercept = 0, color = 'blue') +
+    geom_abline(slope = 0, intercept = 0, linetype = 2) +
+    geom_vline(xintercept = 0, linetype = 2) +
+  labs(caption = cap1,
+       x = "change in STEPWAT raw cover",
+       y = "change in STEPWAT  QDM cover",
+       subtitle = paste('comparing changes in cover (future - historical)', 
+                        rcp_label(RCP, years)))
+print(g)
+
 # histograms with Q curves superimposed -----------------------------------
 
 # # convert to longer format
 # sw_cov_corr2 <- sw_cov_corr1 %>%
-#   rename_with(.fn = \(x) str_replace(x, 'cover_corr_', '')) %>% 
+#   rename_with(.fn = \(x) str_replace(x, 'cover_corr_', '')) %>%
 #   pivot_longer(cols = matches('qm|qdm'),
 #                names_to = 'method',
-#                values_to = 'cover')
+#                values_to = 'cover') %>% 
+#   filter(method == 'qdm') %>% 
+#   mutate(rcp_label = rcp_label(RCP, years))
 # 
 # q1 <- parse_q_curves()[c('sage', 'pfg', 'afg')]
-# names(q1) <- names(q1) %>% 
+# names(q1) <- names(q1) %>%
 #   str_replace("^sage$", "sagebrush")
 # 
-# q2 <- map(q1, \(x) pivot_longer(x, cols = -cover, names_to = "region", 
+# q2 <- map(q1, \(x) pivot_longer(x, cols = -cover, names_to = "region",
 #                                 values_to = "q"))
 # 
 # pft <- 'afg'
 # 
 # ggplot() +
-#   # geom_line(data = q2[[pft]],
-#   #           aes(x = cover, y = q, color = region)) +
+#   geom_line(data = q2[[pft]],
+#             aes(x = cover*100, y = q, color = region)) +
 #   labs(y = "Q Value") +
 #   scale_color_manual(values = cols_region) +
 #   geom_density(data = sw_cov_corr2[sw_cov_corr2$PFT == pft, ],
-#                aes(x = cover, fill = method, group = method))
+#                aes(x = cover, fill = rcp_label))
+
 # end loops ---------------------------------------------------------------
 
 
