@@ -23,6 +23,7 @@ source("src/figure_functions.R")
 source("src/fig_params.R") # for cols_region
 source("../grazing_effects/src/fig_params.R") # for colors, and labels
 theme_set(theme_classic())
+
 # params ------------------------------------------------------------------
 
 # runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
@@ -30,7 +31,7 @@ runs <- c('fire1_eind1_c4grass1_co20')
 
 # how big the neighborhood was for smoothin RAP cover
 # smooths <- c(707, 2000, 5000, 10000)
-smooths <- c(707, 2000)
+smooths <- c(2000)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
 date <- "20230912"
@@ -58,8 +59,8 @@ iter <- expand_grid(run = runs,
        smooth = smooths)
 
 # start loop
-pdf(paste0('figures/qdm/qdm_CDF-plots_maps_', date, '.pdf'),
-    width = 11, height = 8)
+# pdf(paste0('figures/qdm/qdm_CDF-plots_maps_', date, '.pdf'),
+#     width = 11, height = 8)
 
 # this loop isn't very efficient it requires repeating some
 # computation unnecessarily
@@ -90,9 +91,13 @@ bio2cov <- map(b0b1, function(x) {
 
 year_start <- 1986
 year_end <- 2021
+# historical RAP/rcmap cover
 cov1 <- rast(paste0("data_processed/cover/cover_rap-rcmap_", 
                      year_start, "_", year_end, "_1000m_",
                      smooth, "msmooth_20230905.tif"))
+
+# 560m smoothed RAP cover, layers used for SEI
+rapSEI1 <- rast("data_processed/cover/cover_SEIv11_2017_2020_1km_560msmooth_20211228.tif")
 
 # *stepwat ----------------------------------------------------------------
 
@@ -125,6 +130,14 @@ cov2 <- project(cov1, sw3[[1]])
 sw3 <- mask(sw3, cov2[[1]])
 cov2 <- mask(cov2, sw3[[1]])
 sw3 <- mask(sw3, cov2[[1]])
+
+rapSEI2 <- project(rapSEI1, sw3[[1]]) %>% 
+  mask(sw3[[1]])
+
+names(rapSEI2) <- names(rapSEI2) %>% 
+  str_replace("cov_", "")
+  
+
 # *bio2cov ----------------------------------------------------------------
 # convert stepwat biomass to cover using linear equations
 
@@ -153,7 +166,20 @@ sw_cov_df3 <- sw_cov_df2 %>%
   
 
 info2 <- create_rast_info(names(sw_cov_df1), into = into) %>% 
-  mutate(PFT = PFTlookup0[as.character(PFT)])
+  mutate(PFT = PFTlookup0[as.character(PFT)]) %>% 
+  arrange(run, PFT, RCP, years)
+
+
+# * sw proportin change ---------------------------------------------------
+
+# current stepwat cover (this works b/ info2 ordered)
+sw_cov_c <- sw_cov2[[info2$id[info2$RCP == 'Current']]]
+# future
+sw_cov_f <- sw_cov2[[info2$id[info2$RCP == RCP]]]
+
+# proportion change
+r_sw_prop <- (sw_cov_f - sw_cov_c)/sw_cov_c
+names(r_sw_prop) <- info2$PFT[info2$RCP == RCP]
 
 # compute cdfs ------------------------------------------------------------
 # emperical cumulative distribution functions
@@ -231,10 +257,8 @@ sw_cov_corr1 <- map_dfr(PFTabbr, function(pft) {
   xcorr_qdm <- qdm_xcorr(x_mf = x_mf, cdfo = cdfoc, cdfm = cdfmc, additive = additive)
   # correcting curre
   
-  # quantile mapping
-  xcorr_qm <- qm_xcorr(x_mf = x_mf, cdfo = cdfoc, cdfm = cdfmc)
-  out_f <- tibble(cover_corr_qdm = xcorr_qdm,
-                cover_corr_qm = xcorr_qm) %>% 
+
+  out_f <- tibble(cover_corr_qdm = xcorr_qdm) %>% 
     bind_cols(infof) %>% 
     mutate(cellnum = sw_cov_df2$cellnum)
   
@@ -245,9 +269,6 @@ sw_cov_corr1 <- map_dfr(PFTabbr, function(pft) {
   # qdm
   out_c$cover_corr_qdm <- qdm_xcorr(x_mf = x_mc, cdfo = cdfoc, cdfm = cdfmc, 
                                     additive = additive)
-
-  # qm
-  out_c$cover_corr_qm  <- qm_xcorr(x_mf = x_mc, cdfo = cdfoc, cdfm = cdfmc)
 
   out <- bind_cols(out_c, infoc) %>% 
     bind_rows(out_f)
@@ -263,14 +284,6 @@ corr_cdf_qdm1 <- sw_cov_corr1 %>%
   select(-cellnum) %>% 
   map(ecdf)
 
-corr_cdf_qm1 <- sw_cov_corr1%>% 
-  select(cover_corr_qm, id, cellnum) %>% 
-  pivot_wider(id_cols =  cellnum,
-              values_from = 'cover_corr_qm',
-              names_from = 'id') %>% 
-  select(-cellnum) %>% 
-  map(ecdf)
-
 corr_prob_qdm1 <- map(corr_cdf_qdm1, \(f) f(cov_vec)) %>% 
   bind_cols() %>% 
   mutate(cover = cov_vec) %>% 
@@ -280,20 +293,11 @@ corr_prob_qdm1 <- map(corr_cdf_qdm1, \(f) f(cov_vec)) %>%
   left_join(info2, by = 'id') %>% 
   mutate(description = paste0('STEPWAT (', RCP, ' ', years, ') corrected (qdm)')) 
 
-corr_prob_qm1 <- map(corr_cdf_qm1, \(f) f(cov_vec)) %>% 
-  bind_cols() %>% 
-  mutate(cover = cov_vec) %>% 
-  pivot_longer(cols = -cover,
-               values_to = 'prob',
-               names_to = "id") %>% 
-  left_join(info2, by = 'id') %>% 
-  mutate(description = paste0('STEPWAT (', RCP, ' ', years, ') corrected (qm)')) 
-
 # combine datasets (for visualization) -------------------------------------
 
 # cumulative probability, by cover for observed, current and future (raw)
 # cover and corrected future cover. 
-comb_prob1 <- bind_rows(corr_prob_qdm1, corr_prob_qm1) %>% 
+comb_prob1 <- corr_prob_qdm1 %>% 
   filter(RCP != "Current") %>% # don't want to show 'corrected' current (b/ same cdf as observed)
   bind_rows(sw_prob1) %>% 
     select(cover, prob, PFT, description) %>% 
@@ -301,7 +305,7 @@ comb_prob1 <- bind_rows(corr_prob_qdm1, corr_prob_qm1) %>%
   mutate(description = factor(description),
          # re-order for legend
          description = fct_relevel(description,
-                                   levels(description)[c(1,2, 5, 3, 4)])
+                                   levels(description)[c(1,2, 4, 3)])
          )
 
 # filter out the right portions where prob is 1 for all scenarios 
@@ -348,13 +352,6 @@ r_corr_qdm <- sw_cov_corr1 %>%
               id_cols = 'cellnum') %>%
   fill_raster(., template = sw1)
 
-r_corr_qm <- sw_cov_corr1 %>%
-  select(cover_corr_qm, id, cellnum) %>%
-  pivot_wider(names_from = 'id',
-              values_from = 'cover_corr_qm',
-              id_cols = 'cellnum') %>%
-  fill_raster(., template = sw1)
-
 
 # maps of corrected values ------------------------------------------------
 
@@ -382,22 +379,18 @@ for (pft in PFTabbr) {
   
   # bias corrected deltas
   qdm_d <- r_corr_qdm[[lyrf]] - r_corr_qdm[[lyrc]]
-  qm_d <- r_corr_qm[[lyrf]] - r_corr_qm[[lyrc]]
-  
+
   labc <- rcp_label(infoc$RCP, infoc$years)
   labf <- rcp_label(infof$RCP, infof$years)
   
   # list contain elements for 6 different maps
   tmp1 <- list(r = list(sw_cov2[[lyrc]],    sw_cov2[[lyrf]], # the rasters
-                        r_corr_qdm[[lyrc]], r_corr_qdm[[lyrf]],
-                        r_corr_qm[[lyrc]],  r_corr_qm[[lyrf]]),
+                        r_corr_qdm[[lyrc]], r_corr_qdm[[lyrf]]),
                # the type of correction
        type = list("raw", "raw", 
-                   "QDM", "QDM", 
-                   "QM", "QM"),
+                   "QDM", "QDM"),
        # the time period
        period = list(labc, labf, 
-                     labc, labf, 
                      labc, labf)
        )
   
@@ -414,20 +407,13 @@ for (pft in PFTabbr) {
   delta <- list()
   delta$raw <- sw_cov2[[lyrf]] - sw_cov2[[lyrc]]   
   delta$QDM<- r_corr_qdm[[lyrf]] - r_corr_qdm[[lyrc]]  
-  delta$raw_QM <- delta$raw # including 2nd time for different color range
-  delta$QM <- r_corr_qm[[lyrf]] - r_corr_qm[[lyrc]]  
-  
+
   # ranges for QM and QDM deltas are quite different so using different scales
   range_delta1 <- map(delta[c('raw', 'QDM')], minmax) %>% 
     unlist() %>%  abs() %>%  max() %>% c(-., .)
   
-  range_delta2 <- map(delta[c('raw', 'QM')], minmax) %>% 
-    unlist() %>%  abs() %>%  max() %>% c(-., .)
-  
   range_l <- list('raw' = range_delta1,
-                  'QDM' = range_delta1,
-                  'raw_QM' = range_delta2,
-                  'QM' = range_delta2)
+                  'QDM' = range_delta1)
   
   maps_d1 <- map2(delta, names(delta), function(r, type) {
     plot_map_inset(r = r,
@@ -447,17 +433,8 @@ for (pft in PFTabbr) {
   maps_qdm2 <- maps_qdm1 + patchwork::plot_annotation(title = pft,
                                caption = cap1)
   
-  maps_qm1 <- ((maps1[[1]] + maps1[[2]] + maps_d1$raw_QM)/
-    (maps1[[5]] + maps1[[6]] + maps_d1$QM) +
-    plot_layout(guides = 'collect') &
-    theme(legend.position = 'bottom'))
-  
-  maps_qm2 <- maps_qm1 + patchwork::plot_annotation(title = pft,
-                             caption = cap0)
-  
+
   print(maps_qdm2)
-  
-  print(maps_qm2)
 }
 
 
@@ -498,6 +475,65 @@ g <- delta_df %>%
        subtitle = paste('comparing changes in cover (future - historical)', 
                         rcp_label(RCP, years)))
 print(g)
+
+
+# comparing sw change vs RAP cov ------------------------------------------
+
+
+# * create dfs ------------------------------------------------------------
+
+# poportional change in stepwat cover
+sw_prop_df1 <- as.data.frame(r_sw_prop) %>% 
+  mutate(cellnum = rownames(.)) %>% 
+  pivot_longer(cols = -cellnum,
+               names_to = 'PFT',
+               # proportion change
+               values_to = 'sw_prop')
+
+# RAP cover used for SEI
+SEI_cov_df1 <- as.data.frame(rapSEI2) %>% 
+  mutate(cellnum = rownames(.)) %>% 
+  pivot_longer(cols = -cellnum,
+               names_to = 'PFT',
+               # proportion change
+               values_to = 'cov_SEI')
+
+# calculation of 'future' rap
+rap_fut <- delta_df %>% 
+  select(cellnum, PFT, delta_qdm) %>% 
+  left_join(sw_prop_df1, by = c("cellnum", "PFT")) %>% 
+  left_join(SEI_cov_df1, by = c("cellnum", "PFT")) %>% 
+  mutate(
+    # calculating future rap cover by multiply proportion change
+    cov_SEI_f_prop = cov_SEI*sw_prop + cov_SEI,
+    # future cover calculating by adding delta cover (qdm corrected)
+    cov_SEI_f_qdm = cov_SEI + delta_qdm) %>% 
+  drop_na(matches('cov_'))
+
+set.seed(1234)
+rap_fut_sample <- rap_fut %>% 
+  group_by(PFT) %>% 
+  slice_sample(n = 1e4)
+# * scatterplot -----------------------------------------------------------
+
+g <- ggplot(rap_fut_sample, aes(x = cov_SEI)) +
+  labs(caption = cap1,
+       x = "RAP/RCMAP cover (as used for SEI)") +
+  facet_wrap(~PFT)
+
+g +
+  geom_point(aes(y = delta_qdm, color = cov_SEI_f_qdm))
+
+g +
+  geom_point(aes(y = sw_prop, color = cov_SEI_f_prop))
+
+g2 <- g +
+  geom_abline(slope = 1, intercept = 0)
+g2 +
+  geom_point(aes(y = cov_SEI_f_qdm, color = delta_qdm))
+
+g2 +
+  geom_point(aes(y = cov_SEI_f_prop, color = sw_prop))
 
 # histograms with Q curves superimposed -----------------------------------
 
