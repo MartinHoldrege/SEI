@@ -31,7 +31,7 @@ runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
 # smooths <- c(707)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
-date <- "20230911"
+date <- "20230912"
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
@@ -317,8 +317,7 @@ comb_prob2 <- comb_prob1 %>%
 
 cap0 <- paste('Simulation settings: ', run,
               '\n RAP data smoothed over', smooth, 'm',
-              '(temporal 50th percentile, spatial 95th (except 50th for afg))',
-              '\nQDM done with the', additive_name, 'approach')
+              '(temporal 50th percentile, spatial 95th (except 50th for afg))')
 
 cap1 <- paste(cap0,'\nQDM done with the', additive_name, 'approach')
 
@@ -456,7 +455,7 @@ for (pft in PFTabbr) {
   
   print(maps_qdm2)
   
-  print(maps_qm1)
+  print(maps_qm2)
 }
 
 
