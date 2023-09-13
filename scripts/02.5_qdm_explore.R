@@ -34,7 +34,7 @@ runs <- c('fire1_eind1_c4grass1_co20')
 smooths <- c(2000)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
-date <- "20230912"
+date <- "20230913"
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
@@ -370,7 +370,7 @@ for (pft in PFTabbr) {
   
   lyrf <-  infof$id
   l <- c(lyrc, lyrf)
-  range <- minmax(rast(list(r_corr_qdm[[l]], r_corr_qm[[l]], sw_cov2[[l]]))) %>% 
+  range <- minmax(rast(list(r_corr_qdm[[l]], sw_cov2[[l]]))) %>% 
     as.numeric() %>% 
     range()
   
@@ -519,22 +519,50 @@ rap_fut_sample <- rap_fut %>%
 g <- ggplot(rap_fut_sample, aes(x = cov_SEI)) +
   labs(caption = cap1,
        x = "RAP/RCMAP cover (as used for SEI)") +
-  facet_wrap(~PFT)
+  facet_wrap(~PFT) +
+  scale_color_continuous(type = 'viridis')
 
-g +
-  geom_point(aes(y = delta_qdm, color = cov_SEI_f_qdm))
+print(g +
+  geom_point(aes(y = delta_qdm, color = cov_SEI_f_qdm)) +
+  labs(y = 'Delta STEPWAT qdm cover',
+       title = 'Future RAP cover calculated by adding delta (qdm) cover',
+       color = 'Future RAP cover'))
 
-g +
-  geom_point(aes(y = sw_prop, color = cov_SEI_f_prop))
+g3 <- g +
+  geom_point(aes(y = sw_prop, color = cov_SEI_f_prop))+
+  labs(title = 'Future RAP cover calculated by multiplying proportion STEPWAT change',
+       color = 'Future RAP cover') 
+
+print(g3)
+
+print(g3 +
+  ylim(c(-1, 2)) +
+  labs(subtitle = 'ylim restricted'))
 
 g2 <- g +
-  geom_abline(slope = 1, intercept = 0)
-g2 +
-  geom_point(aes(y = cov_SEI_f_qdm, color = delta_qdm))
+  geom_abline(slope = 1, intercept = 0) +
+  labs(title = 'Current vs future RAP, with dotted lines denoting doubling
+       or cutting in half of cover') +
+  geom_abline(slope = 2, linetype = 2) +
+  geom_abline(slope = 0.5, linetype = 2)
 
-g2 +
-  geom_point(aes(y = cov_SEI_f_prop, color = sw_prop))
+print(g2  +
+        geom_hline(yintercept = 0, linetype = 2) + 
+        geom_point(aes(y = cov_SEI_f_qdm, color = delta_qdm)) +
+        labs(y = "Future RAP cover (calculated by adding QDM delta)",
+             color = 'Delta (QDM) cover')) 
 
+print(g4 <- g2 +
+  geom_point(aes(y = cov_SEI_f_prop, color = sw_prop)) +
+  labs(y = "Future RAP cover (calculated using proportion change)",
+       color = 'Proportion change (STEPWAT)')
+  )
+
+print(
+g4 +
+  scale_color_continuous(type = 'viridis', limits = c(-0.5, 2)) +
+  labs(subtitle = 'color range restricted')
+)
 # histograms with Q curves superimposed -----------------------------------
 
 # # convert to longer format
