@@ -296,3 +296,35 @@ fill_raster <- function(df, template) {
   values(r_out) <- as.matrix(full_df2)
   r_out
 }
+
+
+
+# misc --------------------------------------------------------------------
+
+#' Linear interpolation of weights within a given range 
+#'
+#' @param x numeric vector (that data want weights for)
+#' @param w_window weight window, ie the winow over which to linearly
+#' interpolate weights from 1 to 0
+#'
+#' @return vector same length as x containing weights
+#' @examples
+#' x <- rnorm(100)
+#' w <- assign_weight(x, w_window = c(-1, 1))
+#' plot(x, w)
+assign_weight <- function(x, w_window) {
+  stopifnot(
+    length(w_window) == 2,
+    w_window[1] < w_window[2],
+    is.numeric(x)
+  )
+  
+  window_width <- w_window[2] - w_window[1]
+  
+  dplyr::case_when(
+    x <= w_window[1] ~ 1,
+    x >= w_window[2] ~ 0,
+    x > w_window[1] & x < w_window[2] ~ 1 - (x - w_window[1])/window_width,
+    TRUE ~ NA
+  )
+}

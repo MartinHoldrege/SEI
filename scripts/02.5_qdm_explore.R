@@ -52,7 +52,13 @@ cols <- c('sagebrush' = 'sagebrush_p50_p95',
           'pfg' = 'pfg_p50_p95',
           'afg' = 'afg_p50_p50')
 
-
+# 'weight windows', these are the windows over which to change weights
+# between proportion change and delta cover methods for calculating
+# future RAP cover
+ww_prop <- c(0.75, 1.25) # range of proportion change over which to change
+# from 100% weight for ratio method to delta additive method
+ww_cov <- c(30, 40) # range of future cover of RAP (calculated via the ratio approach)
+# over which to changes weights. 
 # * params to loop over ---------------------------------------------------
 
 iter <- expand_grid(run = runs,
@@ -500,20 +506,44 @@ SEI_cov_df1 <- as.data.frame(rapSEI2) %>%
 
 # calculation of 'future' rap
 rap_fut <- delta_df %>% 
-  select(cellnum, PFT, delta_qdm) %>% 
+  select(cellnum, PFT, delta_qdm, delta_raw) %>% 
   left_join(sw_prop_df1, by = c("cellnum", "PFT")) %>% 
   left_join(SEI_cov_df1, by = c("cellnum", "PFT")) %>% 
   mutate(
     # calculating future rap cover by multiply proportion change
     cov_SEI_f_prop = cov_SEI*sw_prop + cov_SEI,
     # future cover calculating by adding delta cover (qdm corrected)
-    cov_SEI_f_qdm = cov_SEI + delta_qdm) %>% 
+    cov_SEI_f_qdm = cov_SEI + delta_qdm,
+    cov_SEI_f_raw = cov_SEI + delta_raw,
+    # locations where applying sw_prop might be a problem
+    # (i.e. results 'blow up')
+    bad_prop = sw_prop > 1 & cov_SEI_f_prop > 25,
+    # weights for deciding how to weght cover_raw_f and cove_r)
+    # these weights only apply to sagebrush
+    w1 = assign_weight(sw_prop, ww_prop),
+    w2 = assign_weight(cov_SEI_f_prop, ww_cov),
+    # taking the maximum weight
+    w = ifelse(w1 > w2, w1, w2),
+    w = ifelse(PFT == 'sagebrush', w, 1), # only applies to sagebrush
+    # weighted future RAP cover, weighting ration (proportion) based
+    # and raw delta cover based future RAP
+    cov_SEI_f_w =  w*cov_SEI_f_prop + (1- w)*cov_SEI_f_raw,
+    # change in 'RAP' cover
+    delta_cov_SEI_w = cov_SEI_f_w - cov_SEI_f_w
+  ) %>% 
   drop_na(matches('cov_'))
+
+rap_fut %>% 
+  arrange(PFT) %>% 
+  group_by(PFT) %>% 
+  group_split() %>% 
+  map(summary)
 
 set.seed(1234)
 rap_fut_sample <- rap_fut %>% 
   group_by(PFT) %>% 
   slice_sample(n = 1e4)
+
 # * scatterplot -----------------------------------------------------------
 
 g <- ggplot(rap_fut_sample, aes(x = cov_SEI)) +
@@ -522,11 +552,12 @@ g <- ggplot(rap_fut_sample, aes(x = cov_SEI)) +
   facet_wrap(~PFT) +
   scale_color_continuous(type = 'viridis')
 
-print(g +
+print(g5 <- g +
   geom_point(aes(y = delta_qdm, color = cov_SEI_f_qdm)) +
   labs(y = 'Delta STEPWAT qdm cover',
        title = 'Future RAP cover calculated by adding delta (qdm) cover',
        color = 'Future RAP cover'))
+
 
 g3 <- g +
   geom_point(aes(y = sw_prop, color = cov_SEI_f_prop))+
@@ -547,18 +578,38 @@ g2 <- g +
   geom_abline(slope = 2, linetype = 2) +
   geom_abline(slope = 0.5, linetype = 2)
 
-print(g2  +
+print(g5 <- g2  +
         geom_hline(yintercept = 0, linetype = 2) + 
         geom_point(aes(y = cov_SEI_f_qdm, color = delta_qdm)) +
         labs(y = "Future RAP cover (calculated by adding QDM delta)",
              color = 'Delta (QDM) cover')) 
+
+# turning potentially problematic points red
+print(g5 +
+  geom_point(data = rap_fut_sample[rap_fut_sample$bad_prop, ], 
+             aes(x = cov_SEI, y = cov_SEI_f_qdm),
+             color = 'red')
+)
+
+g2  +
+  geom_hline(yintercept = 0, linetype = 2) + 
+  geom_point(aes(y = cov_SEI_f_raw, color = delta_raw)) +
+  labs(y = "Future RAP cover (calculated by adding raw delta)",
+       color = 'Delta (raw) cover') +
+  geom_point(data = rap_fut_sample[rap_fut_sample$bad_prop, ], 
+             aes(y = cov_SEI_f_raw),
+             color = 'red')
 
 print(g4 <- g2 +
   geom_point(aes(y = cov_SEI_f_prop, color = sw_prop)) +
   labs(y = "Future RAP cover (calculated using proportion change)",
        color = 'Proportion change (STEPWAT)')
   )
-
+print(g4 +
+  geom_point(data = rap_fut_sample[rap_fut_sample$bad_prop, ], 
+             aes(x = cov_SEI, y = cov_SEI_f_prop),
+             color = 'red')
+)
 print(
 g4 +
   scale_color_continuous(type = 'viridis', limits = c(-0.5, 2)) +
@@ -581,6 +632,34 @@ p <- ggplot(rap_fut_sample, aes(x = cov_SEI_f_prop,
   geom_vline(xintercept = 100, linetype = 2) +
   geom_hline(yintercept = 0, linetype = 2)
 print(p)
+
+print(
+  p +
+    geom_point(data = rap_fut_sample[rap_fut_sample$bad_prop, ],
+               color = 'red')
+)
+
+
+# maps of future RAP cover ------------------------------------------------
+
+# STOP--continue working here
+rap_fut_l <- rap_fut %>% 
+  select(cellnum, cov_SEI, cov_SEI_f_prop, cov_SEI_f_raw, cov_SEI_f_w, sw_prop,
+         delta_cov_SEI_w, w) %>% 
+  split(., rap_fut$PFT)
+
+r_rap_fut <- map(rap_fut_l, \(df) fill_raster(df, template = sw3[[1]]))
+
+
+r_fut_sage <- r_rap_fut[['sagebrush']]
+r_fut_sage$w <- ifel(r_fut_sage[['w']] == 1, 
+                     NA, 
+                     r_fut_sage[['w']])
+plot(r_fut_sage$w)
+plot(r_fut_sage$cov_SEI_f_prop)
+plot(r_fut_sage$cov_SEI_f_w)
+plot(r_fut_sage$cov_SEI)
+plot(r_fut_sage$cov_SEI_f_w - r_fut_sage$cov_SEI)
 
 # histograms with Q curves superimposed -----------------------------------
 
