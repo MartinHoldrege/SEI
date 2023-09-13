@@ -59,8 +59,8 @@ iter <- expand_grid(run = runs,
        smooth = smooths)
 
 # start loop
-# pdf(paste0('figures/qdm/qdm_CDF-plots_maps_', date, '.pdf'),
-#     width = 11, height = 8)
+pdf(paste0('figures/qdm/qdm_CDF-plots_maps_', date, '.pdf'),
+    width = 11, height = 8)
 
 # this loop isn't very efficient it requires repeating some
 # computation unnecessarily
@@ -531,7 +531,8 @@ print(g +
 g3 <- g +
   geom_point(aes(y = sw_prop, color = cov_SEI_f_prop))+
   labs(title = 'Future RAP cover calculated by multiplying proportion STEPWAT change',
-       color = 'Future RAP cover') 
+       color = 'Future RAP cover',
+       y = "Proportion STEPWAT change") 
 
 print(g3)
 
@@ -563,6 +564,24 @@ g4 +
   scale_color_continuous(type = 'viridis', limits = c(-0.5, 2)) +
   labs(subtitle = 'color range restricted')
 )
+
+
+p <- ggplot(rap_fut_sample, aes(x = cov_SEI_f_prop,
+                           y = cov_SEI_f_qdm,
+                           color = cov_SEI)) +
+  geom_point() +
+  facet_wrap(~PFT) +
+  geom_abline(slope = 1) +
+  scale_color_continuous(type = 'viridis') +
+  labs(title = 'Comparing methods of calculating future RAP cover',
+       x = "Future RAP cover (calculated using proportion change)",
+       y = "Future RAP cover (calculated by adding QDM delta)",
+       color = 'Current (for SEI) RAP cover',
+       caption = cap1) +
+  geom_vline(xintercept = 100, linetype = 2) +
+  geom_hline(yintercept = 0, linetype = 2)
+print(p)
+
 # histograms with Q curves superimposed -----------------------------------
 
 # # convert to longer format
