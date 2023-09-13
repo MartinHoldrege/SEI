@@ -31,7 +31,7 @@ var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
 var minorV = '4'; // minor version 4 refers to 'method 4' of calculating SEI directly from stepwat biomass, which is then convertet to cover
-var patch = '0'; // increment minor changes
+var patch = '1'; // patch 0 is the mahood afg cover-biomass equations, patch 1 is rap based equation
 
 // which stepwat output to read in?
 var rootList = ['fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_'];
@@ -92,9 +92,7 @@ for (var j=0; j<RCPList.length; j++) {
   
   // read in stepwat vegetation data
   
-    // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
-    
+
     var s = '_' + RCP + '_' + epoch  + '_' + graze + '_' + GCM;
     
     // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
@@ -102,7 +100,7 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get aft
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    var sw1 = SEI.readImages2Bands(genericPath)
     // remove pixels classified as sage that are "tundra" in high-elevation mountain settings above timerline
       .multiply(tundra);
     

@@ -20,7 +20,7 @@ var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var radiusMax = 200e3; // 
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
-var patch = '0'; // increment minor changes
+var patch = '1'; // patch 1 is where rap based equation used to convert afg biomass to cover. 
 
 // which stepwat output to read in?
 var rootList = ['fire1_eind1_c4grass1_co20_'];
@@ -31,6 +31,7 @@ var grazeList = ['Light'];
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // contains coefficients for biomass-cover equations
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -49,6 +50,15 @@ var imageVisQ5sc = {"opacity":1,"bands":["constant_mean"],"min":1, "max":10,"pal
 // current SEI version 3 from Theobald, also contains smoothed cover
 var cur = SEI.cur;
 
+// intercepts and slopes
+var b0Image = ee.Image(Q.b0b1afg1[0]).rename('afg')
+  .addBands(ee.Image(Q.b0b1pfg1[0]).rename('pfg'))
+  .addBands(ee.Image(Q.b0b1sage1[0]).rename('sage'));
+  
+var b1Image = ee.Image(Q.b0b1afg1[1]).rename('afg')
+  .addBands(ee.Image(Q.b0b1pfg1[1]).rename('pfg'))
+  .addBands(ee.Image(Q.b0b1sage1[1]).rename('sage'));
+
 // Loop over climate scenarios ------------------------------------------------------
 
 for (var j=0; j<RCPList.length; j++) {
@@ -61,24 +71,21 @@ for (var j=0; j<RCPList.length; j++) {
   // read in current stepwat biomass -------------------------------------------------
   // this is needed for calculating scaled % change
 
- // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
-  // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
-    // assets for each PFT
+  // assets for each PFT
 
   var c = '_Current';
 
+  // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
   var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' + graze + c;
-  // this function also sums cheatgrass and aforb to get aft
-  var swCur1 = SEI.readImages2Bands(genericPathCur, pftList, true)
+  // this function also sums cheatgrass and aforb to get aft, and also load sage and pft
+  var swCur1 = SEI.readImages2Bands(genericPathCur)
   // masking so when take max only taking max of appropriate pixels
     .updateMask(mask);
+
+  var swCurCov = SEI.bio2covLin(swCur1, b0Image, b1Image);
   
-  var swCurLocalMax = swCur1
-    .reduceNeighborhood(ee.Reducer.max(),ee.Kernel.circle(radiusMax, 'meters'),null, false);
-    
-  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal')
-  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max')
+  Map.addLayer(swCur1.select('pfg'), {min:0, max:100, palette: ['white', 'green']}, 'pfg biomass', false);  
+  Map.addLayer(swCurCov.select('pfg'), {min:0, max:70, palette: ['white', 'green']}, 'pfg cover', false);
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
@@ -97,33 +104,32 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get afg
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    var sw1 = SEI.readImages2Bands(genericPath)
       .updateMask(mask);
       
-    // calculate scaled percent change in stepwat biomass
-    // (future- current/(local current max)) + 1
-    var deltaS = sw1.subtract(swCur1).divide(swCurLocalMax).add(ee.Image(1)); 
-     
-    // now dividing by max and adding 1
-    var deltaSAnnual = deltaS.select('afg');
-    var deltaSPerennial = deltaS.select('pfg');
-    var deltaSSage = deltaS.select('sage');
+    var swCov = SEI.bio2covLin(sw1, b0Image, b1Image);
     
+    var delta = swCov.subtract(swCurCov) // (future - historical stepwat cover)
+
     /**
-     * Multiply smoothed cover data from rap by stepwat scaled percent change. 
+     * Add smoothed cover data from rap to delta stepwat percent cover. 
      * 
      */
      
-    var sage560m = cur.select('sage560m').multiply(deltaSSage)
+    // adjusted cover
+    var adjustCov = cur.select(['sage560m', 'annualG560m','perennialG560m'])
+      .add(delta.select(['sage','afg', 'pfg']))
+      // both were in units of percent, but converting to proportion for using with q curves
+      .divide(100)
       .unmask(0.0);
+   
+    var sage560m = adjustCov.select('sage560m')
       
-    var annual560m = cur.select('annualG560m').multiply(deltaSAnnual)
-      .unmask(0.0);
+    var annual560m = adjustCov.select('annualG560m');
       
-    var perennial560m = cur.select('perennialG560m').multiply(deltaSPerennial)
-      .unmask(0.0);
+    var perennial560m = adjustCov.select('perennialG560m');
       
-        /**
+     /**
      * Step 3. convert smoothed % cover to quality using HSI curves
      * Note that remap values for HSI are grouped ecoregion specific: 1st column=Great Basin, 2nd column: Intermountain, 3rd column: Great Plains
      */
@@ -232,7 +238,7 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-/*
+
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -240,6 +246,8 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
-*/
+
   
 }// end loop over scenario
+
+//Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "future SEI", true)

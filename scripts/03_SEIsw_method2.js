@@ -60,8 +60,6 @@ for (var j=0; j<RCPList.length; j++) {
   // read in current stepwat biomass -------------------------------------------------
   // this is needed for calculating scaled % change
 
- // plant functional types for which stepwat output is being loaded in
-    var pftList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
   // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
     // assets for each PFT
 
@@ -69,15 +67,15 @@ for (var j=0; j<RCPList.length; j++) {
 
   var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' + graze + c;
   // this function also sums cheatgrass and aforb to get aft
-  var swCur1 = SEI.readImages2Bands(genericPathCur, pftList, true)
+  var swCur1 = SEI.readImages2Bands(genericPathCur)
   // masking so when take max only taking max of appropriate pixels
     .updateMask(mask);
   
   var swCurLocalMax = swCur1
     .reduceNeighborhood(ee.Reducer.max(),ee.Kernel.circle(radiusMax, 'meters'),null, false);
     
-  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal')
-  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max')
+  Map.addLayer(swCur1.select('pfg'), {min:0, max:200, palette: ['white', 'green']}, 'pfg normal', false)
+  Map.addLayer(swCurLocalMax.select('pfg_max'), {min:0, max:200, palette: ['white', 'green']}, 'pfg smoothed max', false)
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
@@ -97,7 +95,7 @@ for (var j=0; j<RCPList.length; j++) {
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
     // this function also sums cheatgrass and aforb to get afg
-    var sw1 = SEI.readImages2Bands(genericPath, pftList, true)
+    var sw1 = SEI.readImages2Bands(genericPath)
       .updateMask(mask);
       
     // calculate scaled percent change in stepwat biomass
@@ -115,12 +113,15 @@ for (var j=0; j<RCPList.length; j++) {
      */
      
     var sage560m = cur.select('sage560m').multiply(deltaSSage)
+      .divide(100)
       .unmask(0.0);
       
     var annual560m = cur.select('annualG560m').multiply(deltaSAnnual)
+      .divide(100)
       .unmask(0.0);
       
     var perennial560m = cur.select('perennialG560m').multiply(deltaSPerennial)
+      .divide(100)
       .unmask(0.0);
       
         /**

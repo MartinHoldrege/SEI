@@ -14,6 +14,9 @@
 exports.visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
 exports.visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
+// blue/tan color scale
+exports.visc3 = {opacity: 1, min:1, max:3, palette: ["#142b65", "#99d4e7", "#eee1ba"]};
+
 // legend for c9 transition maps ----------------------------------------
 
 

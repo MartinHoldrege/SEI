@@ -21,20 +21,15 @@
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
 
-var versions = ['vsw2', 'vsw2']; // version
-// date identifier
-var dateStrings = [
-  '_20230327', // biomass-cover equations used to create q curves
-  '_20230331' // samed as 20230327 except quantile matched q curve used for annuals
-  ];  
-
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
-var root = 'c4on_';
-var RCP =  'RCP85';
-var epoch = '2030-2060';
-var graze = 'Light';
+var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
+//var versionsFull = ['vsw4-2-0']; // select just one for testing
 
+// which stepwat output to read in?
+var root = 'fire1_eind1_c4grass1_co20_';
+var RCP =  'RCP45';
+var epoch = '2070-2100';
 // dependencies -----------------------------------------------------------
 
 // Load module with functions 
@@ -57,12 +52,21 @@ var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 // reading this image in b/ there is no 'products' image for this version (yet at least)
 var c9_v11a =  ee.Image(path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224');
 var c9_v11b = c9_v11a.select('SEIv11_2017_2020_90_ClimateOnly_RCP85_2030-2060_median_20220215');
+var curV11 = ee.Image(path + '/v11/current/SEIv11_2017_2020_30_Current_20220717');
 
-// c9 map v11 dataset ------------------------------------------------------------
+// map background ------------------------------------------
 
 Map.centerObject(c9_v11b, 6);
 Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'background'); // white background
 Map.addLayer(fig.statesOutline, {}, 'outline'); // outline of states (white background)
+// Map 3 class 
+
+Map.addLayer(curV11.select('Q5sc3'), fig.visc3, 'c3 v11', false);
+Map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, 'c3 v30', false);
+
+// c9 map v11 dataset ------------------------------------------------------------
+
+
 Map.addLayer(c9_v11b, fig.visc9, 'c9 v11', false);
 Map.add(fig.legendc9);
 
@@ -70,18 +74,20 @@ Map.add(fig.legendc9);
 
 
 // loop through versions
-for (var i=0; i<versions.length; i++) {
-  var version = versions[i];
-  var dateString = dateStrings[i];
-  var s = ' (' + version + dateString + ')';
+for (var i=0; i<versionsFull.length; i++) {
+  var versionFull = versionsFull[i];
+  var version = SEI.removePatch(versionFull)
+  var s = ' (' + versionFull.replace(/vsw/, '') + ')';
 
-  var productName = 'products_' + version + '_2017_2020_' + resolution + "_" + root +  RCP + '_' + epoch + dateString;
+  var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
+  var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
+ 
   var p = ee.Image(path + version + '/products/' + productName);
   
   // c9 maps ----------------------------------------------------------------------
   
   Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'p6_c9Med' + s, false);
-  
+  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diffQ5sMed' + s , false)
 }
 
 

@@ -209,6 +209,9 @@ exports.repeatelemList = function(elemList, nList) {
  * @ returns an image where each band has a name from nameList
  */
 exports.readImages2Bands = function(genericPath, nameList, combineRename) {
+    if (nameList === undefined || nameList === null){
+      var nameList = ['Aforb', 'Cheatgrass', 'Pherb', 'Sagebrush'];
+    }
     sw1 = ee.Image(0);
     for (var i=0; i<nameList.length; i++) {
       var name = nameList[i];
@@ -316,6 +319,47 @@ exports.calcTransitions = function(current, future) {
 };
 
 
+
+/**
+ * convert biomass to cover using linear function
+ * @param {ee.Image} image 
+ * @param {ee.Image} intercepts of linear functions (as many bands as image and with the same names)
+  * @param {ee.Image} slopes of linear functions (as many bands as image and with the same names)
+ * @return {ee.Image} Image with percent cover (0-100)
+*/
+exports.bio2covLin = function(image, b0, b1) {
+
+  var bandsImage = image.bandNames().getInfo(); // using getInfo() might be slow?
+  
+  // want to make sure band names match so that 
+  // multiplication is don correctly for multi band images
+  if(bandsImage.length > 1){
+    
+    // multiply just needs them to have same band names to work
+    // don't need to be in the same order
+    var bands0 = b0.bandNames().getInfo().sort().join(',');
+    var bands1 = b1.bandNames().getInfo().sort().join(',');
+
+    if(bands0 != bandsImage.sort().join(',') | bands1 != bandsImage.sort().join(',')) {
+      throw new Error("band names do not match");
+    }
+  }
+  // y = b0 + b1*x
+  var out = b0.add(b1.multiply(image));
+  // correction in case cover is outside of 0-100 range
+  return out.max(ee.Image(0)).min(ee.Image(100));
+};
+
+/**
+ * convert biomass to cover using linear function
+ * @param {string} client side string, of a version number
+ * @return {ee.Image} string with patch (last number in version) removed
+*/
+exports.removePatch = function(string) {
+  var regex = /[-.]\d+$/;
+  return string.replace(regex, '')
+}
+
 /*
  
  Datasets 
@@ -385,7 +429,7 @@ exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().pro
 
 // SEI raster from Theobald for current time period
 var curYearEnd= 2021; // change to 2021 when have v30 asset. 
-exports.curYearStart = curYearEnd;
+exports.curYearEnd = curYearEnd;
 var curYearStart = curYearEnd - 3;
 exports.curYearStart = curYearStart;
 
