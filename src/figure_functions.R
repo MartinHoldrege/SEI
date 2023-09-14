@@ -74,7 +74,8 @@ plot_map_inset <- function(r,
                            tag_label = "",
                            scale_name = NULL,
                            limits = NULL,
-                           add_vertical0 = FALSE
+                           add_vertical0 = FALSE,
+                           values = NULL
 )  {
   
   
@@ -96,7 +97,8 @@ plot_map_inset <- function(r,
     scale_fill_gradientn(na.value = 'transparent',
                          limits = limits,
                          name = scale_name,
-                         colors = colors) +
+                         colors = colors,
+                         values = values) +
   add_tag_as_label(tag_label) 
   
   map + inset_element2(inset)

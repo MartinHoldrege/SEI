@@ -34,7 +34,7 @@ runs <- c('fire1_eind1_c4grass1_co20')
 smooths <- c(2000)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
-date <- "20230913"
+date <- "20230914"
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
@@ -529,7 +529,7 @@ rap_fut <- delta_df %>%
     # and raw delta cover based future RAP
     cov_SEI_f_w =  w*cov_SEI_f_prop + (1- w)*cov_SEI_f_raw,
     # change in 'RAP' cover
-    delta_cov_SEI_w = cov_SEI_f_w - cov_SEI_f_w
+    delta_cov_SEI_w = cov_SEI_f_w - cov_SEI
   ) %>% 
   drop_na(matches('cov_'))
 
@@ -642,25 +642,97 @@ print(
 
 # maps of future RAP cover ------------------------------------------------
 
-# STOP--continue working here
-rap_fut_l <- rap_fut %>% 
+
+rap_fut_l <- rap_fut %>%
   select(cellnum, cov_SEI, cov_SEI_f_prop, cov_SEI_f_raw, cov_SEI_f_w, sw_prop,
-         delta_cov_SEI_w, w) %>% 
+         delta_cov_SEI_w, w) %>%
   split(., rap_fut$PFT)
 
 r_rap_fut <- map(rap_fut_l, \(df) fill_raster(df, template = sw3[[1]]))
 
 
 r_fut_sage <- r_rap_fut[['sagebrush']]
-r_fut_sage$w <- ifel(r_fut_sage[['w']] == 1, 
-                     NA, 
+r_fut_sage$w <- ifel(r_fut_sage[['w']] == 1,
+                     NA,
                      r_fut_sage[['w']])
-plot(r_fut_sage$w)
-plot(r_fut_sage$cov_SEI_f_prop)
-plot(r_fut_sage$cov_SEI_f_w)
-plot(r_fut_sage$cov_SEI)
-plot(r_fut_sage$cov_SEI_f_w - r_fut_sage$cov_SEI)
 
+cap2.1 <- paste("simulation settings:", run,
+                "\nPFG and AFG future RAP cover calculated using STEPWAT proportional
+                change")
+cap2.2 <- paste("simulation settings:", run,
+              "\nFor sagebrush future RAP cover calculated by weighting",
+              "proportional change estimate and raw delta cover change estimate",
+              "\nweights transition from 1-0 in", paste(ww_prop, collapse = "-"),
+              "proportional change, and", paste(ww_cov, collapse = "-"), "future 
+              (ratio based) RAP cover")
+
+cap_l <- list('afg' = cap2.1,
+              'pfg' = cap2.1,
+              'sagebrush' = cap2.2)
+
+for(pft in PFTabbr) {
+  l <- r_rap_fut[[pft]]
+  
+  range1 <- max_delta_range(l[[c("cov_SEI", "cov_SEI_f_w")]])
+  range1[1] <- 0
+  
+  range3 <- max_delta_range(l[['delta_cov_SEI_w']]) 
+  
+  
+  m1 <- plot_map_inset(r = l[["cov_SEI"]],
+                 colors = cols_map_bio(10),
+                 tag_label = "current RAP/RCMAP cover (used for SEI)",
+                 limits = range1,
+                 scale_name = lab_cov0)
+  m2 <- plot_map_inset(r = l[["cov_SEI_f_w"]],
+                       colors = cols_map_bio(10),
+                       tag_label = paste("Future RAP/RCMAP cover", 
+                                         rcp_label(RCP, years)),
+                       limits = range1,
+                       scale_name = lab_cov0)
+  
+  minmax_m3 <- as.numeric(minmax(l[["sw_prop"]]))
+  
+  # values for appropriately stretching the color palette,
+  # so grey is +/- 5% change and reds are decreases and blues increases
+  values_m3 <- c(seq(-1, -0.05, length.out = 6), -.05, .05,
+                 seq(.05, max(1, minmax_m3[2]), length.out = 6))
+  
+
+   m3 <- plot_map_inset(r = l[["sw_prop"]],
+                       colors = cols_map_bio_d,
+                       tag_label = "Proportional change in STEPWAT cover",
+                       limits = c(-1, max(1, minmax_m3[2])),
+                       scale_name = "Proportion ((f-c)/c)",
+                       values = scales::rescale(values_m3))
+
+  v <-  c(4, 2.5, 2, 1.75, 1.5, 0.75, 0.25)
+  values_m4 <- cumsum(c(v, rev(v)[-length(v)])) 
+  diff(values_m4)
+  m4 <- plot_map_inset(r = l[['delta_cov_SEI_w']],
+                       colors = cols_map_bio_d,
+                       tag_label = 'Delta RAP cover (i.e., percentage point change)',
+                       limits = range3,
+                       scale_name = "Delta cover (f-c)",
+                       values = scales::rescale(values_m4))
+  m4
+
+  tmp1 <- (m1 + m2)/(m3 + m4)
+
+  tmp2 <- tmp1 + patchwork::plot_annotation(title = pft,
+                                     caption = cap_l[[pft]])
+  print(tmp2)
+  
+}
+
+m <- plot_map_inset(r = r_fut_sage$w,
+                    colors = rev(cols_map_bio(10)),
+                    tag_label = "",
+                    limits = c(0, 1),
+                    scale_name = "Weight") +
+  patchwork::plot_annotation(title = "Sagebrush, weight of proportional change vs additive method (where weight < 1)",
+                             caption = cap_l$sagebrush)
+print(m)
 # histograms with Q curves superimposed -----------------------------------
 
 # # convert to longer format

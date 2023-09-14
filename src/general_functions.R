@@ -298,8 +298,20 @@ fill_raster <- function(df, template) {
 }
 
 
-
+#' get range from raster for plotting
+#'
+#' @param r a raster of delta values
+#'
+#' @return vector of length 2
+max_delta_range <- function(r) {
+  minmax(r) %>% 
+    as.numeric() %>% 
+    abs() %>% 
+    max() %>% 
+    c(-., .)
+}
 # misc --------------------------------------------------------------------
+
 
 #' Linear interpolation of weights within a given range 
 #'
