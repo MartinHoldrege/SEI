@@ -22,7 +22,7 @@
  * 2: Median future classification of CSA, GOA, and ORA
  * 3: Confidence in the projected direction of future change in SEI 
  * 4: Range in projected changes in SEI 
- * 5: Agreement among GCMs of future classification of CSA, GOA, and ORA
+ * 5: Agreement among GCMs of future classification of CSA, GOA, and ORA,
  * 6: 9 class raster--showing median change in designation of CSA, GOA and ORA 
  * (this one wasn't in the data management plant but would be useful in other
  * analyses I think)
@@ -36,8 +36,8 @@
 // User-defined variables -----------------------------------------------------
 
 var resolution = 1000;     // output (and input) resolution, 30 m eventually
-var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
-//var versionsFull = ['vsw4-4-1'] // select just one for testing
+// var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
+var versionsFull = ['vsw4-3-2']
 
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
@@ -62,7 +62,6 @@ var region = SEI.region;
 // current SEI (update which file is used, as needed)
 // band Q5 is SEI560, and Q5s is SEI2000
 var cur1 = SEI.cur;
-print(cur1.bandNames())
 
 // loop through version
 
@@ -79,7 +78,7 @@ for (var i = 0; i < versionsFull.length; i++) {
   
   // product 1 -------------------------------------------------------------------
   
-  // difference (by GCM) relative to current conditions
+  // difference in SEI (by GCM) relative to current conditions
   var diffQ5s =  fut1
     .select('Q5s_.*') // continuous SEI for each layer
     .subtract(cur1.select('Q5s'));
@@ -178,6 +177,17 @@ for (var i = 0; i < versionsFull.length; i++) {
     .reduce('sum')
     .toByte()
     .rename('p5_numGOA');
+  
+  // number of GCMs where future classification agrees with the median
+  // classification. 
+ var numAgree = fut1
+    .select('Q5sc3_.*')
+    .eq(futSc3Med.select('p2_futSc3Med')) // are values equal to median projection?
+    .reduce('sum')
+    .toByte()
+    .rename('p5_numAgree');
+ 
+ 
     
   // product 6 --------------------------------------------------------------------------------  
   
@@ -206,6 +216,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     // p4 still needed
     .addBands(numCSA) // p5
     .addBands(numGOA) // p5
+    .addBands(numAgree) //
     .addBands(c9Med) // p6
     .addBands(c9); // p7
     
