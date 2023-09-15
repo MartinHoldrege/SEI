@@ -374,10 +374,10 @@ exports.assignWeight = function(image, window) {
   var upperBound = ee.Image(window[1]);
   
   //how wide the window of weight transition is
-  var windowWidth = ee.image(upperBound).subtract(lowerBound);
+  var windowWidth = ee.Image(upperBound).subtract(lowerBound);
   
   // calculating the weight
-  var wRaw = ee.image(1).subtract((image.subtract(lowerBound).divide(windowWidth)));
+  var wRaw = ee.Image(1).subtract((image.subtract(lowerBound).divide(windowWidth)));
   
   // now dealing with areas outside the window 
   var wOut = wRaw.max(ee.Image(0)) // replacing negative weights with 0
