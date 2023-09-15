@@ -23,8 +23,8 @@ var resolution = 1000;     // output (and input) resolution, 30 m eventually
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
-var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
-//var versionsFull = ['vsw4-2-0']; // select just one for testing
+var versionsFull = ['vsw4-3-2'];
+
 
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
@@ -52,7 +52,7 @@ var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 // reading this image in b/ there is no 'products' image for this version (yet at least)
 var c9_v11a =  ee.Image(path + 'v11/transitions/SEIv11_9ClassTransition_byScenario_median_20220224');
 var c9_v11b = c9_v11a.select('SEIv11_2017_2020_90_ClimateOnly_RCP85_2030-2060_median_20220215');
-var curV11 = ee.Image(path + '/v11/current/SEIv11_2017_2020_30_Current_20220717');
+var curV11 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 
 // map background ------------------------------------------
 
@@ -87,7 +87,15 @@ for (var i=0; i<versionsFull.length; i++) {
   // c9 maps ----------------------------------------------------------------------
   
   Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'p6_c9Med' + s, false);
-  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diffQ5sMed' + s , false)
+  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diffQ5sMed' + s , false);
+  
+  // * robust change c9
+  // considering robust if all but 1 GCM agree on future classification
+  var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
+  
+  Map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not Robust' + s);
+  
+  
 }
 
 
