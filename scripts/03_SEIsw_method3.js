@@ -3,6 +3,8 @@
  * Calculate future SEI by taking rap cover and multiplying by proporiton change (method 3).
  * Except for sagebrush adding the delta cover is done in some (otherwise unrealistic)
  * places (and the two layers weighted.)
+ * This weighting occurs in places where the proportion change from stepwat is very large
+ * and current rap sage cover is very large, causing unrealistic changes in sagebrush cover. 
  * 
  * Script Started: 8/28/2023
  * 
@@ -15,7 +17,6 @@
 
 var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
-var radiusMax = 200e3; // 
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
 var patch = '2'; // patch 2 where . 
@@ -25,6 +26,14 @@ var rootList = ['fire1_eind1_c4grass1_co20_'];
 var RCPList =  ['RCP45'];
 var epochList = ['2070-2100'];
 var grazeList = ['Light'];
+
+// 'weight windows', these are the windows over which to change weights
+// between proportion change and delta cover methods for calculating
+// future RAP cover
+var wwProp = [0.75, 1.25]; // range of proportion change over which to change
+// from 100% weight for ratio method to delta additive method
+var wwCov = [30, 40]; // range of future cover of RAP (calculated via the ratio approach)
+// over which to changes weights. 
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
@@ -58,6 +67,9 @@ var b1Image = ee.Image(Q.b0b1afg1[1]).rename('afg')
   .addBands(ee.Image(Q.b0b1sage1[1]).rename('sage'));
 
 // Loop over climate scenarios ------------------------------------------------------
+var GCMList = SEI.GCMList;
+// var GCMList = [SEI.GCMList[0]];// for testing
+
 
 for (var j=0; j<RCPList.length; j++) {
   var root = rootList[j];
@@ -82,13 +94,12 @@ for (var j=0; j<RCPList.length; j++) {
 
   var swCurCov = SEI.bio2covLin(swCur1, b0Image, b1Image);
   
-  Map.addLayer(swCur1.select('pfg'), {min:0, max:100, palette: ['white', 'green']}, 'pfg biomass', false);  
-  Map.addLayer(swCurCov.select('pfg'), {min:0, max:70, palette: ['white', 'green']}, 'pfg cover', false);
+  //Map.addLayer(swCur1.select('pfg'), {min:0, max:100, palette: ['white', 'green']}, 'pfg biomass', false);  
+  //Map.addLayer(swCurCov.select('pfg'), {min:0, max:70, palette: ['white', 'green']}, 'pfg cover', false);
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
   
-   var GCMList = SEI.GCMList;
 
   // Loop over GCMs ---------------------------------------------------------------------
   for (var g=0; g<GCMList.length; g++) {
@@ -107,12 +118,12 @@ for (var j=0; j<RCPList.length; j++) {
       
     var swCov = SEI.bio2covLin(sw1, b0Image, b1Image);
     
-    var delta = swCov.subtract(swCurCov); // (future - historical stepwat cover), only needed for sagebrush
+    var deltaSage = swCov.subtract(swCurCov).select('sage'); // (future - historical stepwat cover), only needed for sagebrush
     
     // proportional change
     var swProp = sw1.subtract(swCur1).divide(swCur1);
-    
-    
+
+//    Map.addLayer(swProp.select('sage'), {min: -1, max: 1, palette: ['red', 'white', 'blue']}, 'swprop')
     /**
      * Add smoothed cover data from rap to delta stepwat percent cover. 
      * 
@@ -120,6 +131,7 @@ for (var j=0; j<RCPList.length; j++) {
      
     // adjusted cover (cover multiplied by proportion change)
     var futCovProp = cur.select(['sage560m', 'annualG560m','perennialG560m'])
+      .double() 
       .multiply(swProp.select(['sage','afg', 'pfg']).add(ee.Image(1)))
       .min(ee.Image(100)) // in case multiplication caused cover > 100
       // units of percent, but converting to proportion for using with q curves
@@ -127,15 +139,28 @@ for (var j=0; j<RCPList.length; j++) {
       .unmask(0.0);
       
     // seperately adjusting sagebrush
-    
+    //Map.addLayer(deltaSage, {min: -20, max: 20, palette: ['red', 'white', 'blue']}, 'delta sage', false)
+    //Map.addLayer(cur.select(['sage560m']),{min: 0, max: 20, palette: ['white', 'green']}, 'sei sage cover', false)
+
     // future cover of sagebrush based on add delta sagebrush cover
-    var futCovDeltaSage = cur.select(['sage560m']).add(delta.select('sage'));
+    var futCovDeltaSage = cur.select(['sage560m']).add(deltaSage)
+      .divide(100);    // % to proportion
     
-    var sage560m = adjustCov.select('sage560m');
+    // determing weights for the prop and delta layers for sage
+    var w1 = SEI.assignWeight(swProp.select('sage'), wwProp);
+    var w2 = SEI.assignWeight(futCovProp.select('sage560m').multiply(ee.Image(100)), wwCov); // converting cover back to % to match wwCov
+    var wSage = w1.max(w2); // calculating the overall weight
+
+
+    // Weighted average of proportion based and delta based estimates of future sagebrush cover
+    var sage560m = futCovProp.select('sage560m')
+      .multiply(wSage)
+      .add(ee.Image(1).subtract(wSage).multiply(futCovDeltaSage));
       
-    var annual560m = adjustCov.select('annualG560m');
+
+    var annual560m = futCovProp.select('annualG560m');
       
-    var perennial560m = adjustCov.select('perennialG560m');
+    var perennial560m = futCovProp.select('perennialG560m');
       
      /**
      * Step 3. convert smoothed % cover to quality using HSI curves
@@ -201,7 +226,7 @@ for (var j=0; j<RCPList.length; j++) {
       .multiply(mask);
     
     // here the updateMask call dictates that 0 SEI values aren't shown 
-    Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)' + s,false);
+    // Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)' + s,false);
     
     /**
      * Step 6. Classify
@@ -226,6 +251,9 @@ for (var j=0; j<RCPList.length; j++) {
     
     var outputByGCM = outputByGCM
       .addBands([
+        sage560m.rename('sage560m_' + GCM),
+        perennial560m.rename('perennial560m_' + GCM),
+        annual560m.rename('annual560m_' + GCM),
         Q1.float().rename('Q1raw_' + GCM),
         Q2.float().rename('Q2raw_' + GCM),
         Q3.float().rename('Q3raw_' + GCM),
@@ -245,7 +273,7 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-/*
+
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -253,8 +281,8 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
-*/
+
   
 }// end loop over scenario
 
-//Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "future SEI", true)
+Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "median future SEI", false);
