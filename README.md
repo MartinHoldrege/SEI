@@ -32,12 +32,24 @@ STEPWAT results
   Similar to method 1 but adjust DeltaS to divide by a geographically local maximum
   so DeltaS = (future biomass - historical biomass) / local maximum historical biomass
   
-  Minor version 3 -- `Script 03_SEIsw_method3.js` used. 
-  Calculate DeltaS as a change in potential (STEPWAT) cover between future and historical simulations 
-  and add to observed (RAP) cover
-  so future cover = observed cover + (stepwat future cover - stepwat historical cover)
+  Minor version 3 -- `Script 03_SEIsw_method3.js` used. By multiplying by RAP proportion change (from stepwat)
+  and or by adding change in stepwat cover. 
+
     
-    Patch 1 -- afg biomass converted to cover using the rap based equation
+    Patch 1 -- afg biomass converted to cover using the rap based equation.
+      For all PFTs Calculated DeltaS as a change in potential (STEPWAT) cover between future and historical simulations 
+      and add to observed (RAP) cover
+      so future cover = observed cover + (stepwat future cover - stepwat historical cover)
+    
+    Patch 2 -- calculate 'future RAP cover' by multiplying current RAP cover
+    by the proportional change [(future - historical)/historicalin] STEPWAT biomass. And
+    then do an additional correction for sagebrush because this leads to unrealistic changes
+    in cover in some cases where the proportion change is high (which occurs when historical
+    STEPWAt biomass was very long and then increased). In those cases a weighted average between
+    the proportional adjusted RAP cover and the delta cover (i.e. change in STEPWAT cover) calculated
+    future RAP cover is done. 
+    This weighting occurs in places where the proportion change from stepwat is very large
+    and current rap sage cover is very large, causing unrealistic changes in sagebrush cover. 
   
   
   Minor version 4 -- `Script 03_SEIsw_method4.js` used. 
