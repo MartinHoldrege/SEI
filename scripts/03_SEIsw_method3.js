@@ -15,7 +15,7 @@
 
 // User-defined variables.
 
-var resolution = 1000;     // output resolution, 90 initially, 30 m eventually
+var resolution = 90;     // output resolution, 90 eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
