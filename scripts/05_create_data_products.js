@@ -216,7 +216,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     // p4 still needed
     .addBands(numCSA) // p5
     .addBands(numGOA) // p5
-    .addBands(numAgree) //
+    .addBands(numAgree) // p5
     .addBands(c9Med) // p6
     .addBands(c9); // p7
     
