@@ -360,6 +360,31 @@ exports.removePatch = function(string) {
   return string.replace(regex, '')
 }
 
+/**
+ * Determine weights given a window over which weights go from 1 to 0. 
+ * @param {ee.image} image containing continuous values from which to derive weights
+ * @param {list} list of length 2 where values below the first number get a weight of 1,
+ * values above the second value get a weight of 0, and weights between are linearly
+ * interpolated. 
+ * @return {ee.Image} with weights ranging from 1 to 0
+*/
+exports.assignWeight = function(image, window) {
+  
+  var lowerBound = ee.Image(window[0]);
+  var upperBound = ee.Image(window[1]);
+  
+  //how wide the window of weight transition is
+  var windowWidth = ee.image(upperBound).subtract(lowerBound);
+  
+  // calculating the weight
+  var wRaw = ee.image(1).subtract((image.subtract(lowerBound).divide(windowWidth)));
+  
+  // now dealing with areas outside the window 
+  var wOut = wRaw.max(ee.Image(0)) // replacing negative weights with 0
+    .min(ee.Image(1)); // replacing values > 1
+  return wOut;
+};
+
 /*
  
  Datasets 
