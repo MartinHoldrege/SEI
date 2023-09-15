@@ -462,8 +462,8 @@ exports.curYearStart = curYearStart;
 var cur1 = ee.Image('users/DavidTheobald8/WAFWA/v30/SEI_v30_' + curYearStart + '_' + curYearEnd + '_90_20230828');
 
 // converting the smoothed cover value bands to float from int8
-var cur2 = cur1.select(['^Q.*', 'SEIecoregions']).addBands(cur1.select('.*560m').float());
-exports.cur = cur2;
+exports.cur = cur1.select(['^Q.*', 'SEIecoregions']).addBands(cur1.select('.*560m').float());
+
 // old (v1) version (2017-2020)
 //exports.cur = ee.Image('users/DavidTheobald8/WAFWA/v11/SEIv11_' + curYearStart + '_' + curYearEnd + '_90_20211228');
 
