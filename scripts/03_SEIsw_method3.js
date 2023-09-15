@@ -1,10 +1,8 @@
 /********************************************************
  * Purpose:
- * Calculate future SEI by taking rap cover and adding a delta cover value (method 3).
- * Delta cover However, here deltaS
- * is calculateed in different way than in doherty et al 2022 (i.e. method 1).
- * The biomass delta is devided by the local maximum biomass (within a defined radius)
- * instead of dividing by the global maximum (i.e. max biomass across the whole region)
+ * Calculate future SEI by taking rap cover and multiplying by proporiton change (method 3).
+ * Except for sagebrush adding the delta cover is done in some (otherwise unrealistic)
+ * places (and the two layers weighted.)
  * 
  * Script Started: 8/28/2023
  * 
@@ -20,7 +18,7 @@ var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var radiusMax = 200e3; // 
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
-var patch = '1'; // patch 1 is where rap based equation used to convert afg biomass to cover. 
+var patch = '2'; // patch 2 where . 
 
 // which stepwat output to read in?
 var rootList = ['fire1_eind1_c4grass1_co20_'];
@@ -109,21 +107,31 @@ for (var j=0; j<RCPList.length; j++) {
       
     var swCov = SEI.bio2covLin(sw1, b0Image, b1Image);
     
-    var delta = swCov.subtract(swCurCov) // (future - historical stepwat cover)
-
+    var delta = swCov.subtract(swCurCov); // (future - historical stepwat cover), only needed for sagebrush
+    
+    // proportional change
+    var swProp = sw1.subtract(swCur1).divide(swCur1);
+    
+    
     /**
      * Add smoothed cover data from rap to delta stepwat percent cover. 
      * 
      */
      
-    // adjusted cover
-    var adjustCov = cur.select(['sage560m', 'annualG560m','perennialG560m'])
-      .add(delta.select(['sage','afg', 'pfg']))
-      // both were in units of percent, but converting to proportion for using with q curves
+    // adjusted cover (cover multiplied by proportion change)
+    var futCovProp = cur.select(['sage560m', 'annualG560m','perennialG560m'])
+      .multiply(swProp.select(['sage','afg', 'pfg']).add(ee.Image(1)))
+      .min(ee.Image(100)) // in case multiplication caused cover > 100
+      // units of percent, but converting to proportion for using with q curves
       .divide(100)
       .unmask(0.0);
-   
-    var sage560m = adjustCov.select('sage560m')
+      
+    // seperately adjusting sagebrush
+    
+    // future cover of sagebrush based on add delta sagebrush cover
+    var futCovDeltaSage = cur.select(['sage560m']).add(delta.select('sage'));
+    
+    var sage560m = adjustCov.select('sage560m');
       
     var annual560m = adjustCov.select('annualG560m');
       
@@ -223,7 +231,6 @@ for (var j=0; j<RCPList.length; j++) {
         Q3.float().rename('Q3raw_' + GCM),
         Q4.float().rename('Q4raw_' + GCM),
         Q5.float().rename('Q5raw_' + GCM),
-        Q5y.float().rename('Q5_' + GCM),
         Q5s.float().rename('Q5s_' + GCM),
         Q5scdeciles.byte().rename('Q5scdeciles_' + GCM),
         Q5sc3.byte().rename('Q5sc3_' + GCM)
@@ -238,7 +245,7 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-
+/*
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -246,7 +253,7 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
-
+*/
   
 }// end loop over scenario
 
