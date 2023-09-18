@@ -38,6 +38,11 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var path = SEI.path;
 
+//Custom Basemap
+var snazzy = require("users/aazuspan/snazzy:styles");
+// snazzy.addStyleFromName("Light Monochrome");
+snazzy.addStyleFromName("Interface map");
+
 // fig params --------------------------------------------------------------
 
 var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
@@ -57,8 +62,8 @@ var curV11 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717')
 // map background ------------------------------------------
 
 Map.centerObject(c9_v11b, 6);
-Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'background'); // white background
-Map.addLayer(fig.statesOutline, {}, 'outline'); // outline of states (white background)
+Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'while background', false); // white background
+Map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
 // Map 3 class 
 
 Map.addLayer(curV11.select('Q5sc3'), fig.visc3, 'c3 v11', false);
@@ -93,7 +98,7 @@ for (var i=0; i<versionsFull.length; i++) {
   // considering robust if all but 1 GCM agree on future classification
   var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
   
-  Map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not Robust' + s);
+  Map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not Robust' + s, false);
   
   
 }
