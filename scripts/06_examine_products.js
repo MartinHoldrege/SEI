@@ -41,12 +41,23 @@ var path = SEI.path;
 //Custom Basemap
 var snazzy = require("users/aazuspan/snazzy:styles");
 // snazzy.addStyleFromName("Light Monochrome");
-snazzy.addStyleFromName("Interface map");
+
 
 // fig params --------------------------------------------------------------
 
 var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
 var visSEI = {min:0, max: 1, palette: ['white', 'black']};
+
+// setup app environment 
+
+ui.root.clear();
+//var panel = ui.Panel({style: {width: '250px'}});
+var map = ui.Map();
+//ui.root.add(panel).add(map); // order that you add panl vs map affects if panel is right or left
+ui.root.add(map); 
+//map.setCenter(-112.23, 42.7);
+map.style().set('cursor', 'crosshair');
+snazzy.addStyleFromName("Interface map"); // doesn't seem to work inside app 
 
 // read in v11 dataset --------------------------------------------------------
 
@@ -61,19 +72,19 @@ var curV11 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717')
 
 // map background ------------------------------------------
 
-Map.centerObject(c9_v11b, 6);
-Map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'while background', false); // white background
-Map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
+map.centerObject(c9_v11b, 6);
+map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'white background', false); // white background
+map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
 // Map 3 class 
 
-Map.addLayer(curV11.select('Q5sc3'), fig.visc3, 'c3 v11', false);
-Map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, 'c3 v30', false);
+map.addLayer(curV11.select('Q5sc3'), fig.visc3, 'c3 v11', false);
+map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, 'c3 v30', false);
 
 // c9 map v11 dataset ------------------------------------------------------------
 
 
-Map.addLayer(c9_v11b, fig.visc9, 'c9 v11', false);
-Map.add(fig.legendc9);
+map.addLayer(c9_v11b, fig.visc9, 'c9 v11', false);
+map.add(fig.legendc9);
 
 // loop through data products -------------------------------------------------
 
@@ -91,14 +102,14 @@ for (var i=0; i<versionsFull.length; i++) {
   
   // c9 maps ----------------------------------------------------------------------
   
-  Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, true);
-  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'delta SEI median' + s , false);
+  map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, true);
+  map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'delta SEI median' + s , false);
   
   // * robust change c9
   // considering robust if all but 1 GCM agree on future classification
   var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
   
-  Map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not Robust' + s, false);
+  map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not robust change' + s, false);
 
   // GCM level results -------------------------------------------------------------
   var GCM = 'CESM1-CAM5';
@@ -120,11 +131,11 @@ for (var i=0; i<versionsFull.length; i++) {
   var diff1 = fut1.subtract(cur1); // renamed such that bandwise subtraction should safely occur
   var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut1.select('Q5sc3')); // class transitions
 
-  Map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
+  map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
   for (var j = 0; j < diffBands.length; j++) {
     var band = diffBands[j];
-    Map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM, false);
+    map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM, false);
   }
   
 }
