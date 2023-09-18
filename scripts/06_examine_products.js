@@ -45,7 +45,7 @@ var snazzy = require("users/aazuspan/snazzy:styles");
 
 // fig params --------------------------------------------------------------
 
-var visQDiff = {min:-1, max: 1, palette: ['red', 'white', 'blue']};
+var visQDiff = {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']};
 var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 
 // setup app environment 
@@ -55,9 +55,9 @@ ui.root.clear();
 var map = ui.Map();
 //ui.root.add(panel).add(map); // order that you add panl vs map affects if panel is right or left
 ui.root.add(map); 
-//map.setCenter(-112.23, 42.7);
+
 map.style().set('cursor', 'crosshair');
-snazzy.addStyleFromName("Interface map"); // doesn't seem to work inside app 
+snazzy.addStyleFromName("Interface map"); // doesn't seem to work inside app ?
 
 // read in v11 dataset --------------------------------------------------------
 
