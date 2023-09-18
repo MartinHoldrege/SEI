@@ -91,7 +91,7 @@ for (var i=0; i<versionsFull.length; i++) {
   
   // c9 maps ----------------------------------------------------------------------
   
-  Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, false);
+  Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, true);
   Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'delta SEI median' + s , false);
   
   // * robust change c9
