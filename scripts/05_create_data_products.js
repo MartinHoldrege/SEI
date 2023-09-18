@@ -242,7 +242,7 @@ for (var i = 0; i < versionsFull.length; i++) {
 
   var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
   var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
-/*
+  
   Export.image.toAsset({ 
     image: comb1, 
     assetId: path + version + '/products/' + productName,
@@ -254,7 +254,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     //crs: SEI.crs,
     //crsTransform: SEI.crsTransform
   });
-  */
+
 }
 
 //Map.add(fig.legendc9)
