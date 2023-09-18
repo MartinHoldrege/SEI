@@ -68,7 +68,11 @@ var b1Image = ee.Image(Q.b0b1afg1[1]).rename('afg')
 
 // Loop over climate scenarios ------------------------------------------------------
 var GCMList = SEI.GCMList;
-// var GCMList = [SEI.GCMList[0]];// for testing
+// adding a 'control' GCM which will represent no change relative to current
+// conditions to check if output is as expected (i.e. no change in SEI)
+GCMList.push('control');
+
+//var GCMList = [SEI.GCMList[0]];// for testing
 
 
 for (var j=0; j<RCPList.length; j++) {
@@ -112,10 +116,16 @@ for (var j=0; j<RCPList.length; j++) {
     // assets for each PFT
     var genericPath = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + s;
     
-    // this function also sums cheatgrass and aforb to get afg
-    var sw1 = SEI.readImages2Bands(genericPath)
-      .updateMask(mask);
-      
+
+    
+    if (GCM == 'control') {
+      var sw1 = swCur1; // making current and future identical for the 'control'
+    } else {
+      // this function also sums cheatgrass and aforb to get afg
+      var sw1 = SEI.readImages2Bands(genericPath)
+        .updateMask(mask);
+    }
+
     var swCov = SEI.bio2covLin(sw1, b0Image, b1Image);
     
     var deltaSage = swCov.subtract(swCurCov).select('sage'); // (future - historical stepwat cover), only needed for sagebrush
@@ -286,3 +296,6 @@ for (var j=0; j<RCPList.length; j++) {
 }// end loop over scenario
 
 Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "median future SEI", false);
+
+// red in this map signifies places where there is a original sc3 reproducibility problem. 
+Map.addLayer(outputByGCM.select('Q5sc3_control').neq(cur.select('Q5sc3')).selfMask(), {min: 0, max: 1, palette: ['red']}, 'where sc3 diff', false);
