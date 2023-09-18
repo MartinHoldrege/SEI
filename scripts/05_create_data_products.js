@@ -35,8 +35,8 @@
 
 // User-defined variables -----------------------------------------------------
 
-var resolution = 1000;     // output (and input) resolution, 30 m eventually
-// var versionsFull = ['vsw4-1-0', 'vsw4-2-0', 'vsw4-3-1', 'vsw4-4-0', 'vsw4-4-1'];
+var resolution = 90;     // output (and input) resolution, 30 m eventually
+
 var versionsFull = ['vsw4-3-2']
 
 // which stepwat output to read in?
