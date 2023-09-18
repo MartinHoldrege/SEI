@@ -61,7 +61,7 @@ var region = SEI.region;
 
 // current SEI (update which file is used, as needed)
 // band Q5 is SEI560, and Q5s is SEI2000
-var cur1 = SEI.cur;
+// var cur1 = SEI.cur; // in code below using 'control' bands as cur
 
 // loop through version
 
@@ -74,8 +74,20 @@ for (var i = 0; i < versionsFull.length; i++) {
   var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
   
   // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
-  var fut1 = ee.Image(path + version + '/forecasts/' + assetName);
+  var fut0 = ee.Image(path + version + '/forecasts/' + assetName);
   
+  // these are the bands created when there was (artificially) no change in stepwat values from current
+  // to future conditions. This was designed to overcome some of the artifacts that 
+  // appear when re-calculating SEI (still unclear what the issue is)
+  var cur0 = fut0.select('.*_control');
+  var cur1 = cur0.regexpRename('_control', '');
+  
+  // removing the control bands
+  var fut1 = fut0.select(
+    fut0.bandNames().removeAll(cur0.bandNames())
+    );
+
+    
   // product 1 -------------------------------------------------------------------
   
   // difference in SEI (by GCM) relative to current conditions
@@ -232,7 +244,7 @@ for (var i = 0; i < versionsFull.length; i++) {
 
   var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
   var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
-
+/*
   Export.image.toAsset({ 
     image: comb1, 
     assetId: path + version + '/products/' + productName,
@@ -244,7 +256,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     //crs: SEI.crs,
     //crsTransform: SEI.crsTransform
   });
-  
+  */
 }
 
 //Map.add(fig.legendc9)
