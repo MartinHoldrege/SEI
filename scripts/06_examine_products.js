@@ -19,7 +19,7 @@
 
 // User-defined variables -----------------------------------------------------
 
-var resolution = 1000;     // output (and input) resolution, 30 m eventually
+var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 // which stepwat output to read in?
 // (this is in addition to 'Current' conditions)
@@ -99,8 +99,33 @@ for (var i=0; i<versionsFull.length; i++) {
   var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
   
   Map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not Robust' + s, false);
+
+  // GCM level results -------------------------------------------------------------
+  var GCM = 'CESM1-CAM5';
   
+  // future SEI
+  var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
+  
+  // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
+  var fut0 = ee.Image(path + version + '/forecasts/' + assetName);
+  
+  // these are the bands created when there was (artificially) no change in stepwat values from current
+  // to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
+  var cur0 = fut0.select('.*_control');
+  var cur1 = cur0.regexpRename('_control', '');
+  
+  // removing the control bands
+  var fut1 = fut0.select('.*'+ GCM).regexpRename('_' + GCM, '');
+    
+  var diff1 = fut1.subtract(cur1); // renamed such that bandwise subtraction should safely occur
+  var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut1.select('Q5sc3')); // class transitions
+
+  Map.addLayer(c9, fig.visc9, 'c9' + GCM, false);
+  var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+  for (var j = 0; j < diffBands.length; j++) {
+    var band = diffBands[j];
+    Map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM);
+  }
   
 }
-
 
