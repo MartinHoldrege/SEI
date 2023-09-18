@@ -91,8 +91,8 @@ for (var i=0; i<versionsFull.length; i++) {
   
   // c9 maps ----------------------------------------------------------------------
   
-  Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'p6_c9Med' + s, false);
-  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'diffQ5sMed' + s , false);
+  Map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, false);
+  Map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'delta SEI median' + s , false);
   
   // * robust change c9
   // considering robust if all but 1 GCM agree on future classification
@@ -120,11 +120,11 @@ for (var i=0; i<versionsFull.length; i++) {
   var diff1 = fut1.subtract(cur1); // renamed such that bandwise subtraction should safely occur
   var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut1.select('Q5sc3')); // class transitions
 
-  Map.addLayer(c9, fig.visc9, 'c9' + GCM, false);
+  Map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
   for (var j = 0; j < diffBands.length; j++) {
     var band = diffBands[j];
-    Map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM);
+    Map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM, false);
   }
   
 }
