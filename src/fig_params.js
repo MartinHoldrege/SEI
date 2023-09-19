@@ -17,15 +17,16 @@ exports.visSEI = {min:0, max: 1, palette: ['white', 'black']};
 // blue/tan color scale
 exports.visc3 = {opacity: 1, min:1, max:3, palette: ["#142b65", "#99d4e7", "#eee1ba"]};
 
-// colors for red blue ramp (for -1 to 1 ranged data), whith only 0 values being white
+// colors for red blue ramp (for -1 to 1 ranged data), whith only 0 values being white,
+// colors past abs(0.75) are the darkest colors
 exports.sldRampDiff1 =
   '<RasterSymbolizer>' +
     '<ColorMap type="ramp" extended="false" >' +
-      '<ColorMapEntry color="#67001f" quantity="-1" label="-1"/>' + // dark red
+      '<ColorMapEntry color="#67001f" quantity="-1" label="-0.75"/>' + // dark red
       '<ColorMapEntry color="#f4a582" quantity="-0.01" label="-0.01" />' + // light red
       '<ColorMapEntry color="#FFFFFF" quantity="0" label="0" />' + // white
       '<ColorMapEntry color="#92c5de" quantity="0.01" label="0.01" />' + // light blue
-      '<ColorMapEntry color="#053061" quantity="1" label="1" />' + //dark blue
+      '<ColorMapEntry color="#053061" quantity="1" label="0.75" />' + //dark blue
     '</ColorMap>' +
   '</RasterSymbolizer>';
 
