@@ -125,11 +125,27 @@ for (var i=0; i<versionsFull.length; i++) {
   var cur0 = fut0.select('.*_control');
   var cur1 = cur0.regexpRename('_control', '');
   
+  var fut1 = fut0.select(
+    fut0.bandNames().removeAll(cur0.bandNames())
+  );
+  
   // removing the control bands
-  var fut1 = fut0.select('.*'+ GCM).regexpRename('_' + GCM, '');
+  var fut2 = fut1.select('.*'+ GCM).regexpRename('_' + GCM, '');
+  
+  // calculating 'worst and best' case c9
+  var c3worst = fut1.select('Q5sc3_.*').reduce('max');
+  var c3best = fut1.select('Q5sc3_.*').reduce('min');
+  var c9worst = SEI.calcTransitions(cur1.select('Q5sc3'), c3worst); // class transitions
+  var c9best = SEI.calcTransitions(cur1.select('Q5sc3'), c3best); // class transitions
+  map.addLayer(c9worst, fig.visc9, 'c9 worst (across GCMs)', false);  
+   map.addLayer(c9best, fig.visc9, 'c9 best (across GCMs)', false);  
     
-  var diff1 = fut1.subtract(cur1); // renamed such that bandwise subtraction should safely occur
-  var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut1.select('Q5sc3')); // class transitions
+    
+  var diff1 = fut2.subtract(cur1); // renamed such that bandwise subtraction should safely occur
+  
+  
+  var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut2.select('Q5sc3')); // class transitions
+
 
   map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
