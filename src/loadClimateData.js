@@ -36,13 +36,15 @@ exports.loadFutureSwClim = function(RCP, epoch) {
 };
 
 
-// load MAT or MAP images for historical climate conditions
+// load image containing MAP and MAT bands (stepwat interpolated climate data)
 exports.loadHistoricalSwClim = function(variable) {
-
   var c = "_Current";
-  var imagePath = path + 'climate/' + variable + '_climate' + c + c + c+ dateString;
+  var postPath = '_climate' + c + c + c+ dateString;
   
-  return ee.Image(imagePath).rename(variable);
-
+  var image = ee.Image(path + 'climate/' + 'MAP' + postPath).rename('MAP')
+      .addBands(ee.Image(path + 'climate/' + 'MAT' + postPath).rename('MAT'))
+      //setting GCM property
+      .set('GCM', 'Current');
+  return image;
 };
 
