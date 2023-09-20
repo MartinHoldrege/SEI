@@ -171,7 +171,8 @@ var futIc = ee.ImageCollection(futList);
 var diffIc = futIc.map(function(image) {
   return ee.Image(image).select(diffBands)
     // subtract current conditions
-    .subtract(cur1.select(diffBands));
+    .subtract(cur1.select(diffBands))
+    .copyProperties(ee.Image(image));
 });
 
 // reducing to get min, max, median across GCMs for the differences
@@ -218,6 +219,50 @@ for (var j = 0; j < diffBands.length; j++) {
   map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median)', false);
   map.addLayer(diffRed2.select(band + '_' + GCM).sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (' + GCM + ')', false);
 }
+
+// contributions by each Q compontent to changes --------------------------------------
+
+var qBands = ['Q1raw', 'Q2raw', 'Q3raw']
+
+var qPropIc = diffIc.select(qBands).map(function(x) {
+  // Absolute proportion change in Qs
+  // abs prob = abs( (future-current)/current
+  var absProp = ee.Image(x).divide(cur1.select(qBands)).abs();
+  
+  var sum = absProp.reduce('sum');
+  // divide all layers by the total to normalize each value
+  // (ie. for each q) so they fall between 0 and 1, 1 meaning
+  // all the change was due to that q
+  var absPropNorm = absProp.divide(sum)
+    // mask out areas where denominator would be 0
+    .updateMask(sum.gt(0));
+  return absPropNorm.copyProperties(ee.Image(x));
+});
+
+
+// for now choosing mean because otherwise the 3 contributions
+// won't sum to 1
+var qPropMean = qPropIc.reduce('mean')
+  .regexpRename('_mean', '');
+
+// creating RGB maps
+// R = sage, G = perennials, B = annuals
+
+var rgbViz = {
+  bands: qBands,
+  min: 0,
+  max: 1
+};
+
+var rgbLab = ' (delta contribution, R = Q1, G= Q2, R = Q3)';
+map.addLayer(qPropMean, rgbViz, 'RGB mean' + rgbLab, false);
+
+// RGB but just for one GCM
+map.addLayer(
+  qPropIc.filter(ee.Filter.eq('GCM', GCM)).first(),
+  rgbViz, 
+  'RGB ' + GCM + rgbLab, 
+  false);
 
 // plot climate data -----------------------------------------------------------------
 var deltaMATvis = {min: 1, max: 6, palette: ['white', '#67001f']};
