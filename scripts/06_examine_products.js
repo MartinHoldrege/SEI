@@ -254,7 +254,7 @@ var rgbViz = {
   max: 1
 };
 
-var rgbLab = ' (delta contribution, R = Q1, G= Q2, R = Q3)';
+var rgbLab = ' (R = Q1, G= Q2, R = Q3)';
 map.addLayer(qPropMean, rgbViz, 'RGB mean' + rgbLab, false);
 
 // RGB but just for one GCM
