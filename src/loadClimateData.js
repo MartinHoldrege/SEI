@@ -1,17 +1,43 @@
-// Purpose load climate data for use in other scripts
+// Purpose: load climate data for use in other scripts
+// Script started Sept 19, 2023.
 
+// to load:
+// var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 
 // dependencies
 
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var path = SEI.path
-var RCP = 'RCP45'
-var epoch = '2070-2100'
+var dateString = '_20230919';
 
-var c = '_Current';
-var genericPathCur =  path + 'climate/' +  'ZZZZ' + '_climate' + c + c + c + '_20230919';
-// this function also sums cheatgrass and aforb to get aft, and also load sage and pft
-//print(String(genericPathCur.getValue()))
-var climCur1 = SEI.readImages2Bands(genericPathCur,['MAP', 'MAT'],false);
+// functions
 
-print(climCur1)
+// load future upscaled climate data (from STEPWAT)
+// load all GCMs into bands. At moment variables are MAT and MAP
+exports.loadFutureSwClim = function(RCP, epoch, variable) {
+  
+  var image1 = ee.Image(0);
+
+  for(var i = 0; i < SEI.GCMList.length; i++) {
+    var GCM = SEI.GCMList[i];
+    var imagePath = path + 'climate/' + variable + '_climate_' + RCP + '_' + epoch + '_' + GCM + dateString;
+
+    var tmp = ee.Image(imagePath).rename(GCM);
+
+    var image1 = image1.addBands(tmp);
+  }
+  
+  // remove empty band
+  return image1.select(SEI.GCMList) ;
+};
+
+// load MAT or MAP images for historical climate conditions
+exports.loadHistoricalSwClim = function(variable) {
+
+  var c = "_Current";
+  var imagePath = path + 'climate/' + variable + '_climate' + c + c + c+ dateString;
+  
+  return ee.Image(imagePath).rename(variable);
+
+};
+
