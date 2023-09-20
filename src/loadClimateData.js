@@ -13,23 +13,28 @@ var dateString = '_20230919';
 // functions
 
 // load future upscaled climate data (from STEPWAT)
-// load all GCMs into bands. At moment variables are MAT and MAP
-exports.loadFutureSwClim = function(RCP, epoch, variable) {
+// load all GCMs into images. At moment variables are MAT and MAP
+// returns image collection with one image per GCM
+exports.loadFutureSwClim = function(RCP, epoch) {
   
-  var image1 = ee.Image([]);
+  var list1 = ee.List([]);
 
   for(var i = 0; i < SEI.GCMList.length; i++) {
     var GCM = SEI.GCMList[i];
-    var imagePath = path + 'climate/' + variable + '_climate_' + RCP + '_' + epoch + '_' + GCM + dateString;
+    var postPath = '_climate_' + RCP + '_' + epoch + '_' + GCM + dateString
 
-    var tmp = ee.Image(imagePath).rename(GCM);
+    // image with MAT and MAP bands
+    var image = ee.Image(path + 'climate/' + 'MAP' + postPath).rename('MAP')
+      .addBands(ee.Image(path + 'climate/' + 'MAT' + postPath).rename('MAT'))
+      //setting GCM property
+      .set('GCM', GCM);
 
-    var image1 = image1.addBands(tmp);
+    var list1 = list1.add(image);
   }
   
-  // remove empty band
-  return image1;
+  return ee.ImageCollection(list1);
 };
+
 
 // load MAT or MAP images for historical climate conditions
 exports.loadHistoricalSwClim = function(variable) {
