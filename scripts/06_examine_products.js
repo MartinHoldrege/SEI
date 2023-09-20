@@ -22,8 +22,7 @@
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 // which stepwat output to read in?
-// (this is in addition to 'Current' conditions)
-var versionsFull = ['vsw4-3-2'];
+var versionFull = 'vsw4-3-2';
 
 
 // which stepwat output to read in?
@@ -36,6 +35,7 @@ var epoch = '2070-2100';
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var fig = require("users/mholdrege/SEI:src/fig_params.js");
+var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 //Custom Basemap
@@ -45,7 +45,7 @@ var snazzy = require("users/aazuspan/snazzy:styles");
 
 // fig params --------------------------------------------------------------
 
-var visQDiff = {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']};
+// var visQDiff = {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']};
 var visSEI = {min:0, max: 1, palette: ['white', 'black']};
 var sldRampDiff1 = fig.sldRampDiff1;
 // setup app environment 
@@ -70,6 +70,31 @@ var c9_v11a =  ee.Image(path + 'v11/transitions/SEIv11_9ClassTransition_byScenar
 var c9_v11b = c9_v11a.select('SEIv11_2017_2020_90_ClimateOnly_RCP85_2030-2060_median_20220215');
 var curV11 = ee.Image(path + 'v11/current/SEIv11_2017_2020_30_Current_20220717');
 
+// prepare climate data -----------------------------------------------------
+// This is interpolated climate data from STEPWAT (historical and future) (i.e.,
+// this data only has 200 unique values);
+
+var climCur = clim.loadHistoricalSwClim();
+
+var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image per GCM
+
+// change in climate variables
+var climDelta = climFut.map(function(image) {
+  return ee.Image(image).subtract(climCur);
+})
+
+var reducers = ee.Reducer.max().combine({
+  reducer2: ee.Reducer.min(),
+  sharedInputs: true
+}).combine({
+  reducer2: ee.Reducer.median(),
+  sharedInputs: true
+});
+
+// 'reduced' delta MAP and MAT (i.e., pixelwise min, max, and median across GCMs)
+var climDeltaRed = climDelta.reduce(reducers);
+
+
 // map background ------------------------------------------
 
 map.centerObject(c9_v11b, 6);
@@ -86,74 +111,134 @@ map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, 'c3 v30', false);
 map.addLayer(c9_v11b, fig.visc9, 'c9 v11', false);
 map.add(fig.legendc9);
 
-// loop through data products -------------------------------------------------
+// read in data product  -------------------------------------------------
+
+var version = SEI.removePatch(versionFull);
+
+var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
+var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
+
+var p = ee.Image(path + version + '/products/' + productName);
+
+// c9 maps ----------------------------------------------------------------------
+
+map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median', true);
 
 
-// loop through versions
-for (var i=0; i<versionsFull.length; i++) {
-  var versionFull = versionsFull[i];
-  var version = SEI.removePatch(versionFull)
-  var s = ' (' + versionFull.replace(/vsw/, '') + ')';
+// * robust change c9
+// considering robust if all but 1 GCM agree on future classification
+var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
 
-  var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
-  var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
+map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not robust change', false);
+
+// GCM level results -------------------------------------------------------------
+
+// bands of interest and their descriptions
+var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
+
+var GCM = 'CESM1-CAM5'; // specific GCM pulling out as an example
+
+// future SEI
+var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
+
+// this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
+var fut0 = ee.Image(path + version + '/forecasts/' + assetName);
+
+// these are the bands created when there was (artificially) no change in stepwat values from current
+// to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
+var cur0 = fut0.select('.*_control');
+var cur1 = cur0.regexpRename('_control', '');
+
+// removing the control bands
+var fut1 = fut0.select(
+  fut0.bandNames().removeAll(cur0.bandNames())
+);
+
+var futList = ee.List(SEI.GCMList).map(function(GCM) {
+  var GCM = ee.String(GCM)
+  return fut1.select(ee.String('.*').cat(GCM))
+      // removing GCM from bandName
+      .regexpRename(ee.String('_').cat(GCM), '')
+      // setting GCM property
+      .set('GCM', GCM);
+});
+
+// each image in collection from a different GCM
+var futIc = ee.ImageCollection(futList);
+
+// differences relative to current conditions for relavent bands
+var diffIc = futIc.map(function(image) {
+  return ee.Image(image).select(diffBands)
+    // subtract current conditions
+    .subtract(cur1.select(diffBands));
+});
+
+// reducing to get min, max, median across GCMs for the differences
+var diffRed1 = diffIc.reduce(reducers);
+
+// future values for the given GCM
+var futGCM = futIc.filter(ee.Filter.eq('GCM', GCM))
+  // IC only has one image, but this way just have the image
+  .first();
+  
+// difference relative to current conditions
+var diffGCM = futGCM
+  .select(diffBands)
+  .subtract(cur1.select(diffBands))
+  .regexpRename('$', '_' + GCM);
+
+// combing min, max etc. deltas with delta for one specific GCM
+var diffRed2 = diffRed1.addBands(diffGCM);
  
-  var p = ee.Image(path + version + '/products/' + productName);
-  
-  // c9 maps ----------------------------------------------------------------------
-  
-  map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, true);
-  map.addLayer(p.select('p1_diffQ5sMed').sldStyle(sldRampDiff1), {}, 'delta SEI median' + s , false);
-  
-  // * robust change c9
-  // considering robust if all but 1 GCM agree on future classification
-  var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
-  
-  map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not robust change' + s, false);
+// calculating 'worst and best' case c9
+// reduced c3 (i.e., includes layers for best and worst)
+var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
+  .addBands(futGCM.select('Q5sc3').rename(GCM));
+var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
 
-  // GCM level results -------------------------------------------------------------
-  var GCM = 'CESM1-CAM5';
-  
-  // future SEI
-  var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-  
-  // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
-  var fut0 = ee.Image(path + version + '/forecasts/' + assetName);
-  
-  // these are the bands created when there was (artificially) no change in stepwat values from current
-  // to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
-  var cur0 = fut0.select('.*_control');
-  var cur1 = cur0.regexpRename('_control', '');
-  
-  var fut1 = fut0.select(
-    fut0.bandNames().removeAll(cur0.bandNames())
-  );
-  
-  // removing the control bands
-  var fut2 = fut1.select('.*'+ GCM).regexpRename('_' + GCM, '');
-  
-  // calculating 'worst and best' case c9
-  var c3worst = fut1.select('Q5sc3_.*').reduce('max');
-  var c3best = fut1.select('Q5sc3_.*').reduce('min');
-  var c9worst = SEI.calcTransitions(cur1.select('Q5sc3'), c3worst); // class transitions
-  var c9best = SEI.calcTransitions(cur1.select('Q5sc3'), c3best); // class transitions
-  map.addLayer(c9worst, fig.visc9, 'c9 worst (across GCMs)', false);  
-   map.addLayer(c9best, fig.visc9, 'c9 best (across GCMs)', false);  
-    
-    
-  var diff1 = fut2.subtract(cur1); // renamed such that bandwise subtraction should safely occur
-  
-  
-  var c9 = SEI.calcTransitions(cur1.select('Q5sc3'), fut2.select('Q5sc3')); // class transitions
+map.addLayer(c9Red.select('min'), fig.visc9, 'c9 best (across GCMs)', false); 
+map.addLayer(c9Red.select('max'), fig.visc9, 'c9 worst (across GCMs)', false);  
+map.addLayer(c9Red.select(GCM), fig.visc9, 'c9 ' + '(' + GCM + ')', false);
 
+// Delta (fut-historical) values (min, max, median, etc) ----------------------------------
 
-  map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
-  var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
-  var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (annual)', 'Q3 (perennial)', 'SEI'];
-  for (var j = 0; j < diffBands.length; j++) {
-    var band = diffBands[j];
-    map.addLayer(diff1.select(band).sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' ('  + GCM + ')', false);
+for (var j = 0; j < diffBands.length; j++) {
+  var band = diffBands[j];
+  
+  map.addLayer(diffRed2.select(band + '_min').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (min across GCMs)', false);
+  map.addLayer(diffRed2.select(band + '_max').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (max across GCMs)', false);
+  
+  // median is already pre-computed for Q5s
+  if (diffBands == 'Q5s') {
+    var medianLyr = p.select('p1_diffQ5sMed');
+  } else {
+    var medianLyr = diffRed2.select(band + '_median');
   }
-  
+  map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median)', false);
+  map.addLayer(diffRed2.select(band + '_' + GCM).sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (' + GCM + ')', false);
+}
+
+// plot climate data -----------------------------------------------------------------
+var deltaMATvis = {min: 1, max: 6, palette: ['white', '#67001f']};
+var deltaMAPvis = {min: -130, max: 130, palette: ['#67001f', 'white', '#053061']};
+
+// historical
+map.addLayer(climCur.select('MAP'), {min: 0, max: 800, palette: ['white', '#053061']}, 'MAP (historical, interpolated)', false);
+map.addLayer(climCur.select('MAT'), {min: 0, max: 18, palette: ['white', '#67001f']}, 'MAT (historical, interpolated)', false);
+
+// change under future conditions
+var bandsRed = ['min', 'max', 'median'];
+
+// MAP
+for (var i = 0; i < bandsRed.length; i++) {
+  var b = bandsRed[i];
+  map.addLayer(climDeltaRed.select('MAP_' + b), deltaMAPvis, 'delta MAP future (' + b + ', interpolated)', false);
+}
+
+// MAT
+for (var i = 0; i < bandsRed.length; i++) {
+  var b = bandsRed[i];
+  map.addLayer(climDeltaRed.select('MAT_' + b), deltaMATvis, 'delta MAT future (' + b + ', interpolated)', false);
 }
 
