@@ -98,7 +98,8 @@ var climDeltaRed = climDelta.reduce(reducers);
 // map background ------------------------------------------
 
 map.centerObject(c9_v11b, 6);
-map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'white background', false); // white background
+map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'white background', false); 
+map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "gray"},'gray background', false); 
 map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
 // Map 3 class 
 
