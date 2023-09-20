@@ -16,7 +16,7 @@ var dateString = '_20230919';
 // load all GCMs into bands. At moment variables are MAT and MAP
 exports.loadFutureSwClim = function(RCP, epoch, variable) {
   
-  var image1 = ee.Image(0);
+  var image1 = ee.Image([]);
 
   for(var i = 0; i < SEI.GCMList.length; i++) {
     var GCM = SEI.GCMList[i];
@@ -28,7 +28,7 @@ exports.loadFutureSwClim = function(RCP, epoch, variable) {
   }
   
   // remove empty band
-  return image1.select(SEI.GCMList) ;
+  return image1;
 };
 
 // load MAT or MAP images for historical climate conditions
