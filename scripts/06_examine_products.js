@@ -47,7 +47,7 @@ var snazzy = require("users/aazuspan/snazzy:styles");
 
 var visQDiff = {min:-0.5, max: 0.5, palette: ['red', 'white', 'blue']};
 var visSEI = {min:0, max: 1, palette: ['white', 'black']};
-
+var sldRampDiff1 = fig.sldRampDiff1;
 // setup app environment 
 
 ui.root.clear();
@@ -103,7 +103,7 @@ for (var i=0; i<versionsFull.length; i++) {
   // c9 maps ----------------------------------------------------------------------
   
   map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median' + s, true);
-  map.addLayer(p.select('p1_diffQ5sMed'), {min: -0.5, max: 0.5, palette: ['red', 'white', 'blue']}, 'delta SEI median' + s , false);
+  map.addLayer(p.select('p1_diffQ5sMed').sldStyle(sldRampDiff1), {}, 'delta SEI median' + s , false);
   
   // * robust change c9
   // considering robust if all but 1 GCM agree on future classification
@@ -149,9 +149,10 @@ for (var i=0; i<versionsFull.length; i++) {
 
   map.addLayer(c9, fig.visc9, 'c9 ' + GCM, false);
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+  var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (annual)', 'Q3 (perennial)', 'SEI'];
   for (var j = 0; j < diffBands.length; j++) {
     var band = diffBands[j];
-    map.addLayer(diff1.select(band), visQDiff, 'delta ' + band + ' '  + GCM, false);
+    map.addLayer(diff1.select(band).sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' ('  + GCM + ')', false);
   }
   
 }
