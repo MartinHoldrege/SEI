@@ -18,14 +18,14 @@
 var resolution = 90;     // output resolution, 90 eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
-var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
+var minorV = '3'; // modified method 1 (deltaS is based on proportional change (but not divided by max)
 var patch = '2'; // patch 2 where . 
 
 // which stepwat output to read in?
-var rootList = ['fire1_eind1_c4grass1_co20_'];
-var RCPList =  ['RCP45'];
-var epochList = ['2070-2100'];
-var grazeList = ['Light'];
+var rootList = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
+var RCPList =  ['RCP45', 'RCP45'];
+var epochList = ['2070-2100', '2070-2100'];
+var grazeList = ['Light', 'Light'];
 
 // 'weight windows', these are the windows over which to change weights
 // between proportion change and delta cover methods for calculating
