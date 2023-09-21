@@ -29,6 +29,7 @@ var versionFull = 'vsw4-3-2';
 var root = 'fire1_eind1_c4grass1_co20_';
 var RCP =  'RCP45';
 var epoch = '2070-2100';
+
 // dependencies -----------------------------------------------------------
 
 // Load module with functions 
