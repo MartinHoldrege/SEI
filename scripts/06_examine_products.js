@@ -81,7 +81,7 @@ var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image 
 // change in climate variables
 var climDelta = climFut.map(function(image) {
   return ee.Image(image).subtract(climCur);
-})
+});
 
 var reducers = ee.Reducer.max().combine({
   reducer2: ee.Reducer.min(),
