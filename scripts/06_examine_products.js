@@ -288,3 +288,26 @@ for (var i = 0; i < bandsRed.length; i++) {
   map.addLayer(climDeltaRed.select('MAT_' + b), deltaMATvis, 'delta MAT future (' + b + ', interpolated)', false);
 }
 
+// misc labels -------------------------------------------------------------------------
+
+// label providing simulations settings
+var panel = ui.Panel({
+  style: {
+    position: 'bottom-right',
+    padding: '8px 15px'
+  }
+});
+ 
+// Create legend title
+var panelDescript = ui.Label({
+  value: 'STEPWAT simulation settings: ' + root + ' (' + RCP + ', ' + epoch + ')',
+  style: {
+    fontSize: '12px',
+    margin: '0 0 4px 0',
+    padding: '0'
+    }
+});
+ 
+// Add the title to the panel
+panel.add(panelDescript);
+map.add(panel);
