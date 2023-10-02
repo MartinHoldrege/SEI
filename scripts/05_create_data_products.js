@@ -37,10 +37,10 @@
 
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
-var versionsFull = ['vsw4-3-2']
+var versionsFull = ['vsw4-3-3', 'vsw4-3-3', 'vsw4-3-3']
 
 // which stepwat output to read in?
-var root = 'fire1_eind1_c4grass1_co20_';
+var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
 var RCP =  'RCP45';
 var epoch = '2070-2100';
 
@@ -49,7 +49,7 @@ var sigDelta = 0.05; // (just using a place holder value for now)
 
 // dependencies -----------------------------------------------------------
 
-// odule with functions etc.
+// module with functions etc.
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var fig = require("users/mholdrege/SEI:src/fig_params.js");
@@ -69,6 +69,7 @@ for (var i = 0; i < versionsFull.length; i++) {
   
   var versionFull = versionsFull[i];
   var version = SEI.removePatch(versionFull); // version name with patch removed
+  var root = roots[i];
 
   // future SEI
   var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
@@ -123,25 +124,43 @@ for (var i = 0; i < versionsFull.length; i++) {
   */
   
   // did the given pixel have show a positive delta (by GCM)
-  var isPos = diffQ5s
+  var isPosSig = diffQ5s
     .gte(ee.Image(sigDelta));
     
   // did the given pixel have show a negat delta (by GCM)
-  var isNeg = diffQ5s
+  var isNegSig = diffQ5s
     .lte(ee.Image(-sigDelta));
     
   // # of GCMs with significant positive  deltas
-  var numPos = isPos
+  var numPosSig = isPosSig
     .reduce('sum')
     .toByte()
     .rename('p3_numPos');
     
   // # of GCMs with significant negative  deltas
-  var numNeg = isNeg
+  var numNegSig = isNegSig
     .reduce('sum')
     .toByte()
     .rename('p3_numNeg');
     
+  // direction of chang by GCM 1 means decrease, 2: no change, 3 =  increase
+  var dirChangeGCM = diffQ5sGCM.gt(0).multiply(3)
+    .sum(diffQ5sGCM.eq(0).multiply(2))
+    .sum(diffQ5sGCM.lt(0));
+  
+  // median change in direction
+  var dirChangeMed = diffQ5sMed.gt(0).multiply(3)
+    .sum(diffQ5sMed.eq(0).multiply(2))
+    .sum(diffQ5sMed.lt(0));
+  
+  // number of GCMs that agree with the median on the direction 
+  // of change
+  var numAgree = dirChangeGCM
+    .eq(dirChangeMed)
+    .reduce('sum')
+    .toByte()
+    .rename('p3_numAgree');
+
   // product 4 -------------------------------------------------------------------------------
   
   /*
@@ -190,14 +209,7 @@ for (var i = 0; i < versionsFull.length; i++) {
     .toByte()
     .rename('p5_numGOA');
   
-  // number of GCMs where future classification agrees with the median
-  // classification. 
- var numAgree = fut1
-    .select('Q5sc3_.*')
-    .eq(futSc3Med.select('p2_futSc3Med')) // are values equal to median projection?
-    .reduce('sum')
-    .toByte()
-    .rename('p5_numAgree');
+
  
   // product 6 --------------------------------------------------------------------------------  
   
@@ -221,12 +233,12 @@ for (var i = 0; i < versionsFull.length; i++) {
   
   var comb1 = diffQ5sMed // p1
     .addBands(futSc3Med) // p2
-    .addBands(numPos) // p3
-    .addBands(numNeg) // p3
+    .addBands(numPosSig) // p3
+    .addBands(numNegSig) // p3
+    .addBands(numAgree) // 3
     // p4 still needed
     .addBands(numCSA) // p5
     .addBands(numGOA) // p5
-    .addBands(numAgree) // p5
     .addBands(c9Med) // p6
     .addBands(c9); // p7
     
