@@ -143,10 +143,10 @@ for (var i = 0; i < versionsFull.length; i++) {
     .toByte()
     .rename('p3_numNeg');
     
-  // direction of chang by GCM 1 means decrease, 2: no change, 3 =  increase
-  var dirChangeGCM = diffQ5sGCM.gt(0).multiply(3)
-    .sum(diffQ5sGCM.eq(0).multiply(2))
-    .sum(diffQ5sGCM.lt(0));
+  // direction of change by GCM 1 means decrease, 2: no change, 3 =  increase
+  var dirChange = diffQ5s.gt(0).multiply(3)
+    .sum(diffQ5s.eq(0).multiply(2))
+    .sum(diffQ5s.lt(0));
   
   // median change in direction
   var dirChangeMed = diffQ5sMed.gt(0).multiply(3)
@@ -155,7 +155,7 @@ for (var i = 0; i < versionsFull.length; i++) {
   
   // number of GCMs that agree with the median on the direction 
   // of change
-  var numAgree = dirChangeGCM
+  var numAgree = dirChange
     .eq(dirChangeMed)
     .reduce('sum')
     .toByte()
