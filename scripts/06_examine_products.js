@@ -22,7 +22,7 @@
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 // which stepwat output to read in?
-var versionFull = 'vsw4-3-2';
+var versionFull = 'vsw4-3-3';
 
 
 // which stepwat output to read in?
@@ -129,7 +129,7 @@ map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median', true);
 
 // * robust change c9
 // considering robust if all but 1 GCM agree on future classification
-var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
+var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
 
 map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not robust change', false);
 
@@ -301,7 +301,7 @@ var panel = ui.Panel({
  
 // Create legend title
 var panelDescript = ui.Label({
-  value: 'STEPWAT simulation settings: ' + root + ' (' + RCP + ', ' + epoch + ')',
+  value: 'STEPWAT simulation settings: ' + root + ' (' + RCP + ', ' + epoch + ')' + ' (' + versionFull + ')',
   style: {
     fontSize: '12px',
     margin: '0 0 4px 0',
