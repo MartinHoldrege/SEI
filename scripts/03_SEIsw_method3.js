@@ -22,10 +22,10 @@ var minorV = '3'; // modified method 1 (deltaS is based on proportional change (
 var patch = '3'; // proportional change calculated from cover (not biomass as in 2)
 
 // which stepwat output to read in?
-var rootList = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
-var RCPList =  ['RCP45', 'RCP45'];
-var epochList = ['2070-2100', '2070-2100'];
-var grazeList = ['Light', 'Light'];
+var rootList = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
+var RCPList =  ['RCP45', 'RCP45', 'RCP45'];
+var epochList = ['2070-2100', '2070-2100',  '2070-2100'];
+var grazeList = ['Light', 'Light', 'Light'];
 
 // 'weight windows', these are the windows over which to change weights
 // between proportion change and delta cover methods for calculating
