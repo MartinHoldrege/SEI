@@ -13,8 +13,11 @@ source $".bashrc" # b/ of aliases etc. for conda environment (just needed b/ idi
 conda activate ee # earthengine commandline environment
 
 # Set the Earth Engine asset folder
-FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI" #earth engine directory
+ FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI" #earth engine directory
+# FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/climate" #earth engine directory
 
+earthengine authenticate
+earthengine set_project "usgs-gee-drylandecohydrology"
 # recursively list all assets in the folder and save their paths in a file
 earthengine ls -r $FOLDER > temp_assets.txt
 

@@ -26,38 +26,39 @@ asset_folder="projects/usgs-gee-drylandecohydrology/assets/SEI/stepwat_biomass/"
 conda activate ee
 
 # some things to try and run when initially setting up gcloud
-#  gcloud init
-# gcloud auth login
-# gcloud auth application-default login # (not always necessary)
+#gcloud init
+gcloud auth login
+gcloud auth application-default login # (not always necessary)
 gcloud config set project usgs-gee-drylandecohydrology # at least uncomment this line
-# earthengine authenticate
+earthengine authenticate
 earthengine set_project "usgs-gee-drylandecohydrology" #  at least uncomment this line
 
 cd "$dir"
 
 # copy files matching this regular expression to cloud bucket:
 # (Note this code will fail if breaks in file names exists)
-files=$(find . | grep -P "fire1_eind1_c4grass1_co21_(Aforb|Sagebrush|Pherb|Cheatgrass)_biomass.*.tif$")
+files=$(find . | grep -P "fire0_eind1_c4grass1_co20_(Aforb|Sagebrush|Pherb|Cheatgrass)_biomass.*.tif$")
+#files=$(find . | grep -P ".*_climate.*.tif$")
 
 # Split files into an array using newline as the delimiter
 IFS=$'\n' read -d '' -ra files_array <<< "$files"
 
 # these lines are for testing with a single file
-# file="${files_array[2]}" 
-# echo gsutil cp "$file" ${gs_folder};
-# gsutil cp "$file" ${gs_folder};
+file="${files_array[2]}" 
+echo gsutil cp "$file" ${gs_folder};
+gsutil cp "$file" ${gs_folder};
 
 # upload to bucket (uncomment to load files to bucket)
-# for file in $files; do
-#  echo "$file"
-#  gsutil cp "$file" ${gs_folder};
-# done
+for file in $files; do
+  echo "$file"
+  gsutil cp "$file" ${gs_folder};
+done
 
 # testing ingesting images to earth engine
-# file="${files_array[2]}" 
-# file=${file:2}
-# file2=${file::-4}
-# earthengine upload image --asset_id=${asset_folder}${file2} ${gs_folder}${file};
+file="${files_array[2]}" 
+file=${file:2}
+file2=${file::-4}
+earthengine upload image --asset_id=${asset_folder}${file2} ${gs_folder}${file};
 
 #ingest image to earth engine (from the bucket)
 for file in $files; do 
