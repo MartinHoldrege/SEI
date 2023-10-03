@@ -29,6 +29,17 @@ rcp_label <- function(rcp, years) {
   ifelse(rcp == "Current", "(Historical)", paste0("(",rcp,", ",years, ")"))
 }
 
+
+# ggplot themes -----------------------------------------------------------
+
+theme_custom1 <- function() {
+  theme_bw() %+replace%
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        strip.background = element_blank())
+}
+
 # ggplot basemap objects --------------------------------------------------
 
 # basemap for ggplot maps
