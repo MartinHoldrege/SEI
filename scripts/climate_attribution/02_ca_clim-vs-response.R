@@ -356,7 +356,7 @@ for(i in 1:nrow(iter)) {
            x = paste0(x, "(Historical)"))
   })
   print(l)
-}
+
 
   # * cover -----------------------------------------------------------------
   # cover versus climate
@@ -384,6 +384,7 @@ for(i in 1:nrow(iter)) {
   })
   print(l)
 
+} # end of loop across runs and pfts
 
 # * boxplots by GCM -------------------------------------------------------
 # Change in cover on y axis, and delta climate on x axis, with one box per GCM
