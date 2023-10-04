@@ -35,7 +35,6 @@ var resolution = 90;     // output (and input) resolution
 // which version used to calculate SEI?
 var versionFull = 'vsw4-3-3';
 
-
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
 var RCP =  'RCP45';
@@ -50,7 +49,6 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
-
 // prepare climate data -----------------------------------------------------
 // This is interpolated climate data from STEPWAT (historical and future) (i.e.,
 // this data only has 200 unique values);
@@ -64,17 +62,19 @@ var climDelta = climFut.map(function(image) {
   return ee.Image(image).subtract(climCur);
 });
 
-var reducers = ee.Reducer.max().combine({
-  reducer2: ee.Reducer.min(),
-  sharedInputs: true
-}).combine({
+var n = SEI.GCMList.length - 1;
+// percentiles of the 2nd lowest (ranked) GCM and 2nd highest
+var pcents = [1/n*100, (n-1)/n*100];
+
+var reducerLowHigh = ee.Reducer.percentile(pcents, ['low', 'high']);
+
+var reducers = reducerLowHigh.combine({
   reducer2: ee.Reducer.median(),
   sharedInputs: true
 });
 
 // 'reduced' delta MAP and MAT (i.e., pixelwise min, max, and median across GCMs)
 var climDeltaRed = climDelta.reduce(reducers);
-
 
 // read in data product  -------------------------------------------------
 
@@ -84,7 +84,6 @@ var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
 var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
 
 var p = ee.Image(path + version + '/products/' + productName);
-
 
 // * robust change c9
 // considering robust if all but 1 GCM agree on future classification
