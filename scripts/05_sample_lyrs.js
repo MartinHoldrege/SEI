@@ -128,7 +128,7 @@ for (var i = 0; i < roots.length; i++) {
   
   // all bands want to sample from
   var allComb = fut0
-    .select(['Q5s_.*', 'Q1raw.*', 'Q2raw.*', 'Q3raw.*', 'Q5scdeciles.*', '.*560m.*'])
+    .select(['Q5s_.*', 'Q1raw.*', 'Q2raw.*', 'Q3raw.*', 'Q5sc3_.*', '.*560m.*'])
     // adding the classification change bands
     .addBands(p.select('p7_c9_.*').regexpRename('p7_', ''))
     .addBands(climComb)
