@@ -9,24 +9,8 @@ Author: Martin Holdrege
 Started: October 4, 2023
 */
 
-/********************************************************
- * Purpose:
- * Examine the products image created in the 05_create_data_products.js
- * script. These are the fundamental data products that are being created
- * by this project. Here, maps made to compare different versions of the products
- * 
- * 
- * Script Started: April 3, 2023
- * 
- * Author: Martin Holdrege
- * 
- *  Notes
- * This script does not create any output, and is meant to be for examination
- * Later will be converted to an earthengine app
- * 
-* 
- * *******************************************************
-*/ 
+// STOP: this is still a work in progress and is not being sourced elsewhere
+
 
 // User-defined variables -----------------------------------------------------
 
