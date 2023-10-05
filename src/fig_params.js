@@ -115,6 +115,107 @@ for (var i = 0; i < c9Palette.length; i++) {
 exports.legendc9 = legend;
 //Map.add(legend)
 
+// legends for continuous mapped values -----------------------------------------------------
+
+
+/**
+ * Creating color bar legend for layers that show colors with <RasterSymbolizer>
+ * @param {ui.panel} existing_panel to add new panel additions to (this panel specificies the location)
+ * @param {sld} sld xml string
+ * @param {number} minimum value in the sld 
+ * @param {number} max value in the sld 
+ * @param {string} legend title
+ * @return {ui} ui object that 
+ */
+var makeSldRampLegend = function(existing_panel, sld, min, max, title) {
+  var lon = ee.Image.pixelLonLat().select('longitude');
+  var gradient = lon.multiply((max - min)/100.0).add(min);
+  var legendImage = gradient.sldStyle(sld);
+  var thumb = ui.Thumbnail({
+    image: legendImage,
+    params: {bbox:'0,0,100,8', dimensions:'128x10'},
+    style: {
+      position: 'bottom-center',
+      padding: '0px 0px 0px 0px'
+    } 
+  });
+
+  var panel2 = ui.Panel({
+    widgets: [
+      ui.Label(min),
+      ui.Label({style: {stretch: 'horizontal'}}),
+      ui.Label(max) 
+      ],
+    layout: ui.Panel.Layout.flow('horizontal'),
+    style: {stretch: 'horizontal', maxWidth: '270px', padding: '0px 0px 0px 0px'}
+    
+  });
+  var new_panel = existing_panel
+  // adding a title
+    .add(ui.Label({
+      value: title,
+      style: {
+        fontWeight: 'bold',
+        fontSize: '10px',
+        margin: '0 0 4px 0',
+        padding: '0',
+        textAlign: 'center'
+        }
+  }))
+    .add(panel2)
+    .add(thumb);
+  return new_panel;
+};
+
+/**
+ * Creating color bar legend for maps that are displayed with a regular dictionary of visualization parameters
+ * @param {ui.panel} existing_panel to add new panel additions to (this panel specificies the location)
+ * @param {vizParams} dictionary containing min, max and palette
+ * @param {string} legend title
+ * @return {ui} ui object that 
+ */
+var makeVisParamsRampLegend = function(existing_panel, visParams, title) {
+  var min = visParams.min;
+  var max = visParams.max;
+  var lon = ee.Image.pixelLonLat().select('longitude');
+  var gradient = lon.multiply((max - min)/100.0).add(min);
+  var legendImage = gradient.visualize(visParams);
+  var thumb = ui.Thumbnail({
+    image: legendImage,
+    params: {bbox:'0,0,100,8', dimensions:'128x10'},
+    style: {
+      position: 'bottom-center',
+      padding: '0px 0px 0px 0px'
+    } 
+  });
+
+  var panel2 = ui.Panel({
+    widgets: [
+      ui.Label(min),
+      ui.Label({style: {stretch: 'horizontal'}}),
+      ui.Label(max) 
+      ],
+    layout: ui.Panel.Layout.flow('horizontal'),
+    style: {stretch: 'horizontal', maxWidth: '270px', padding: '0px 0px 0px 0px'}
+    
+  });
+  var new_panel = existing_panel
+  // adding a title
+    .add(ui.Label({
+      value: title,
+      style: {
+        fontWeight: 'bold',
+        fontSize: '10px',
+        margin: '0 0 4px 0',
+        padding: '0',
+        textAlign: 'center'
+        }
+  }))
+    .add(panel2)
+    .add(thumb);
+  return new_panel;
+}
+
 // creating a white basemap map -------------------------------------------------------------
 
 // white basemap to see colors more easily if needed. 
