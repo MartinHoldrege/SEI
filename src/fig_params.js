@@ -127,7 +127,7 @@ exports.legendc9 = legend;
  * @param {string} legend title
  * @return {ui} ui object that 
  */
-var makeSldRampLegend = function(existing_panel, sld, min, max, title) {
+exports.makeSldRampLegend = function(existing_panel, sld, min, max, title) {
   var lon = ee.Image.pixelLonLat().select('longitude');
   var gradient = lon.multiply((max - min)/100.0).add(min);
   var legendImage = gradient.sldStyle(sld);
@@ -174,7 +174,7 @@ var makeSldRampLegend = function(existing_panel, sld, min, max, title) {
  * @param {string} legend title
  * @return {ui} ui object that 
  */
-var makeVisParamsRampLegend = function(existing_panel, visParams, title) {
+exports.makeVisParamsRampLegend = function(existing_panel, visParams, title) {
   var min = visParams.min;
   var max = visParams.max;
   var lon = ee.Image.pixelLonLat().select('longitude');
