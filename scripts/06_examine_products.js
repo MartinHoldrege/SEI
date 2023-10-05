@@ -22,13 +22,14 @@
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 // which stepwat output to read in?
-var versionFull = 'vsw4-3-2';
+var versionFull = 'vsw4-3-3';
 
 
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
 var RCP =  'RCP45';
 var epoch = '2070-2100';
+
 // dependencies -----------------------------------------------------------
 
 // Load module with functions 
@@ -81,7 +82,7 @@ var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image 
 // change in climate variables
 var climDelta = climFut.map(function(image) {
   return ee.Image(image).subtract(climCur);
-})
+});
 
 var reducers = ee.Reducer.max().combine({
   reducer2: ee.Reducer.min(),
@@ -128,7 +129,7 @@ map.addLayer(p.select('p6_c9Med'), fig.visc9, 'c9 median', true);
 
 // * robust change c9
 // considering robust if all but 1 GCM agree on future classification
-var whereNotRobust = p.select('p5_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
+var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
 
 map.addLayer(whereNotRobust.selfMask(), {palette: 'white'}, 'not robust change', false);
 
@@ -288,3 +289,26 @@ for (var i = 0; i < bandsRed.length; i++) {
   map.addLayer(climDeltaRed.select('MAT_' + b), deltaMATvis, 'delta MAT future (' + b + ', interpolated)', false);
 }
 
+// misc labels -------------------------------------------------------------------------
+
+// label providing simulations settings
+var panel = ui.Panel({
+  style: {
+    position: 'bottom-right',
+    padding: '8px 15px'
+  }
+});
+ 
+// Create legend title
+var panelDescript = ui.Label({
+  value: 'STEPWAT simulation settings: ' + root + ' (' + RCP + ', ' + epoch + ')' + ' (' + versionFull + ')',
+  style: {
+    fontSize: '12px',
+    margin: '0 0 4px 0',
+    padding: '0'
+    }
+});
+ 
+// Add the title to the panel
+panel.add(panelDescript);
+map.add(panel);

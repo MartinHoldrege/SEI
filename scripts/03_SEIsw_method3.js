@@ -18,14 +18,14 @@
 var resolution = 90;     // output resolution, 90 eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
-var minorV = '3'; // modified method 1 where deltaS is calculated by dividing by local max;
-var patch = '2'; // patch 2 where . 
+var minorV = '3'; // modified method 1 (deltaS is based on proportional change (but not divided by max)
+var patch = '3'; // proportional change calculated from cover (not biomass as in 2)
 
 // which stepwat output to read in?
-var rootList = ['fire1_eind1_c4grass1_co20_'];
-var RCPList =  ['RCP45'];
-var epochList = ['2070-2100'];
-var grazeList = ['Light'];
+var rootList = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
+var RCPList =  ['RCP45', 'RCP45', 'RCP45'];
+var epochList = ['2070-2100', '2070-2100',  '2070-2100'];
+var grazeList = ['Light', 'Light', 'Light'];
 
 // 'weight windows', these are the windows over which to change weights
 // between proportion change and delta cover methods for calculating
@@ -131,7 +131,7 @@ for (var j=0; j<RCPList.length; j++) {
     var deltaSage = swCov.subtract(swCurCov).select('sage'); // (future - historical stepwat cover), only needed for sagebrush
     
     // proportional change
-    var swProp = sw1.subtract(swCur1).divide(swCur1);
+    var swProp = swCov.subtract(swCurCov).divide(swCurCov);
 
 //    Map.addLayer(swProp.select('sage'), {min: -1, max: 1, palette: ['red', 'white', 'blue']}, 'swprop')
     /**

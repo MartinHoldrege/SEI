@@ -42,7 +42,7 @@ STEPWAT results
       so future cover = observed cover + (stepwat future cover - stepwat historical cover)
     
     Patch 2 -- calculate 'future RAP cover' by multiplying current RAP cover
-    by the proportional change [(future - historical)/historicalin] STEPWAT biomass. And
+    by the proportional change [(future - historical)/historical] STEPWAT biomass. And
     then do an additional correction for sagebrush because this leads to unrealistic changes
     in cover in some cases where the proportion change is high (which occurs when historical
     STEPWAt biomass was very long and then increased). In those cases a weighted average between
@@ -50,6 +50,10 @@ STEPWAT results
     future RAP cover is done. 
     This weighting occurs in places where the proportion change from stepwat is very large
     and current rap sage cover is very large, causing unrealistic changes in sagebrush cover. 
+    
+    Patch 3 -- same as patch 3 but proportional change [(future - historical)/historical] calculated using cover 
+    (i.e. STEPWAT biomass converted to cover using linear equations (based on RAP relationsions for annuals and perennials
+    and S. Carpenter's equation for sagebrush))
   
   
   Minor version 4 -- `Script 03_SEIsw_method4.js` used. 
