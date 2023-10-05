@@ -72,7 +72,7 @@ var version = SEI.removePatch(versionFull);
 var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
 var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
 
-var p = ee.Image(path + version + '/products/' + productName);
+var p = ee.Image(path + version + '/products/' + productName).updateMask(SEI.mask);
 exports.p = p;
 // * robust change c9
 // considering robust if all but 1 GCM agree on future classification
@@ -92,7 +92,8 @@ var GCM = 'CESM1-CAM5'; // specific GCM pulling out as an example
 var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
 
 // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
-var fut0 = ee.Image(path + version + '/forecasts/' + assetName);
+var fut0 = ee.Image(path + version + '/forecasts/' + assetName)
+  .updateMask(SEI.mask);
 
 // these are the bands created when there was (artificially) no change in stepwat values from current
 // to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
