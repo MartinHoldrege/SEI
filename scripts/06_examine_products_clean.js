@@ -57,15 +57,13 @@ snazzy.addStyleFromName("Interface map"); // doesn't seem to work inside app ?
 map.centerObject(SEI.cur.select('Q5sc3'), 6);
 map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "white"},'white background', false); 
 map.addLayer(ee.Image(1), {'min':1, 'max':1, palette: "gray"},'gray background', false); 
-map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
-
 
 
 // plot climate data -----------------------------------------------------------------
 var deltaMATvis = {min: 1, max: 6, palette: ['white', '#67001f']};
 var deltaMAPvis = {min: -130, max: 130, palette: ['#67001f', 'white', '#053061']};
-var MAPvis = {min: 0, max: 800, palette: ['white', '#053061']}
-var MATvis = {min: 0, max: 18, palette: ['white', '#67001f']}
+var MAPvis = {min: 0, max: 800, palette: ['white', '#053061']};
+var MATvis = {min: 0, max: 18, palette: ['white', '#67001f']};
 
 // historical
 map.addLayer(d.climCur.select('MAP'), MAPvis, 'MAP (historical, interpolated)', false);
@@ -135,6 +133,8 @@ map.addLayer(d.c9Red.select('low'), fig.visc9, '9 class transition (good case ac
 map.addLayer(d.c9Red.select('high'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
 map.addLayer(d.p.select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
 
+// 'backgroud' layers ---------------------------------------------------------------------------
+map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
 // misc labels -------------------------------------------------------------------------
 
 // label providing simulations settings
