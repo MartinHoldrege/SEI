@@ -19,7 +19,7 @@ var versionFull = 'vsw4-3-3';
 exports.versionFull = versionFull;
 
 // which stepwat output to read in?
-var root = 'fire0_eind1_c4grass1_co20_';
+var root = 'fire1_eind1_c4grass1_co21_';
 exports.root = root;
 var RCP =  'RCP45';
 exports.RCP = RCP;
