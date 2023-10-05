@@ -131,8 +131,8 @@ map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v30)', false);
 
 // c9 maps ----------------------------------------------------------------------
 
-map.addLayer(d.c9Red.select('low'), fig.visc9, 'c9 good case (across GCMs)', false); 
-map.addLayer(d.c9Red.select('high'), fig.visc9, 'c9 bad case (across GCMs)', false);  
+map.addLayer(d.c9Red.select('low'), fig.visc9, '9 class transition (good case across GCMs)', false); 
+map.addLayer(d.c9Red.select('high'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
 map.addLayer(d.p.select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
 
 // misc labels -------------------------------------------------------------------------
