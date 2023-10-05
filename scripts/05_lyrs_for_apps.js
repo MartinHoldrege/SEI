@@ -150,6 +150,7 @@ exports.c9Red = c9Red;
 
 // contributions by each Q compontent to changes --------------------------------------
 
+var qBands = ['Q1raw', 'Q2raw', 'Q3raw']
 
 var qPropIc = diffIc.select(qBands).map(function(x) {
   // Absolute proportion change in Qs
