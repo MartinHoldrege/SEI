@@ -9,8 +9,6 @@ Author: Martin Holdrege
 Started: October 4, 2023
 */
 
-// STOP: this is still a work in progress and is not being sourced elsewhere
-
 
 // User-defined variables -----------------------------------------------------
 
@@ -18,11 +16,15 @@ var resolution = 90;     // output (and input) resolution
 
 // which version used to calculate SEI?
 var versionFull = 'vsw4-3-3';
+exports.versionFull = versionFull;
 
 // which stepwat output to read in?
 var root = 'fire1_eind1_c4grass1_co20_';
+exports.root = root;
 var RCP =  'RCP45';
+exports.RCP = RCP;
 var epoch = '2070-2100';
+exports.epoch = epoch;
 
 // dependencies -----------------------------------------------------------
 
@@ -33,11 +35,13 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
+
 // prepare climate data -----------------------------------------------------
 // This is interpolated climate data from STEPWAT (historical and future) (i.e.,
 // this data only has 200 unique values);
 
 var climCur = clim.loadHistoricalSwClim();
+exports.climCur = climCur;
 
 var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image per GCM
 
@@ -57,8 +61,9 @@ var reducers = reducerLowHigh.combine({
   sharedInputs: true
 });
 
-// 'reduced' delta MAP and MAT (i.e., pixelwise min, max, and median across GCMs)
-var climDeltaRed = climDelta.reduce(reducers);
+// 'reduced' delta MAP and MAT (i.e., pixelwise low, median, and median across GCMs)
+exports.climDeltaRed = climDelta.reduce(reducers);
+
 
 // read in data product  -------------------------------------------------
 
@@ -68,7 +73,7 @@ var curYears = '_' + SEI.curYearStart + '_' + SEI.curYearEnd + '_';
 var productName = 'products_' + versionFull + curYears + resolution + "_" + root +  RCP + '_' + epoch;
 
 var p = ee.Image(path + version + '/products/' + productName);
-
+exports.p = p;
 // * robust change c9
 // considering robust if all but 1 GCM agree on future classification
 var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
@@ -78,6 +83,7 @@ var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1)
 
 // bands of interest and their descriptions
 var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+
 var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
 
 var GCM = 'CESM1-CAM5'; // specific GCM pulling out as an example
@@ -134,17 +140,16 @@ var diffGCM = futGCM
 
 // combing min, max etc. deltas with delta for one specific GCM
 var diffRed2 = diffRed1.addBands(diffGCM);
- 
+exports.diffRed2 = diffRed2;
 // calculating 'worst and best' case c9
 // reduced c3 (i.e., includes layers for best and worst)
 var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
   .addBands(futGCM.select('Q5sc3').rename(GCM));
 var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
-
+exports.c9Red = c9Red; 
 
 // contributions by each Q compontent to changes --------------------------------------
 
-var qBands = ['Q1raw', 'Q2raw', 'Q3raw']
 
 var qPropIc = diffIc.select(qBands).map(function(x) {
   // Absolute proportion change in Qs
@@ -167,8 +172,7 @@ var qPropIc = diffIc.select(qBands).map(function(x) {
 var qPropMean = qPropIc.reduce('mean')
   .regexpRename('_mean', '');
 
-
-
+exports.qPropMean = qPropMean;
 
 
 
