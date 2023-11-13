@@ -40,7 +40,7 @@ var resolution = 90;     // output (and input) resolution, 30 m eventually
 var versionsFull = ['vsw4-3-3', 'vsw4-3-3', 'vsw4-3-3']
 
 // which stepwat output to read in?
-var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
+var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
 var RCP =  'RCP45';
 var epoch = '2070-2100';
 
