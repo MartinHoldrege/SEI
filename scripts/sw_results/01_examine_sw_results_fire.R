@@ -19,9 +19,9 @@ source("src/general_functions.R")
 
 # params ------------------------------------------------------------------
 
-runs <- c('fire1_eind1_c4grass1_co20', 
-          'fire1_eind1_c4grass1_co21')
-date <- "20230822"
+runs <- c('fire1_eind1_c4grass1_co20_2311', 
+          'fire1_eind1_c4grass1_co21_2311')
+date <- "20231113"
 
 graze_levels <- c("grazL" = "Light")
 
@@ -96,7 +96,9 @@ diff_id_all <- info_c1 %>%
 
 # want to get range across run types so that figures will
 # have comparable colors across runs for given pft
-range_f <- range(as.numeric(minmax(r_c1[[fire_id_all]])))
+max_f <- max(as.numeric(minmax(r_c1[[fire_id_all]])))
+# adding small amount b/ I think rounding is causing this max to be too low (and some values not display)
+range_f <- c(0, max_f + 0.1)
 range_d0 <- range(as.numeric(minmax(r_c1[[diff_id_all]])))
 m <- max(abs(range_d0)) # for colour gradient b/ can't sent midpoint
 range_d <- c(-m, m)

@@ -26,8 +26,8 @@ source("src/Functions__DisplayItems.R")
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
-run <- c('fire1_eind1_c4grass1_co20')
-date <- "20230905"
+run <- c('fire1_eind1_c4grass1_co20_2311')
+date <- "20231113"
 cap1 <- paste0('simulation settings: ', 
               run, "_", names(graze_level))
 # Read in data ------------------------------------------------------------
