@@ -51,4 +51,4 @@ bio1 <- pft5_bio1 %>%
 
 # save output -------------------------------------------------------------
 
-write_csv(bio1, "data_processed/sw_sites/cover_mean_by_site-PFT_v1.csv")
+write_csv(bio1, "data_processed/sw_sites/cover_mean_by_site-PFT_v2.csv")

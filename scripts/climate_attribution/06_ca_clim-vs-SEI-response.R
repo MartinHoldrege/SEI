@@ -13,8 +13,8 @@ resolution <- 90;
 versionFull <-'vsw4-3-3'
   
 runs <-  c('fire0_eind1_c4grass1_co20', 
-            'fire1_eind1_c4grass1_co20', 
-            'fire1_eind1_c4grass1_co21');
+            'fire1_eind1_c4grass1_co20_2311', 
+            'fire1_eind1_c4grass1_co21_2311');
 
 RCP <-   'RCP45';
 epoch <-  '2070-2100';
@@ -224,7 +224,7 @@ s_pft_diff_med1 <- s_pft_diff2 %>%
 # median vars vs climate ------------------------------------------
 # figures
 
-pdf('figures/climate_attribution/sampled_sites/SEI-responses_vs_clim_median_v1.pdf',
+pdf('figures/climate_attribution/sampled_sites/SEI-responses_vs_clim_median_v2.pdf',
     height = 8, width = 8)
 
 # * non PFT variables -------------------------------------------------------
@@ -345,7 +345,7 @@ map(clim_vars, function(clim) {
 dev.off()
 
 # GCM level responses vs climate ------------------------------------------
-pdf('figures/climate_attribution/sampled_sites/SEI-responses_vs_clim_by-GCM_v1.pdf',
+pdf('figures/climate_attribution/sampled_sites/SEI-responses_vs_clim_by-GCM_v2.pdf',
     height = 8, width = 8)
 # ** original values ---------------------------------------------------
 # i.e. these are not delta variables

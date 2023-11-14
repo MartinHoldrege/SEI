@@ -22,7 +22,7 @@ theme_set(theme_custom1())
 
 # biomass & cover by climate scenario, site etc. 
 # file created in 01_ca_compile-sw-site-data.R
-bio1 <- read_csv("data_processed/sw_sites/cover_mean_by_site-PFT_v1.csv")
+bio1 <- read_csv("data_processed/sw_sites/cover_mean_by_site-PFT_v2.csv")
 
 
 # current climate ---------------------------------------------------------
@@ -171,7 +171,7 @@ iter <- expand_grid(run = runs,
                     pft = pfts
                     )
 
-pdf('figures/climate_attribution/sw_sites/prop-change_vs_clim_v2.pdf')
+pdf('figures/climate_attribution/sw_sites/prop-change_vs_clim_v3.pdf')
 
 for(i in 1:nrow(iter)) {
   
@@ -297,7 +297,7 @@ dev.off()
 
 # responses by GCM -------------------------------------------------------
 
-pdf('figures/climate_attribution/sw_sites/change_vs_clim_by_GCM_v2.pdf',
+pdf('figures/climate_attribution/sw_sites/change_vs_clim_by_GCM_v3.pdf',
     width = 9)
 
 

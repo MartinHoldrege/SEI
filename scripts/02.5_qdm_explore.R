@@ -27,14 +27,14 @@ theme_set(theme_classic())
 # params ------------------------------------------------------------------
 
 # runs <- c('fire1_eind1_c4grass1_co20', 'fire1_eind1_c4grass1_co21')
-runs <- c('fire1_eind1_c4grass1_co20')
+runs <- c('fire1_eind1_c4grass1_co20_2311')
 
 # how big the neighborhood was for smoothin RAP cover
 # smooths <- c(707, 2000, 5000, 10000)
 smooths <- c(2000)
 additive <- TRUE # whether QDM is additive or not (multiplicative)
 
-date <- "20230914"
+date <- "20231114"
 graze_level <- c("grazL" = "Light")
 # PFTs for which to keep data when reading in
 PFTs <- c("Sagebrush", "Pherb", "Cheatgrass", "Aforb")
