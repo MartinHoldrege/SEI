@@ -24,6 +24,16 @@ c3Names <- c("Core", "Grow", "Other")
 # biomass
 lab_bio0 <- expression("Biomass ("*gm^-2*")")
 
+# climate
+lab_mathist0 <- expression("MAT (" * degree * C * "; Historical)")
+lab_maphist0 <-'MAP (mm; Historical)'
+
+# panel labels ------------------------------------------------------------
+
+pft_labels <- c('afg' = 'Annuals',
+                'pfg' = 'Perennials',
+                'sagebrush' = 'Sagebrush')
+
 # colors ------------------------------------------------------------------
 
 cols_rcp <- c(#"Current" = "cornflower blue",

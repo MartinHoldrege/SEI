@@ -16,6 +16,7 @@ runs <-  c('fire0_eind1_c4grass1_co20',
             'fire1_eind1_c4grass1_co20_2311', 
             'fire1_eind1_c4grass1_co21_2311');
 
+run_target <- runs[2] # some figs just made for a specific run
 RCP <-   'RCP45';
 epoch <-  '2070-2100';
 
@@ -23,6 +24,7 @@ epoch <-  '2070-2100';
 
 library(tidyverse)
 library(dtplyr)
+library(patchwork)
 # for scaled_change function
 source('../grazing_effects/src/general_functions.R')
 source("../grazing_effects/src/fig_params.R") # for axis labels etc
@@ -293,10 +295,10 @@ g <- ggplot(s_pft_med1, aes(color = id)) +
 map(clim_vars, function(clim) {
   g + 
     geom_point(aes(x = .data[[paste0(clim, "_cur")]],
-               y = cover),
+               y = cover*100),
                alpha = 0.05, size = 0.1) +
     geom_smooth(aes(x = .data[[paste0(clim, "_cur")]],
-                    y = cover,), se = FALSE) +
+                    y = cover*100,), se = FALSE) +
     labs(x = paste(clim, '(Historical)'),
          y = lab_cov0) 
 })  
@@ -322,15 +324,17 @@ g <- ggplot(s_pft_diff_med1) +
 map(clim_vars, function(clim) {
   g + 
     geom_point(aes(x = .data[[paste0(clim, "_cur")]],
-                   y = cover_diff),
+                   y = cover_diff*100),
                alpha = 0.05, size = 0.1) +
     geom_smooth(aes(x = .data[[paste0(clim, "_cur")]],
-                    y = cover_diff,), se = FALSE) +
+                    y = cover_diff*100,), se = FALSE) +
     labs(x = paste(clim, '(Historical)'),
          y = lab_cov1) 
 })  
 
 # delta Q ~ clim
+
+
 map(clim_vars, function(clim) {
   g + 
     geom_point(aes(x = .data[[paste0(clim, "_cur")]],
@@ -342,6 +346,88 @@ map(clim_vars, function(clim) {
          y = lab_q1) 
 })
 
+dev.off()
+
+
+# **individual jpegs (cover vs clim) ----------------------------------------
+# individual figures for presentations etc. 
+pfts <- s_pft_med1$PFT %>% unique()
+s_pft_tmp <- s_pft_med1 %>% 
+  filter(run == run_target)
+
+
+# stacked figures of cover vs mat on top and cover vs map on bottom
+# for a given PFT
+
+map(pfts, function(pft) {
+  g_clim <- s_pft_tmp %>% 
+    filter(PFT == pft) %>% 
+    ggplot(aes(y = cover*100, color = id)) +
+    labs(y = lab_cov0)+
+    scale_color_manual(values = cols_id) +
+    theme(legend.title = element_blank(),
+          legend.position = 'bottom')
+  
+  g_mat <- g_clim +    
+    geom_point(aes(x = MAT_cur), alpha = 0.05, size = 0.1) +
+    geom_smooth(aes(x = MAT_cur), se = FALSE) +
+    labs(x = lab_mathist0)
+  
+  g_map <- g_clim +    
+    geom_point(aes(x = MAP_cur), alpha = 0.05, size = 0.1) +
+    geom_smooth(aes(x = MAP_cur), se = FALSE) +
+    labs(x = lab_maphist0)
+  
+  g_comb <- g_mat / g_map + plot_layout(guides = "collect") & theme(legend.position = 'top')
+  "figures/climate_attribution/sampled_sites/"
+  jpeg(paste0('figures/climate_attribution/sampled_sites/cov_vs_clim_', pft, '_', run_target, '.jpg'),
+       units = 'in', res = 600, height = 6, width = 3)
+  print(g_comb)
+  dev.off()
+})
+
+# cover & Q vs clim, individual panels by PFT
+labeller = labeller(
+  .default = capitalize,
+  conservation = conservation_status
+)
+
+g_clim <- ggplot(s_pft_tmp, aes(color = id)) +
+  scale_color_manual(values = cols_id) +
+  theme(legend.title = element_blank(),
+        legend.position = 'top') +
+  facet_wrap(~PFT, labeller = labeller(
+    PFT = pft_labels
+  ), ncol = 1, scales = 'free_y')
+
+g_mat_cov <- g_clim +
+  geom_point(aes(MAT_cur, cover*100), alpha = 0.05, size = 0.1) +
+  geom_smooth(aes(MAT_cur, cover*100), se = FALSE) +
+  labs(x = lab_mathist0,
+       y = lab_cov0)
+
+g_mat_q <- g_clim +
+  geom_point(aes(MAT_cur, Q), alpha = 0.05, size = 0.1) +
+  geom_smooth(aes(MAT_cur, Q), se = FALSE) +
+  labs(x = lab_mathist0)
+
+g_map_cov <- g_clim +
+  geom_point(aes(MAP_cur, cover*100), alpha = 0.05, size = 0.1) +
+  geom_smooth(aes(MAP_cur, cover*100), se = FALSE) +
+  labs(x = lab_maphist0,
+       y = lab_cov0)
+
+g_map_q <- g_clim +
+  geom_point(aes(MAP_cur, Q), alpha = 0.05, size = 0.1) +
+  geom_smooth(aes(MAP_cur, Q), se = FALSE) +
+  labs(x = lab_maphist0)
+
+g_clim_comb <- g_mat_cov + g_mat_q +  g_map_cov + g_map_q +
+  plot_layout(guides = "collect", nrow = 1) & theme(legend.position = 'top')
+
+jpeg(paste0('figures/climate_attribution/sampled_sites/cov-q_vs_clim_by-PFT_', run_target, '.jpg'),
+     units = 'in', res = 600, height = 8, width = 12)
+print(g_clim_comb)
 dev.off()
 
 # GCM level responses vs climate ------------------------------------------
@@ -360,7 +446,7 @@ g <- ggplot(s_pft2, aes(color = GCM)) +
 map(clim_vars, function(clim) {
   g + 
     geom_smooth(aes(x = .data[[paste0(clim, "_cur")]],
-                    y = cover,), se = FALSE) +
+                    y = cover*100,), se = FALSE) +
     labs(x = paste(clim, '(Historical)'),
          y = lab_cov0) 
 })  
