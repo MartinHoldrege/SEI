@@ -18,7 +18,8 @@ var resolution = 90;     // output (and input) resolution
 var versionFull = 'vsw4-3-3';
 
 // which stepwat output to read in?
-var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co21_'];
+// var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
+var roots = ['fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
 var RCP =  'RCP45';
 var epoch = '2070-2100';
 
