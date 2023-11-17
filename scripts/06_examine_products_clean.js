@@ -29,7 +29,9 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 // contains one main function
 
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
-var d = lyrMod.main(root = root); // returns a dictionary
+var d = lyrMod.main({
+  root: root
+}); // returns a dictionary
 
 //Custom Basemap
 var snazzy = require("users/aazuspan/snazzy:styles");
