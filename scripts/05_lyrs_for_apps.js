@@ -22,7 +22,7 @@ var path = SEI.path;
 
 // the main function, arguments are the user defined variables
 // returns a large dictionary
-exports.main = function(root, RCP, epoch, versionFull, resolution) {
+var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
   
   // User-defined variables -----------------------------------------------------
   // default settings
@@ -148,13 +148,38 @@ exports.main = function(root, RCP, epoch, versionFull, resolution) {
   
   
   // contributions by each Q compontent to changes --------------------------------------
+  // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
+  // and then dividing by the sum changes in Q that are in the same direction, then taking 
+  // the absolute value. 
   
-  var qBands = ['Q1raw', 'Q2raw', 'Q3raw']
-  
-  var qPropIc = diffIc.select(qBands).map(function(x) {
+  var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
+
+  var qPropIc = diffIc.map(function(x) {
+    
+    // direction of SEI change (1 pos, 0 neg or no change)
+    var Q5s = ee.Image(x).select('Q5s');
+    var dirQ5s = ee.Image(0)
+      .where(Q5s.gt(0), 3) // increase
+      .where(Q5s.eq(0), 2) // no change
+      .where(Q5s.lt(0), 1); // decrease
+      
+    // direction of Q change
+    var diffQ = ee.Image(x).select(qBands);
+    
+    var dirQ = ee.Image(0)
+      .where(diffQ.gt(0), 3) // increase
+      .where(diffQ.eq(0), 2) // no change
+      .where(diffQ.lt(0), 1); // decrease
+    
+    // is the change change in direction of SEI and the individual Q component the same?
+    var agreeDir = dirQ.eq(dirQ5s);
+    
     // Absolute proportion change in Qs
-    // abs prob = abs( (future-current)/current
-    var absProp = ee.Image(x).divide(cur1.select(qBands)).abs();
+    // abs prop = abs( (future-current)/current
+    var absProp = diffQ.divide(cur1.select(qBands))
+      .abs()
+      // mask out areas that don't agree on direction of change
+      .updateMask(agreeDir); 
     
     var sum = absProp.reduce('sum');
     // divide all layers by the total to normalize each value
@@ -188,3 +213,4 @@ exports.main = function(root, RCP, epoch, versionFull, resolution) {
   return out;
 };
 
+//print(main())
