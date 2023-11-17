@@ -20,10 +20,16 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
-// the main function, arguments are the user defined variables
+// the main function, arguments are the user defined variables, passed as a dictionary
+// the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
 // returns a large dictionary
-var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
-  
+var main = exports.main = function(args) {
+  var root = args.root;
+  var RCP =  args.RCP;
+  var epoch =  args.epoch;
+  var versionFull =  args.versionFull;
+  var resolution =  args.resolution;
+
   // User-defined variables -----------------------------------------------------
   // default settings
   if (root === undefined){var root = 'fire1_eind1_c4grass1_co20_2311_';}
