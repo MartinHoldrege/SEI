@@ -164,7 +164,10 @@ var main = exports.main = function(args) {
     
     // direction of SEI change (1 pos, 0 neg or no change)
     var Q5s = ee.Image(x).select('Q5s');
-    var dirQ5s = ee.Image(0)
+    var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
+      .rename(qBands);
+      
+    var dirQ5s = empty
       .where(Q5s.gt(0), 3) // increase
       .where(Q5s.eq(0), 2) // no change
       .where(Q5s.lt(0), 1); // decrease
@@ -172,7 +175,7 @@ var main = exports.main = function(args) {
     // direction of Q change
     var diffQ = ee.Image(x).select(qBands);
     
-    var dirQ = ee.Image(0)
+    var dirQ = empty
       .where(diffQ.gt(0), 3) // increase
       .where(diffQ.eq(0), 2) // no change
       .where(diffQ.lt(0), 1); // decrease
