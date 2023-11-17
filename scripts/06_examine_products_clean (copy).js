@@ -16,7 +16,7 @@
 */ 
 
 // User-defined variables -----------------------------------------------------
-
+ 
 var root = 'fire1_eind1_c4grass1_co20_2311_'
 // dependencies -----------------------------------------------------------
 
@@ -68,8 +68,9 @@ var MAPvis = {min: 0, max: 800, palette: ['white', '#053061']};
 var MATvis = {min: 0, max: 18, palette: ['white', '#67001f']};
 
 // historical
-map.addLayer(d.get('climCur').select('MAP'), MAPvis, 'MAP (historical, interpolated)', false);
-map.addLayer(d.get('climCur').select('MAT'), MATvis, 'MAT (historical, interpolated)', false);
+
+map.addLayer(ee.Image(d.get('climCur')).select('MAP'), MAPvis, 'MAP (historical, interpolated)', false);
+map.addLayer(ee.Image(d.get('climCur')).select('MAT'), MATvis, 'MAT (historical, interpolated)', false);
 
 // change under future conditions
 var bandsRed = ['low', 'high', 'median'];
@@ -77,13 +78,13 @@ var bandsRed = ['low', 'high', 'median'];
 // MAP
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(d.get('climDeltaRed').select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', interpolated)', false);
 }
 
 // MAT
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(d.get('climDeltaRed').select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', interpolated)', false);
 }
 
 // contributions by each Q compontent to changes --------------------------------------
@@ -101,7 +102,7 @@ var rgbViz = {
 };
 
 var rgbLab = ' (R = Q1, G= Q2, B = Q3)';
-map.addLayer(d.get('qPropMean'), rgbViz, 'RGB (delta Q attribution)' + rgbLab, false);
+map.addLayer(ee.Image(d.get('qPropMean')), rgbViz, 'RGB (delta Q attribution)' + rgbLab, false);
 
 
 // Delta (fut-historical) values (min, max, median, etc) ----------------------------------
@@ -113,14 +114,14 @@ var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 
 for (var j = 0; j < diffBands.length; j++) {
   var band = diffBands[j];
   
-  map.addLayer(d.get('diffRed2').select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, across GCMs)', false);
-  map.addLayer(d.get('diffRed2').select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, across GCMs)', false);
+  map.addLayer(ee.Image(d.get('diffRed2')).select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, across GCMs)', false);
+  map.addLayer(ee.Image(d.get('diffRed2')).select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, across GCMs)', false);
   
   // median is already pre-computed for Q5s
   if (diffBands == 'Q5s') {
-    var medianLyr = d.get('p').select('p1_diffQ5sMed');
+    var medianLyr = ee.Image(d.get('p')).select('p1_diffQ5sMed');
   } else {
-    var medianLyr = d.get('diffRed2').select(band + '_median');
+    var medianLyr = ee.Image(d.get('diffRed2')).select(band + '_median');
   }
   map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median)', false);
   
@@ -131,9 +132,9 @@ map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v30)', false);
 
 // c9 maps ----------------------------------------------------------------------
 
-map.addLayer(d.get('c9Red').select('low'), fig.visc9, '9 class transition (good case across GCMs)', false); 
-map.addLayer(d.get('c9Red').select('high'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
-map.addLayer(d.get('p').select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
+map.addLayer(ee.Image(d.get('c9Red')).select('low'), fig.visc9, '9 class transition (good case across GCMs)', false); 
+map.addLayer(ee.Image(d.get('c9Red')).select('high'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
+map.addLayer(ee.Image(d.get('p')).select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
 
 // 'backgroud' layers ---------------------------------------------------------------------------
 map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
@@ -149,7 +150,8 @@ var panel = ui.Panel({
  
 // Create legend title
 var panelDescript = ui.Label({
-  value: 'STEPWAT simulation settings: ' + d.get('root') + ' (' + d.get('RCP') + ', ' + d.get('epoch') + ')' + ' (' + d.get('versionFull') + ')',
+  value: 'STEPWAT simulation settings: ' + d.get('root').getInfo() + ' (' + d.get('RCP').getInfo() 
+    + ', ' + d.get('epoch').getInfo() + ')' + ' (' + d.get('versionFull').getInfo() + ')',
   style: {
     fontSize: '12px',
     margin: '0 0 4px 0',
