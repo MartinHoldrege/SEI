@@ -187,8 +187,9 @@ var main = exports.main = function(args) {
     // abs prop = abs( (future-current)/current
     var absProp = diffQ.divide(cur1.select(qBands))
       .abs()
-      // mask out areas that don't agree on direction of change
-      .updateMask(agreeDir); 
+      // if don't agree on the direction of change than make the proportion change 0 (i.e
+      // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
+      .where(agreeDir.eq(0), 0);
     
     var sum = absProp.reduce('sum');
     // divide all layers by the total to normalize each value
