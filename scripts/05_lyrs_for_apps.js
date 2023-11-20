@@ -153,7 +153,7 @@ var main = exports.main = function(args) {
    
   // c9 transition for each GCM 
   var c9Ic = futIc.map(function(x) {
-    var out = SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x).select('Q5sc3'))
+    var out = ee.Image(SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x).select('Q5sc3')))
       .copyProperties(ee.Image(x))
       .rename('c9');
     return out;
