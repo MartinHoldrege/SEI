@@ -217,7 +217,8 @@ var main = exports.main = function(args) {
     'p': p,
     'diffRed2': diffRed2,
     'c9Red': c9Red,
-    'qPropMean': qPropMean
+    'qPropMean': qPropMean,
+    'qPropIc': qPropIc
   });
   
   return out;
