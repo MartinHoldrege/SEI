@@ -155,11 +155,10 @@ var main = exports.main = function(args) {
   var c9Ic = futIc.map(function(x) {
     var out = SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x).select('Q5sc3'))
       .copyProperties(ee.Image(x));
-    //  .rename('c9');
     return out;
   })
     .map(function(x) {
-      return ee.Image(x).rename('c9')
+      return ee.Image(x).rename('c9'); // not sure wy rename in map above doesn't work
     });
   
   
