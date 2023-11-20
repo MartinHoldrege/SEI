@@ -24,8 +24,26 @@ var d = lyrMod.main({
   root: root
 }); // returns a dictionary
 
-// prepare spatial index -----------------------------------------------
+// which Q dominant driver of change ---------------------------------
 
+var q = ee.Image(d.get('qPropMean'));
+
+var driver = ee.Image(0)
+  .where(q.select('Q1raw')
+    .gt(q.select('Q2raw'))
+    .and(q.select('Q1raw').gt(q.select('Q3raw'))),
+    1) // sagebrush dominant driver of change
+  .where(q.select('Q2raw')
+    .gt(q.select('Q1raw'))
+    .and(q.select('Q2raw').gt(q.select('Q3raw'))),
+    2) // perennials
+  .where(q.select('Q3raw')
+    .gt(q.select('Q2raw'))
+    .and(q.select('Q3raw').gt(q.select('Q1raw'))),
+    3); // annuals
+  
+
+// prepare spatial index -----------------------------------------------
 
 var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
   .updateMask(SEI.mask);
@@ -34,7 +52,10 @@ var index = eco
   .multiply(10)
   .add(ee.Image(d.get('p')).select('p6_c9Med'))
   .multiply(10)
-  .add()
+  .add(driver)
+  .updateMask(SEI.mask);
+  
+
 
 
 
