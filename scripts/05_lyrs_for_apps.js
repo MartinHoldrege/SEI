@@ -150,6 +150,13 @@ var main = exports.main = function(args) {
   // reduced c3 (i.e., includes layers for best and worst)
   var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
     .addBands(futGCM.select('Q5sc3').rename(GCM));
+   
+  // c9 transition for each GCM 
+  var c9Ic = futIc.map(function(x) {
+    return SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x).select('Q5sc3'));
+  });
+  
+  
   var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
   
   
@@ -218,7 +225,8 @@ var main = exports.main = function(args) {
     'diffRed2': diffRed2,
     'c9Red': c9Red,
     'qPropMean': qPropMean,
-    'qPropIc': qPropIc
+    'qPropIc': qPropIc,
+    'c9Ic': c9Ic // image collection (one image per GCM) of c9 transitions
   });
   
   return out;
