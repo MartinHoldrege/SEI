@@ -88,20 +88,26 @@ var index = ecoC9.combine(driver).map(function(x) {
 
 // calculate area for unique values of the spatial index ----------------
 
+// returns feature collection of feature collections
+// outer part is 1 fc for each GCM
+// inner part is one feature per unique index value
 var areaFc1 = index.map(function(x) {
-  var image = ee.Image(x)
-  var areas1 = fnsRr.areaByGroup(image, 'index', SEI.region, 10000);
-  
-  
-}
-
-var areaFc2 = areaFc1.map(function(x) {
-  var out = ee.Feature(x)
-    .set('run', ee.String(root))
-    .set('RCP', ee.String(d.get('RCP')))
-    .set('years', ee.String(d.get('epoch')));
-  return  out;
+  var image = ee.Image(x);
+  // returning feature for each unique value of index, giving the area
+  var areas1 = fnsRr.areaByGroup(image, 'index', SEI.region, 10000)
+  // adding additional proprties to the feature
+    .map(function(x) {
+      var out = ee.Feature(x)
+        .set('run', ee.String(root))
+        .set('RCP', ee.String(d.get('RCP')))
+        .set('years', ee.String(d.get('epoch')))
+        .set('GCM', ee.String(image.get('GCM')));
+      return out;
+    });
+  return areas1;
 });
 
+var areaFc2 = areaFc1.flatten()
 print(areaFc2)
+
 
