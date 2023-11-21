@@ -10,9 +10,17 @@ Started: Nov 20, 2023
 
 // params ---------------------------------------------------------------
 
-var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+var roots = ['fire0_eind1_c4grass1_co20_', 
+            'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
             'fire1_eind1_c4grass1_co21_2311_'];
+var epochList = ['2070-2100',
+            '2030-2060', '2030-2060', '2070-2100', '2070-2100',
+            '2070-2100'
+];
 
+var RCPList = ['RCP45',
+              'RCP45', 'RCP45', 'RCP85', 'RCP85',
+              'RCP45']
 var resolution = 90;
 
 // dependencies ---------------------------------------------------------
@@ -30,8 +38,12 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var combFc = ee.FeatureCollection([]); // empty fc that add to each loop iteration
 for (var i = 0; i < roots.length; i++) {
   var root = roots[i];
+  var RCP = RCPList[i];
+  var epoch = epochList[i]
   var d = lyrMod.main({
     root: root,
+    RCP: RCP,
+    epoch: epoch,
     resolution: resolution
   }); // returns a dictionary
   
