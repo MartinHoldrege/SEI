@@ -20,10 +20,16 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
-// the main function, arguments are the user defined variables
+// the main function, arguments are the user defined variables, passed as a dictionary
+// the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
 // returns a large dictionary
-var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
-  
+var main = exports.main = function(args) {
+  var root = args.root;
+  var RCP =  args.RCP;
+  var epoch =  args.epoch;
+  var versionFull =  args.versionFull;
+  var resolution =  args.resolution;
+
   // User-defined variables -----------------------------------------------------
   // default settings
   if (root === undefined){var root = 'fire1_eind1_c4grass1_co20_2311_';}
@@ -144,6 +150,18 @@ var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
   // reduced c3 (i.e., includes layers for best and worst)
   var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
     .addBands(futGCM.select('Q5sc3').rename(GCM));
+   
+  // c9 transition for each GCM 
+  var c9Ic = futIc.map(function(x) {
+    var out = SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x).select('Q5sc3'))
+      .copyProperties(ee.Image(x));
+    return out;
+  })
+    .map(function(x) {
+      return ee.Image(x).rename('c9'); // not sure wy rename in map above doesn't work
+    });
+  
+  
   var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
   
   
@@ -158,7 +176,10 @@ var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
     
     // direction of SEI change (1 pos, 0 neg or no change)
     var Q5s = ee.Image(x).select('Q5s');
-    var dirQ5s = ee.Image(0)
+    var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
+      .rename(qBands);
+      
+    var dirQ5s = empty
       .where(Q5s.gt(0), 3) // increase
       .where(Q5s.eq(0), 2) // no change
       .where(Q5s.lt(0), 1); // decrease
@@ -166,7 +187,7 @@ var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
     // direction of Q change
     var diffQ = ee.Image(x).select(qBands);
     
-    var dirQ = ee.Image(0)
+    var dirQ = empty
       .where(diffQ.gt(0), 3) // increase
       .where(diffQ.eq(0), 2) // no change
       .where(diffQ.lt(0), 1); // decrease
@@ -178,8 +199,9 @@ var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
     // abs prop = abs( (future-current)/current
     var absProp = diffQ.divide(cur1.select(qBands))
       .abs()
-      // mask out areas that don't agree on direction of change
-      .updateMask(agreeDir); 
+      // if don't agree on the direction of change than make the proportion change 0 (i.e
+      // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
+      .where(agreeDir.eq(0), 0);
     
     var sum = absProp.reduce('sum');
     // divide all layers by the total to normalize each value
@@ -207,7 +229,9 @@ var main = exports.main = function(root, RCP, epoch, versionFull, resolution) {
     'p': p,
     'diffRed2': diffRed2,
     'c9Red': c9Red,
-    'qPropMean': qPropMean
+    'qPropMean': qPropMean,
+    'qPropIc': qPropIc,
+    'c9Ic': c9Ic // image collection (one image per GCM) of c9 transitions
   });
   
   return out;

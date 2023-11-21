@@ -432,12 +432,21 @@ var ecoregionDict = ee.Dictionary({'00000000000000000000': 'GreatBasin',
   '00000000000000000001': 'Intermountain',
   '00000000000000000002': 'Plains'});
 
+var regionNumDict = ee.Dictionary({
+  'GreatBasin': 1,
+  'Intermountain': 2,
+  'Plains': 3
+});
+
 var ecoregions2 = ecoregions1.map(function(x) {
   var feat = ee.Feature(x);
   var index = feat.get("system:index");
-  var region = ecoregionDict.values(ee.List([ee.String(index)])); // use dictionary as a lookup table
+  var region = ecoregionDict.get(ee.String(index)); // use dictionary as a lookup table
+  var regionNum = regionNumDict.get(region);
   // region is a list of length 1
-  var out = feat.set('ecoregion', ee.String(region.get(0))); // set ecoregion property
+  var out = feat.set('ecoregion', ee.String(region)) // set ecoregion property
+    // ecoregion number property(useful for 'painting' to a raster)
+    .set('ecoregionNum', ee.Number(regionNum));
   return out;
 });
 
