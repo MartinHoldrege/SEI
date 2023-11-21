@@ -31,6 +31,7 @@ drive_ls_filtered <- function(path = NULL, file_regex = NULL,
     group_by(name_no_date) %>% 
     filter(modifiedTime == max(modifiedTime)) 
   
+  # only keep files that match regex
   if (!is.null(file_regex)) {
     files2 <- filter(files2, str_detect(name, file_regex))
   }
@@ -339,4 +340,33 @@ assign_weight <- function(x, w_window) {
     x > w_window[1] & x < w_window[2] ~ 1 - (x - w_window[1])/window_width,
     TRUE ~ NA
   )
+}
+
+
+#' low value across GCMS
+#'
+#' @param x vector of numbers (one from each GCM)
+#'
+#' @return
+#' 2nd lowest value
+low <- function(x) {
+  # this function usually used for data from 13 GCMs
+  if(length(x) != 13) {
+    warning('length of x is no 13')
+  }
+  sort(x, decreasing = FALSE)[2]
+}
+
+#' high value across GCMS
+#'
+#' @param x vector of numbers (one from each GCM)
+#'
+#' @return
+#' 2nd highest value
+high <- function(x) {
+  if(length(x) != 13) {
+    warning('length of x is no 13')
+  }
+  sort(x, decreasing = TRUE)[2]
+  
 }
