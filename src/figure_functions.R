@@ -1,6 +1,8 @@
 
 source("src/Functions__DisplayItems.R")
-
+source("src/fig_params.R")
+library(dplyr)
+library(ggplot2)
 # crs -----------------------------------------------------------------------
 
 # the crs to be used for the sagebrush conservation design (this is the same
@@ -43,75 +45,105 @@ theme_custom1 <- function() {
 # ggplot basemap objects --------------------------------------------------
 
 # basemap for ggplot maps
-basemap1 <- function(bbox = NULL) {
-  
-  if (is.null(bbox)) {
-    bbox <- bbox1
-  }
-  # bounding box
-  xlim = c(bbox[c('xmin', 'xmax')])
-  ylim = c(bbox[c('ymin', 'ymax')])
-  
-
-  
-  list(
-    geom_sf(data = states, fill = NA, color = 'black'),
-    coord_sf(xlim = xlim,
-             ylim = ylim,
-             expand = FALSE),
-    theme_void()
-  )
-}
-
+# basemap1 <- function(bbox = NULL) {
+#   
+#   if (is.null(bbox)) {
+#     bbox <- bbox1
+#   }
+#   # bounding box
+#   xlim = c(bbox[c('xmin', 'xmax')])
+#   ylim = c(bbox[c('ymin', 'ymax')])
+#   
+# 
+#   
+#   list(
+#     geom_sf(data = states, fill = NA, color = 'black'),
+#     coord_sf(xlim = xlim,
+#              ylim = ylim,
+#              expand = FALSE),
+#     theme_custom1(),
+#     theme(axis.text = element_blank(),
+#           axis.ticks = element_blank())
+#     
+#   )
+# }
+# 
 # ggplot() +
 #   basemap1()
 
 
 
-inset_element2 <- function(x) {
-  patchwork::inset_element(
-    x,
-    0.005, 0.005, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
-    align_to = "panel",
-    clip = TRUE,
-    ignore_tag = TRUE
-  )
-}
+# inset_element2 <- function(x) {
+#   patchwork::inset_element(
+#     x,
+#     0.005, 0.005, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
+#     align_to = "panel",
+#     clip = TRUE,
+#     ignore_tag = TRUE
+#   )
+# }
 
 # this function relies on 
 # source("src/Functions__DisplayItems.R") (Daniels functions)
-plot_map_inset <- function(r,
-                           colors = colors,
-                           tag_label = "",
-                           scale_name = NULL,
-                           limits = NULL,
-                           add_vertical0 = FALSE,
-                           values = NULL
-)  {
+plot_map2 <- function(r)  {
   
-  
-  limits_inset <- if(is.null(limits))  {
-    c(NA, NA)
-  }  else 
-    limits
-  
-  inset <- inset_densitycountplot(as.numeric(values(r)),
-                                  limits = limits_inset,
-                                  add_vertical0 = add_vertical0)
   
   s <- stars::st_as_stars(r)
   
   map <- plot_map(s, 
                   st_geom_state = states,
                   add_coords = TRUE) +
-    ggplot2_map_theme() +
-    scale_fill_gradientn(na.value = 'transparent',
-                         limits = limits,
-                         name = scale_name,
-                         colors = colors,
-                         values = values) +
-  add_tag_as_label(tag_label) 
-  
-  map + inset_element2(inset)
+    ggplot2_map_theme()
+
+  map
   
 }
+
+
+# colors ------------------------------------------------------------------
+
+scale_color_c9 <- function() {
+  scale_fill_manual(values = unname(c9Palette), breaks = 1:10 - 0.5)
+}
+
+# color matrix (to add to other plots) ------------------------------------
+
+# create 9 color matrix ---------------------------------------------------
+# Creating a 3x3 colored matrix of current and future SEI classes,
+
+c3_levels <- c('CSA', 'GOA', 'ORA')
+
+# c9 levels, with there associated current and future SEI categories
+df_c9 <- tibble(
+  c9Name  = c9Names, 
+  c9Value = 1:9,
+  current = rep(c3_levels, each = 3), # Current SEI (3 levels)
+  future = rep(c3_levels, 3) # future SEI (3 levels)
+) %>% 
+  mutate(
+    current = factor(current, levels = rev(c3_levels)),
+    future = factor(future, levels = c3_levels)
+  )
+
+# Adding label column (category of change)
+df_c9$label <- NA
+df_c9$label[c(1, 5, 9)] <- "Stable"
+df_c9$label[c(2, 3, 6)] <- "Declining"
+df_c9$label[c(4, 7, 8)] <- "Increasing"
+
+# color of text in color matrix
+text_color <- rep('black', 9)
+text_color[c(1, 5)] <- 'white' # background is dark
+names(text_color) <- c9Names
+
+color_matrix <- ggplot(df_c9, aes(future, current, fill = c9Name)) +
+  geom_tile() +
+  geom_text(aes(label = label, color = c9Name)) +
+  theme_minimal() +
+  scale_x_discrete(position = 'top') +
+  scale_fill_manual(values = c9Palette) +
+  labs(x = "Future condition",
+       y = "Current condition") +
+  scale_color_manual(values = text_color)+
+  theme(panel.grid = element_blank(),
+        legend.position = 'none')
