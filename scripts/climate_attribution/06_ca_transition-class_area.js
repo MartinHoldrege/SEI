@@ -14,7 +14,7 @@ var roots = ['fire0_eind1_c4grass1_co20_',
             'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
             'fire1_eind1_c4grass1_co21_2311_'];
 var epochList = ['2070-2100',
-            '2030-2060', '2030-2060', '2070-2100', '2070-2100',
+            '2030-2060', '2070-2100', '2030-2060', '2070-2100',
             '2070-2100'
 ];
 
@@ -46,12 +46,13 @@ for (var i = 0; i < roots.length; i++) {
     epoch: epoch,
     resolution: resolution
   }); // returns a dictionary
-  
+  print(i)
   // which Q dominant driver of change ---------------------------------
   
   // image collection of 3 banded images where bands are the proportion change 
   // of Q1-Q3, and each image is for a different GCM
   var qIc = ee.ImageCollection(d.get('qPropIc'));
+  print(qIc)
   // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
   var driver = qIc.map(function(x) {
     var q = ee.Image(x);
