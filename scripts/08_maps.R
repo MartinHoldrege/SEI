@@ -43,6 +43,24 @@ p1 <- newest_file_path('data_processed/transitions',
 
 r_c9 <- rast(p1)
 
+# * c9 diff ---------------------------------------------------------------
+# where are c9 transition different, between fire1 and fire0 simulations
+# (1 = same, 2= fire1 better, 3 = fire1 worse)
+file_regex2 <- file_regex %>% 
+  str_replace('9ClassTransition', 'c9-diff') %>% 
+  str_replace('fire[01]', 'fire01')
+
+if(download) {
+  files2 <- drive_ls_filtered(path = "gee", file_regex = file_regex2)
+  files2
+  
+  drive_download_from_df(files2, 'data_processed/transitions')
+}
+
+p2 <- newest_file_path('data_processed/transitions',
+                       file_regex2)
+
+r_c9diff <- rast(p2)
 
 
 # *figures ----------------------------------------------------------------
@@ -78,3 +96,15 @@ jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, r
      res = 600)
 comb
 dev.off()
+
+
+# c9-diff maps ------------------------------------------------------------
+tmp <- spatSample(r_c9diff, c(500, 500), method = 'regular', as.raster = TRUE)
+
+plot_map2(as.factor(tmp)) +
+  scale_fill_manual(values = c('transparent', 'transparent', '#5ab4ac', '#d8b365'),
+                    labels = c('', '', 'Better habitat projected when fire incorporated',
+                               'Worse habitat projected when fire incorporated')) +
+  theme(legend.position = 'bottom',
+        )
+plot(r_c9diff)

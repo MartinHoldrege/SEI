@@ -22,6 +22,7 @@ target_run <- 'fire1_eind1_c4grass1_co20_2311' # main 'run' used for some pub qu
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
+library(ggpattern)
 source("src/general_functions.R")
 source("src/fig_params.R")
 source('../grazing_effects/src/fig_params.R') # for axis labels
@@ -217,24 +218,40 @@ tmp <- area_med_c9 %>%
   filter(c9 %in% unique(c9[area_km2_hi > 0])) %>% 
   mutate(c9_name = droplevels(c9_name)) 
 
-g <- ggplot(tmp, aes(c9_name, y = area_km2_med, fill = rcp_years, group = rcp_years)) +
-  geom_bar(aes(y = area_km2_med), stat = 'identity',
-           position = position_dodge()) +
-  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+
+g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
+  geom_bar_pattern(aes(pattern = rcp_years,
+                       pattern_density = rcp_years,
+                       fill = c9_name),
+                   stat = 'identity',
+                   position = position_dodge(),
+                   pattern_fill = 'black',
+                   pattern_spacing = 0.05,
+                   color = 'white',
+                   pattern_key_scale_factor = 1 # relative density in the legend
+                   )  +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = rcp_years),
                 stat = 'identity',
-                width=.3, 
+                width=.3,
                 position=position_dodge(0.9)) +
-  scale_fill_manual(values = cols_rcp_years)+
-  # geom_vline(xintercept = c(1:8) + 0.5, linetype = 2) +
+  scale_fill_manual(values = c9Palette, guide = 'none')+
+  scale_pattern_manual(values = c("stripe", "none", "crosshatch", "circle")) +
+  # this makes the circles bigger than the lines (more readable)
+  scale_pattern_density_manual(values = c(rep(0.05, 3), 0.3))+ 
+  guides(pattern = guide_legend(override.aes = list(fill = "white"))) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.title = element_blank(),
         legend.position = 'bottom') +
   labs(y = lab_areakm0,
        x = NULL,
        subtitle = fig_letters['b']) +
-  guides(fill = guide_legend(nrow = 2))
+  guides(pattern = guide_legend(nrow = 2, 
+                                override.aes = list(fill = "white", color = 'black'))) +
+  scale_y_log10(labels = scales::comma) +
+  coord_cartesian(ylim = c(100, max(tmp$area_km2_hi, na.rm = TRUE)))
 
 g
+
 list2save <- list('fig' = g,
                   run = target_run,
                   RCP = rcp,
@@ -243,6 +260,8 @@ list2save <- list('fig' = g,
 
 # saving so that can be combined with a map in a downstream script
 saveRDS(list2save, "figures/area/c9_area_barplot_by-scenario.RDS")
+
+
 # * figures (exploratory) ---------------------------------------------------
 
 

@@ -133,7 +133,7 @@ df_c9$label[c(4, 7, 8)] <- "Increase"
 
 # color of text in color matrix
 text_color <- rep('black', 9)
-text_color[c(1, 5)] <- 'white' # background is dark
+text_color[c(1, 3, 7)] <- 'white' # background is dark
 names(text_color) <- c9Names
 
 color_matrix <- function() {
@@ -152,7 +152,13 @@ color_matrix <- function() {
           plot.background = element_rect(fill = 'white', color = 'white'))
 }
 
-
+if(FALSE){
+png("figures/c9_color_matrix.png",
+    width = 3.5, height = 2.5, units = 'in',
+    res = 600)
+color_matrix()
+dev.off()
+}
 inset_color_matrix <-  function() {
   patchwork::inset_element(
     color_matrix(),
