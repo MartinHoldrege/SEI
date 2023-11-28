@@ -34,11 +34,26 @@ pft_labels <- c('afg' = 'Annuals',
                 'pfg' = 'Perennials',
                 'sagebrush' = 'Sagebrush')
 
+
+# panel letters -----------------------------------------------------------
+
+# so consistent letter theme is used throughout (for multiple
+# panel pub quality figs)
+fig_letters <- paste(letters, ")", sep = "")
+names(fig_letters) <- letters
+
 # colors ------------------------------------------------------------------
 
 cols_rcp <- c(#"Current" = "cornflower blue",
               "RCP45" = "darkgreen",
               "RCP85" = "green3")
+
+cols_rcp_years <- c(
+  '#a6dba0',# RCP45 2030-2060
+  '#1b7837',# RCP45 2070-2100
+  '#c2a5cf',# RCP85 2030-2060
+  '#762a83'# RCP85 2070-2100
+)
 
 # color palette based on colorbrewer2 8-class RdBu palette
 c9Palette = c('#000000', # stable core (black)

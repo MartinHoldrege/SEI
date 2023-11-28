@@ -20,6 +20,7 @@ rcp_c9 <- 'RCP45'
 
 library(tidyverse)
 library(terra)
+library(patchwork)
 source("src/general_functions.R")
 source('src/figure_functions.R')
 # load data ---------------------------------------------------------------
@@ -43,10 +44,37 @@ p1 <- newest_file_path('data_processed/transitions',
 r_c9 <- rast(p1)
 
 
+
+# *figures ----------------------------------------------------------------
+
+# boxplot created in 07_ca_transition-class_area.R
+box_l <- readRDS("figures/area/c9_area_barplot_by-scenario.RDS")
+
+# make sure boxplot used the same scenarios/runs
+stopifnot(box_l$run == root_c9,
+          box_l$years == years_c9,
+          box_l$RCP == rcp_c9)
+
+# fig params --------------------------------------------------------------
+
+c9Palette2 <- unname(c('transparent', c9Palette))
+
 # c9 maps -----------------------------------------------------------------
-# continue here--colors not working!
-tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
-plot_map2(as.factor(tmp)) +
-  scale_fill_manual(values = (c9Palette), na.value = 'transparent')
-  
-  scale_fill_gradientn(colors = unname(c9Palette), breaks = 1:10 - 0.5)
+
+#tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
+
+g1 <- plot_map2(as.factor(r_c9)) +
+  labs(subtitle = fig_letters[1])+
+  scale_fill_c9() +
+  theme(legend.position = 'none')
+
+g2 <- g1 +
+  inset_color_matrix()
+
+comb <- g2/box_l$fig + plot_layout(heights = c(3, 1))
+
+jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+     width = 6, height = 10.5, units = 'in',
+     res = 600)
+comb
+dev.off()

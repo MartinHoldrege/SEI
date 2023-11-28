@@ -84,15 +84,15 @@ theme_custom1 <- function() {
 # }
 
 # this function relies on 
-# source("src/Functions__DisplayItems.R") (Daniels functions)
-plot_map2 <- function(r)  {
+plot_map2 <- function(r, ...)  {
   
   
   s <- stars::st_as_stars(r)
   
   map <- plot_map(s, 
                   st_geom_state = states,
-                  add_coords = TRUE) +
+                  add_coords = TRUE,
+                  ...) +
     ggplot2_map_theme()
 
   map
@@ -102,8 +102,8 @@ plot_map2 <- function(r)  {
 
 # colors ------------------------------------------------------------------
 
-scale_color_c9 <- function() {
-  scale_fill_manual(values = unname(c9Palette), breaks = 1:10 - 0.5)
+scale_fill_c9 <- function(...) {
+  scale_fill_manual(values = unname(c('transparent', c9Palette)), ...)
 }
 
 # color matrix (to add to other plots) ------------------------------------
@@ -128,22 +128,38 @@ df_c9 <- tibble(
 # Adding label column (category of change)
 df_c9$label <- NA
 df_c9$label[c(1, 5, 9)] <- "Stable"
-df_c9$label[c(2, 3, 6)] <- "Declining"
-df_c9$label[c(4, 7, 8)] <- "Increasing"
+df_c9$label[c(2, 3, 6)] <- "Decline"
+df_c9$label[c(4, 7, 8)] <- "Increase"
 
 # color of text in color matrix
 text_color <- rep('black', 9)
 text_color[c(1, 5)] <- 'white' # background is dark
 names(text_color) <- c9Names
 
-color_matrix <- ggplot(df_c9, aes(future, current, fill = c9Name)) +
-  geom_tile() +
-  geom_text(aes(label = label, color = c9Name)) +
-  theme_minimal() +
-  scale_x_discrete(position = 'top') +
-  scale_fill_manual(values = c9Palette) +
-  labs(x = "Future condition",
-       y = "Current condition") +
-  scale_color_manual(values = text_color)+
-  theme(panel.grid = element_blank(),
-        legend.position = 'none')
+color_matrix <- function() {
+  ggplot(df_c9, aes(future, current, fill = c9Name)) +
+    geom_tile() +
+    geom_text(aes(label = label, color = c9Name), size = 2) +
+    theme_minimal() +
+    scale_x_discrete(position = 'top') +
+    scale_fill_manual(values = c9Palette) +
+    labs(x = "Future",
+         y = "Current") +
+    scale_color_manual(values = text_color)+
+    theme(panel.grid = element_blank(),
+          legend.position = 'none',
+          text = element_text(size = 8),
+          plot.background = element_rect(fill = 'white', color = 'white'))
+}
+
+
+inset_color_matrix <-  function() {
+  patchwork::inset_element(
+    color_matrix(),
+    0.002, 0.002, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
+    align_to = "panel",
+    clip = TRUE,
+    ignore_tag = TRUE
+  )
+}
+

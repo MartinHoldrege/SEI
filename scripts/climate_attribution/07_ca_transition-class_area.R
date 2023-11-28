@@ -17,7 +17,7 @@ resolution <- 90
 
 yr <- '2070-2100'
 rcp <- 'RCP45'
-
+target_run <- 'fire1_eind1_c4grass1_co20_2311' # main 'run' used for some pub qual figs
 
 # dependencies ------------------------------------------------------------
 
@@ -72,6 +72,7 @@ area2 <- area1 %>%
   select(-area_m2, -ecoregionNum, -driverNum)
 
 runs <- unique(area2$run) # for looping
+stopifnot(target_run %in% runs)
 
 # making sure final dataset has all 'combinations' so that, for example, no GCMs are missing
 # for areas that are 0. 
@@ -86,9 +87,8 @@ area3 <- expand_grid(
 ) %>% 
   left_join(area2, by = join_by(GCM, RCP, ecoregion, run, years, c9, driver)) %>% 
   mutate(area_km2 = ifelse(is.na(area_km2), 0, area_km2),
-         c9_name = factor(c9Names[c9], levels = c9Names)
-         ) %>% 
-  filter(RCP == rcp, years == yr)
+         c9_name = factor(c9Names[c9], levels = c9Names),
+         rcp_years = paste0(RCP, ' (', years, ')')) 
 
 # total area per ecoregion or biome-wide (for calculating % of total area)
 
@@ -106,13 +106,17 @@ tot_area_eco <- area3 %>%
 tot_area <- sum(tot_area_eco$tot_area)
 
 
-# c9 area ----------------------------------------------------------------
+# summary dataframes ------------------------------------------------------
+
+
+# * c9 area ---------------------------------------------------------------
+
 
 # First looking at the area in each transition class
 
 # area by c9 by ecoregion
 area_gcm_c9_eco <- area3 %>% 
-  group_by(run, GCM, RCP, years, c9_name, c9, ecoregion) %>% 
+  group_by(run, GCM, RCP, years, rcp_years, c9_name, c9, ecoregion) %>% 
   summarise(area_km2 = sum(area_km2),
             .groups = 'drop_last') %>% 
   left_join(tot_area_eco, by = 'ecoregion') %>% 
@@ -126,7 +130,7 @@ area_gcm_c9 <- area_gcm_c9_eco %>%
 
 # median, low, and high across GCMS
 area_med_c9_eco <- area_gcm_c9_eco %>% 
-  group_by(run, RCP, years, c9_name, c9, ecoregion) %>% 
+  group_by(run, RCP, years, rcp_years, c9_name, c9, ecoregion) %>% 
   summarise(area_km2_med = median(area_km2),
             area_km2_lo = low(area_km2),
             area_km2_hi = high(area_km2),
@@ -141,7 +145,7 @@ area_med_c9_eco <- area_gcm_c9_eco %>%
 
 
 area_med_c9 <- area_gcm_c9 %>% 
-  group_by(run, RCP, years, c9_name, c9) %>% 
+  group_by(run, RCP, years, rcp_years, c9_name, c9) %>% 
   summarise(area_km2_med = median(area_km2),
             area_km2_lo = low(area_km2),
             area_km2_hi = high(area_km2),
@@ -155,58 +159,8 @@ area_med_c9 <- area_gcm_c9 %>%
               .cols = matches('km2_.*_perc'))
 
 
-# * figures ---------------------------------------------------------------
+# * drivers ---------------------------------------------------------------
 
-
-pdf(paste0("figures/area/c9_area_barplots_", version, "_v1.pdf"), height = 8, width = 8)
-# panels for each ecoregion
-g <- ggplot(area_med_c9_eco, aes(c9_name, fill = c9_name)) +
-  facet_grid(run ~ ecoregion) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = 'none') +
-  scale_fill_manual(values = c9Palette)  +
-  labs(x = NULL,
-       caption = cap1)
-
-g + 
-  geom_bar(aes(y = area_km2_med), stat = 'identity') +
-  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
-                width = 0.3) +
-  labs(y = lab_areakm0)
-
-
-g + 
-  geom_bar(aes(y = area_perc_med), stat = 'identity') +
-  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
-                width = 0.3) +
-  labs(y = lab_areaperc0)
-
-# biome-wide values
-g <- ggplot(area_med_c9, aes(c9_name, fill = c9_name)) +
-  facet_wrap(~run) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = 'none') +
-  scale_fill_manual(values = c9Palette)  +
-  labs(x = NULL,
-       caption = cap1)
-
-g + 
-  geom_bar(aes(y = area_km2_med), stat = 'identity') +
-  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
-                width = 0.3) +
-  labs(y = lab_areakm0)
-
-
-g + 
-  geom_bar(aes(y = area_perc_med), stat = 'identity') +
-  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
-                width = 0.3) +
-  labs(y = lab_areaperc0)
-
-dev.off()
-
-
-# * area by driver --------------------------------------------------------
 
 area_gcm_eco <- area3 %>% 
   # exclude 'stable' categories
@@ -248,13 +202,112 @@ area_med <- area_med %>%
 
 area_med_eco <- area_med_eco %>% 
   filter(!c9_name %in% c9_to_drop)
-  
+
+
+# c9 area -----------------------------------------------------------------
+
+
+# * figures (pub qual) ----------------------------------------------------
+
+# note--consider whether want to include only c9 categories with >0 area
+
+tmp <- area_med_c9 %>% 
+  filter(run == target_run) %>% 
+  # if any c9 categories have 0 area, then drop them
+  filter(c9 %in% unique(c9[area_km2_hi > 0])) %>% 
+  mutate(c9_name = droplevels(c9_name)) 
+
+g <- ggplot(tmp, aes(c9_name, y = area_km2_med, fill = rcp_years, group = rcp_years)) +
+  geom_bar(aes(y = area_km2_med), stat = 'identity',
+           position = position_dodge()) +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+                stat = 'identity',
+                width=.3, 
+                position=position_dodge(0.9)) +
+  scale_fill_manual(values = cols_rcp_years)+
+  # geom_vline(xintercept = c(1:8) + 0.5, linetype = 2) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.title = element_blank(),
+        legend.position = 'bottom') +
+  labs(y = lab_areakm0,
+       x = NULL,
+       subtitle = fig_letters['b']) +
+  guides(fill = guide_legend(nrow = 2))
+
+g
+list2save <- list('fig' = g,
+                  run = target_run,
+                  RCP = rcp,
+                  years = yr,
+                  version = version)
+
+# saving so that can be combined with a map in a downstream script
+saveRDS(list2save, "figures/area/c9_area_barplot_by-scenario.RDS")
+# * figures (exploratory) ---------------------------------------------------
+
+
+pdf(paste0("figures/area/c9_area_barplots_", version, "_v1.pdf"), height = 8, width = 8)
+# panels for each ecoregion
+g <- area_med_c9_eco %>% 
+  filter(RCP == rcp, years == yr) %>% 
+  ggplot(aes(c9_name, fill = c9_name)) +
+  facet_grid(run ~ ecoregion) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = 'none') +
+  scale_fill_manual(values = c9Palette)  +
+  labs(x = NULL,
+       caption = cap1)
+
+g + 
+  geom_bar(aes(y = area_km2_med), stat = 'identity') +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+                width = 0.3) +
+  labs(y = lab_areakm0)
+
+
+g + 
+  geom_bar(aes(y = area_perc_med), stat = 'identity') +
+  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
+                width = 0.3) +
+  labs(y = lab_areaperc0)
+
+# biome-wide values
+g <- area_med_c9 %>% 
+  filter(RCP == rcp, years == yr) %>% 
+  ggplot(aes(fill = c9_name)) +
+  facet_wrap(~run) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = 'none') +
+  scale_fill_manual(values = c9Palette)  +
+  labs(x = NULL,
+       caption = cap1)
+
+g + 
+  geom_bar(aes(y = area_km2_med), stat = 'identity') +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+                width = 0.3) +
+  labs(y = lab_areakm0)
+
+
+g + 
+  geom_bar(aes(y = area_perc_med), stat = 'identity') +
+  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
+                width = 0.3) +
+  labs(y = lab_areaperc0)
+
+dev.off()
+
+
+# area by driver --------------------------------------------------------
+
 # * biome-wide figures ----------------------------------------------------
 
 pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v1.pdf"),
     width = 10, height = 10)
 
-g <- ggplot(area_med, aes(x = driver, fill = c9_name)) +
+g <- area_med %>% 
+  filter(RCP == rcp, years == yr) %>% 
+  ggplot(aes(x = driver, fill = c9_name)) +
   facet_grid(run~c9_name) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = 'none') +
@@ -280,8 +333,8 @@ r <- runs[2]
 
 for (r in runs) {
   tmp_eco <- area_med_eco %>% 
-    filter(run == r)
-  
+    filter(run == r, RCP == rcp, years == yr)
+
   g <- ggplot(tmp_eco, aes(x = driver, fill = c9_name)) +
     facet_grid(ecoregion~c9_name, scales = 'free_y') +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
