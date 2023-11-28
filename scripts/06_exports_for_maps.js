@@ -56,8 +56,17 @@ var c9Diff = ee.Image(0)
       .where(c9_fire1.gt(c9_fire0), 3); // fire leads to a worse transition
     
 
-  var sDiff = s.replace('9ClassTransition', 'C9-diff')
-    .replace('fire1', 'fire01');
+var sDiff = s.replace('9ClassTransition', 'c9-diff')
+  .replace('fire1', 'fire01');
 
-  print(sDiff)
+Export.image.toDrive({
+  image: c9Diff,
+  description: sDiff,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
   
