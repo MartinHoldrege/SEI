@@ -28,7 +28,8 @@ var d_fire0 = lyrMod.main({root: root_fire0}); // using the default args
 
 var c9_fire1 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
 
-var s = d_fire1.get('versionFull').getInfo() + '_9ClassTransition_' + resolutionOut + '_' + d_fire1.get('root').getInfo()
+var s = d_fire1.get('versionFull').getInfo() + '_9ClassTransition_'
+  + resolutionOut + '_' + d_fire1.get('root').getInfo()
   + d_fire1.get('RCP').getInfo()  + '_' + d_fire1.get('epoch').getInfo();
 
 Export.image.toDrive({
@@ -48,9 +49,15 @@ Export.image.toDrive({
 var c9_fire0 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
 // first digit is c9 with fire, second is c9 without fire
 
-// CONTINUE HERE --using where (1 = same, 2= fire1 better, 3 = fire1 worse)
-c9Diff = ee.image(0)
-  
-  .add(ee.Image(d_fire0.get('p')).select('p6_c9Med'));
-  
+// where are c9 transition different? (1 = same, 2= fire1 better, 3 = fire1 worse)
+var c9Diff = ee.Image(0)
+      .where(c9_fire1.eq(c9_fire0), 1) // same transitions
+      .where(c9_fire1.lt(c9_fire0), 2) //  fire leads to a a 'better' transition
+      .where(c9_fire1.gt(c9_fire0), 3); // fire leads to a worse transition
+    
+
+  var sDiff = s.replace('9ClassTransition', 'C9-diff')
+    .replace('fire1', 'fire01');
+
+  print(sDiff)
   
