@@ -13,7 +13,7 @@ Data started: November 21, 2023
 var resolutionOut = 500; // resolution of output
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
-var root_co21 = 'fire1_eind1_c4grass1_co20_2311_';
+var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
 
 // dependencies ---------------------------------------------
 
