@@ -43,7 +43,7 @@ p1 <- newest_file_path('data_processed/transitions',
 
 r_c9 <- rast(p1)
 
-# * c9 diff ---------------------------------------------------------------
+# * c9 diff (fire) ---------------------------------------------------------------
 # where are c9 transition different, between fire1 and fire0 simulations
 # (1 = same, 2= fire1 better, 3 = fire1 worse)
 file_regex2 <- file_regex %>% 
@@ -62,6 +62,23 @@ p2 <- newest_file_path('data_processed/transitions',
 
 r_c9diff <- rast(p2)
 
+# * c9 diff (co2) ---------------------------------------------------------------
+# where are c9 transition different, between co21 and co20 simulations
+# (1 = same, 2= co21 better, 3 = co21 worse)
+file_regex3 <- file_regex %>% 
+  str_replace('9ClassTransition', 'c9-diff') %>% 
+  str_replace('co2[01]', 'co201')
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex3) %>% 
+    drive_download_from_df('data_processed/transitions')
+}
+
+p2 <- newest_file_path('data_processed/transitions',
+                       file_regex3)
+
+r_c9diffco2 <- rast(p2)
+
 
 # *figures ----------------------------------------------------------------
 
@@ -76,6 +93,7 @@ stopifnot(box_l$run == root_c9,
 # fig params --------------------------------------------------------------
 
 c9Palette2 <- unname(c('transparent', c9Palette))
+cols_diff <- c('#998ec3', '#f1a340')
 
 # c9 maps -----------------------------------------------------------------
 
@@ -99,12 +117,56 @@ dev.off()
 
 
 # c9-diff maps ------------------------------------------------------------
-tmp <- spatSample(r_c9diff, c(500, 500), method = 'regular', as.raster = TRUE)
 
-plot_map2(as.factor(tmp)) +
-  scale_fill_manual(values = c('transparent', 'transparent', '#5ab4ac', '#d8b365'),
-                    labels = c('', '', 'Better habitat projected when fire incorporated',
-                               'Worse habitat projected when fire incorporated')) +
+
+# * fire ------------------------------------------------------------------
+
+g <- subst(r_c9diff, from = c(0, 1), to = c(NA, NA)) %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  as.factor() %>% 
+  plot_map2() +
+  scale_fill_manual(values = cols_diff,
+                    labels = c('Better habitat projected when fire incorporated',
+                               'Worse habitat projected when fire incorporated'),
+                    na.value = 'transparent',
+                    na.translate = FALSE) +
   theme(legend.position = 'bottom',
-        )
-plot(r_c9diff)
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 2))
+
+name_fire <- file_regex2 %>% 
+  str_replace('.tif', '') %>% 
+  str_replace(paste0('_c9-diff_', resolution), '')
+
+jpeg(paste0('figures/transition_maps/c9-diff_', name_fire, '.jpg'), 
+     width = 5, height = 5, units = 'in',
+     res = 800)
+g
+dev.off()
+
+# * co2 -------------------------------------------------------------------
+
+g2 <- subst(r_c9diffco2, from = c(0, 1), to = c(NA, NA)) %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  as.factor() %>% 
+  plot_map2() +
+  scale_fill_manual(values = cols_diff,
+                    labels = c('Better habitat projected when CO2 fertilization incorporated',
+                               'Worse habitat projected when CO2 fertilization incorporated'),
+                    na.value = 'transparent',
+                    na.translate = FALSE) +
+  theme(legend.position = 'bottom',
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 2))
+
+
+name_co2 <- file_regex3 %>% 
+  str_replace('.tif', '') %>% 
+  str_replace(paste0('_c9-diff_', resolution), '')
+
+jpeg(paste0('figures/transition_maps/c9-diff_', name_co2, '.jpg'), 
+     width = 5.5, height = 5, units = 'in',
+     res = 800)
+g2
+dev.off()
+
