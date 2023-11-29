@@ -84,7 +84,6 @@ var c9DiffCo2 = ee.Image(0)
       .where(c9_co21.lt(c9_fire1), 2) //  co2 leads to a a 'better' transition
       .where(c9_co21.gt(c9_fire1), 3); // co2 leads to a worse transition
     
-
 var sDiffCo2 = s.replace('9ClassTransition', 'c9-diff')
   .replace('co20', 'co201');
 
