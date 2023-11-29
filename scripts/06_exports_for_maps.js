@@ -13,6 +13,7 @@ Data started: November 21, 2023
 var resolutionOut = 500; // resolution of output
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
+var root_co21 = 'fire1_eind1_c4grass1_co20_2311_';
 
 // dependencies ---------------------------------------------
 
@@ -23,7 +24,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 var d_fire1 = lyrMod.main({root: root_fire1}); // using the default args
 var d_fire0 = lyrMod.main({root: root_fire0}); // using the default args
-
+var d_co21 = lyrMod.main({root: root_co21}); // using the default args
 // c9 layer ------------------------------------------------
 
 var c9_fire1 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
@@ -42,6 +43,8 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
+
+
 
 // c9 fire difference layer -------------------------------------
 // to show where habitat classification is different
@@ -62,6 +65,32 @@ var sDiff = s.replace('9ClassTransition', 'c9-diff')
 Export.image.toDrive({
   image: c9Diff,
   description: sDiff,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
+  
+// c9 co2 difference layer -------------------------------------
+// to show where habitat classification is different
+
+var c9_co21 = ee.Image(d_co21.get('p')).select('p6_c9Med');
+
+// where are c9 transition different? (1 = same, 2= co21 better, 3 = co21 worse)
+var c9DiffCo2 = ee.Image(0)
+      .where(c9_co21.eq(c9_fire1), 1) // same transitions
+      .where(c9_co21.lt(c9_fire1), 2) //  co2 leads to a a 'better' transition
+      .where(c9_co21.gt(c9_fire1), 3); // co2 leads to a worse transition
+    
+
+var sDiffCo2 = s.replace('9ClassTransition', 'c9-diff')
+  .replace('co20', 'co201');
+
+Export.image.toDrive({
+  image: c9DiffCo2,
+  description: sDiffCo2,
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
