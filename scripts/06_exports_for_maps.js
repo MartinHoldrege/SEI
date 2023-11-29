@@ -46,7 +46,7 @@ Export.image.toDrive({
 // c9 fire difference layer -------------------------------------
 // to show where habitat classification is different
 
-var c9_fire0 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
+var c9_fire0 = ee.Image(d_fire0.get('p')).select('p6_c9Med');
 // first digit is c9 with fire, second is c9 without fire
 
 // where are c9 transition different? (1 = same, 2= fire1 better, 3 = fire1 worse)
