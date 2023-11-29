@@ -99,3 +99,19 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
   
+// qProp layer (for RGB maps) -----------------------------------
+
+var qPropMean = ee.Image(d_fire1.get('qPropMean'));
+
+var sQProp = s.replace('9ClassTransition', 'qPropMean');
+
+Export.image.toDrive({
+  image: qPropMean,
+  description: sQProp,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
