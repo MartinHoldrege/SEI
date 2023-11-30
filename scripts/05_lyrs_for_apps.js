@@ -138,6 +138,9 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
+  // reducing proportion change
+  var diffPropRed1 = diffPropIc.reduce(reducers);
+  
   // reducing to get min, max, median across GCMs for the differences
   var diffRed1 = diffIc.reduce(reducers);
   
