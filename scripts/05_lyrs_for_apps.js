@@ -236,7 +236,7 @@ var main = exports.main = function(args) {
     'climCur': climCur,
     'climDeltaRed': climDeltaRed,
     'p': p,
-    'diffIc': diffIc, // de
+    'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
     'diffRed2': diffRed2,
     'c9Red': c9Red,
     'qPropMean': qPropMean, // climate attribution (proportion)
