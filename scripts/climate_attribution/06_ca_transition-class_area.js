@@ -13,7 +13,7 @@ Started: Nov 20, 2023
 var roots = ['fire0_eind1_c4grass1_co20_', 
             'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
             'fire1_eind1_c4grass1_co21_2311_'];
-var roots = ['fire0_eind1_c4grass1_co20_']; // for testing
+// var roots = ['fire0_eind1_c4grass1_co20_']; // for testing
 var epochList = ['2070-2100',
             '2030-2060', '2070-2100', '2030-2060', '2070-2100',
             '2070-2100'
@@ -53,7 +53,7 @@ for (var i = 0; i < roots.length; i++) {
   // image collection of 3 banded images where bands are the proportion change 
   // of Q1-Q3, and each image is for a different GCM
   var qIc = ee.ImageCollection(d.get('qPropIc'));
-  print(qIc)
+  // print(qIc)
   // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
   var driver = qIc.map(function(x) {
     var q = ee.Image(x);
@@ -93,16 +93,17 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
-  // direction of change of SEI--1 = decrease 2 = increase (or no change)
+  // direction of change of SEI--1 = decrease, 2 = increase (or no change)
   var dirQ5s = ee.ImageCollection(d.get('diffIc'))
     .select('Q5s')
     .map(function(x) {
       var img = ee.Image(x);
-      return ee.Image(0)
+      var out = ee.Image(0)
         .where(img.lt(0), 1)
-        .where(img.gte(0), 2)
+        .where(img.gte(0), 2);
+      return out
+        .rename('dirQ5s')
         .copyProperties(img)
-        .rename('dirQ5s');
     });
    
   // making the 3rd digit  which PFT most dominant driver of change
