@@ -240,6 +240,7 @@ var main = exports.main = function(args) {
     'climDeltaRed': climDeltaRed,
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
+    'diffPropRed': 'diffPropRed',
     'diffIc': diffPropIc, // absolute change, for relavent bands, by GCM
     'diffRed2': diffRed2,
     'c9Red': c9Red,
