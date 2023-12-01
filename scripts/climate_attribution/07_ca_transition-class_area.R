@@ -193,16 +193,16 @@ area_med <- area_gcm_eco %>%
             .groups = 'drop_last') 
 
 # don't need to display a c9 category that doesn't exist anywhere
-c9_to_drop <- area_med %>% 
-  filter(area_tot_hi == 0) %>% 
+c9_to_keep <- area_med %>% 
+  filter(area_tot_hi > 0) %>% 
   pull(c9_name) %>% 
   unique()
 
 area_med <- area_med %>% 
-  filter(!c9_name %in% c9_to_drop)
+  filter(c9_name %in% c9_to_keep)
 
 area_med_eco <- area_med_eco %>% 
-  filter(!c9_name %in% c9_to_drop)
+  filter(c9_name %in% c9_to_keep)
 
 
 # c9 area -----------------------------------------------------------------
@@ -222,6 +222,7 @@ tmp <- area_med_c9 %>%
 g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
   geom_bar_pattern(aes(pattern = rcp_years,
                        pattern_density = rcp_years,
+                       pattern_angle = rcp_years,
                        fill = c9_name),
                    stat = 'identity',
                    position = position_dodge(),
@@ -235,9 +236,10 @@ g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
                 width=.3,
                 position=position_dodge(0.9)) +
   scale_fill_manual(values = c9Palette, guide = 'none')+
-  scale_pattern_manual(values = c("stripe", "none", "crosshatch", "circle")) +
-  # this makes the circles bigger than the lines (more readable)
-  scale_pattern_density_manual(values = c(rep(0.05, 3), 0.3))+ 
+  # scale_pattern_manual(values = c("stripe", "none", "crosshatch", "circle")) +
+  scale_pattern_manual(values = c("stripe", "none", "stripe", "stripe")) +
+  scale_pattern_density_manual(values = rep(0.02, 4))+ 
+  scale_pattern_angle_manual(values = c(45, 0, 0, -45)) +
   guides(pattern = guide_legend(override.aes = list(fill = "white"))) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.title = element_blank(),
@@ -247,8 +249,7 @@ g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
        subtitle = fig_letters['b']) +
   guides(pattern = guide_legend(nrow = 2, 
                                 override.aes = list(fill = "white", color = 'black'))) +
-  scale_y_log10(labels = scales::comma) +
-  coord_cartesian(ylim = c(100, max(tmp$area_km2_hi, na.rm = TRUE)))
+  scale_y_continuous(labels = scales::comma) 
 
 g
 
@@ -320,6 +321,37 @@ dev.off()
 # area by driver --------------------------------------------------------
 
 # * biome-wide figures ----------------------------------------------------
+
+# ** pub qual --------------------------------------------------------------
+# continue here
+g <- area_med %>% 
+  filter(RCP == rcp, years == yr) %>% 
+  mutate(run_name = run2name(run),
+         driver_name = driver2factor(driver)) %>% 
+  ggplot(aes(x = run_name, fill = driver_name)) +
+  facet_wrap(~c9_name, nrow = 2) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = 'bottom') +
+  scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
+                    name = "Primary driver of change")  +
+  labs(x = "Factors included in model",
+       subtitle = fig_letters['b']) +
+  geom_bar(aes(y = area_km2_med), stat = 'identity',
+           position = position_dodge()) +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+                width = 0.3,
+                position=position_dodge(0.9)) +
+  labs(y = lab_areakm0) +
+  guides(fill = guide_legend(nrow = 2))
+
+list2save <- list('fig' = g,
+                  RCP = rcp,
+                  years = yr,
+                  version = version)
+
+# saving so that can be combined with a map in a downstream script
+saveRDS(list2save, "figures/area/c9_driver_barplot_by-run.RDS")
+# ** regular ---------------------------------------------------------------
 
 pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v1.pdf"),
     width = 10, height = 10)

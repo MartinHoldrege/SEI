@@ -107,7 +107,16 @@ c3_named_factor <- function(x) {
   out
 }
 
-
+driver2factor <- function(x) {
+  factor(x, levels = c('sagebrush', 'pfg', 'afg', 'none'),
+         labels = c('Sagebrush', 'Perennials', 'Annuals', 'None'))
+}
+run2name <- function(x) {
+  out <- case_when(str_detect(x, 'fire0.*co20') ~ 'No fire',
+                   str_detect(x, 'fire1.*co20') ~ 'Fire',
+                   str_detect(x, 'fire1.*co21') ~ 'Fire & CO2')
+  factor(out, levels = c('No fire', 'Fire', 'Fire & CO2'))
+}
 # q curve functions -------------------------------------------------------
 
 

@@ -20,14 +20,16 @@ rcp_c9 <- 'RCP45'
 
 library(tidyverse)
 library(terra)
+library(stars)
 library(patchwork)
 source("src/general_functions.R")
 source('src/figure_functions.R')
+theme_set(theme_custom1())
 # load data ---------------------------------------------------------------
 
+# most tifs exported from 06_exports_for_maps.js
 # *c9 ---------------------------------------------------------------------
 
-# file created in 06_exports_for_maps.js
 file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '_', 
                      rcp_c9, '_', years_c9, '.tif')
 
@@ -80,6 +82,35 @@ p2 <- newest_file_path('data_processed/transitions',
 r_c9diffco2 <- rast(p2)
 
 
+# * RGB lyr ---------------------------------------------------------------
+# layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
+
+file_regex4 <- file_regex %>% 
+  str_replace('9ClassTransition', 'qPropMean') 
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex4) %>% 
+    drive_download_from_df('data_processed/ca_lyrs')
+}
+
+r_qprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex4) %>% 
+  rast()
+
+# * prop diff (q, sei) ----------------------------------------------------
+# proportion change of Qs and SEI from current to future
+
+file_regex5 <- file_regex %>% 
+  str_replace('9ClassTransition', 'diffProp') 
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex5) %>% 
+    drive_download_from_df('data_processed/ca_lyrs')
+}
+
+r_diffprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
+  rast()
+
+
 # *figures ----------------------------------------------------------------
 
 # boxplot created in 07_ca_transition-class_area.R
@@ -89,6 +120,14 @@ box_l <- readRDS("figures/area/c9_area_barplot_by-scenario.RDS")
 stopifnot(box_l$run == root_c9,
           box_l$years == years_c9,
           box_l$RCP == rcp_c9)
+
+# boxplot of primary drivers, created in 07_ca_transition-class_area.R
+dbox_l <- readRDS("figures/area/c9_driver_barplot_by-run.RDS")
+
+# make sure boxplot used the same scenarios/runs
+stopifnot(dbox_l$years == years_c9,
+          dbox_l$RCP == rcp_c9)
+
 
 # fig params --------------------------------------------------------------
 
@@ -170,3 +209,49 @@ jpeg(paste0('figures/transition_maps/c9-diff_', name_co2, '.jpg'),
 g2
 dev.off()
 
+
+# RGB-maps ----------------------------------------------------------------
+
+# converting to a 'rgb' stars object
+s_rgb <- r_qprop1 %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  stars::st_as_stars() %>% 
+  stars::st_rgb(maxColorValue = 1)
+
+rgb <- plot_map2(s_rgb)+
+  scale_fill_identity()+
+  labs(subtitle = fig_letters['a'])
+
+comb <- rgb/dbox_l$fig + plot_layout(heights = c(3.5, 2))
+
+jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+     width = 5, height = 9, units = 'in',
+     res = 600)
+comb
+dev.off()
+
+
+# proportion change maps --------------------------------------------------
+lookup_q <- c("Q1raw_median" = "Q1 (Sagebrush)", 
+              "Q2raw_median" = "Q2 (Perennials)", 
+              "Q3raw_median" = "Q3 (Annuals)", 
+              "Q5s_median" = "SEI"
+) 
+
+lookup_q[] <- paste(fig_letters[1:length(lookup_q)], lookup_q) # using [] to preservenames 
+r_diffprop2 <- r_diffprop1*100 #convert to %
+pmax <- as.data.frame(r_diffprop2) %>% 
+  map(\(x) max(abs(x), na.rm = TRUE)) %>% 
+  unlist() %>% 
+  max()
+
+tmp <- r_diffprop2 %>% 
+  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) # uncomment for testing
+
+# continue here--look at color ramps from stepwat biomass maps for better color spacing. 
+  plot_map2(tmp) +
+    facet_wrap(~band,
+               labeller = labeller(band = lookup_q)) +
+    theme(strip.text = element_text(hjust = 0)) +
+    scale_fill_gradient2(limits = c(-pmax, pmax),
+                         na.value = 'transparent')
