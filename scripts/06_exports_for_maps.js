@@ -51,13 +51,21 @@ Export.image.toDrive({
 // to show where habitat classification is different
 
 var c9_fire0 = ee.Image(d_fire0.get('p')).select('p6_c9Med');
-// first digit is c9 with fire, second is c9 without fire
+var dQ5s_fire0  = ee.Image(d_fire0.get('diffRed2')).select('Q5s_median'); // median change in SEI
+var dQ5s_fire1  = ee.Image(d_fire1.get('diffRed2')).select('Q5s_median'); // median change in SEI
 
-// where are c9 transition different? (1 = same, 2= fire1 better, 3 = fire1 worse)
+// where are c9 transition different? (1 = same transition & same SEI
+// 2 = same transition, but fire better SEI
+// 3 = same transition, but fire worse SEI, 2= fire1 better transition, 3 = fire1 worse transition)
 var c9Diff = ee.Image(0)
-      .where(c9_fire1.eq(c9_fire0), 1) // same transitions
-      .where(c9_fire1.lt(c9_fire0), 2) //  fire leads to a a 'better' transition
-      .where(c9_fire1.gt(c9_fire0), 3); // fire leads to a worse transition
+      .where(c9_fire1.eq(c9_fire0)
+              .and(dQ5s_fire1.eq(dQ5s_fire0)), 1) // same transitions and identical change in SEI
+      .where(c9_fire1.eq(c9_fire0)
+              .and(dQ5s_fire1.gt(dQ5s_fire0)), 2) // same transition, but fire better SEI
+      .where(c9_fire1.eq(c9_fire0)
+              .and(dQ5s_fire1.lt(dQ5s_fire0)), 3) // same transition, but fire worse SEI
+      .where(c9_fire1.lt(c9_fire0), 4) //  fire leads to a 'better' transition
+      .where(c9_fire1.gt(c9_fire0), 5); // fire leads to a worse transition
     
 
 var sDiff = s.replace('9ClassTransition', 'c9-diff')
@@ -78,6 +86,8 @@ Export.image.toDrive({
 // to show where habitat classification is different
 
 var c9_co21 = ee.Image(d_co21.get('p')).select('p6_c9Med');
+var dQ5s_c021 = ee.Image(d_co21.get('diffRed2')).select('Q5s_median'); // median change in SEI
+print(dQ5s_c021);
 
 // where are c9 transition different? (1 = same, 2= co21 better, 3 = co21 worse)
 var c9DiffCo2 = ee.Image(0)
