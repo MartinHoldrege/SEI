@@ -1031,7 +1031,8 @@ plot_map <- function(
   st_poly_hatched = NULL,
   st_geom_sb = NULL,
   st_geom_state = NULL,
-  st_geom_eco = NULL
+  st_geom_eco = NULL,
+  ... # passed to geom_stars
 ) {
   stopifnot(
     requireNamespace("ggplot2"),
@@ -1043,7 +1044,8 @@ plot_map <- function(
   tmp <- ggplot2::ggplot() +
     stars::geom_stars(
       data = xstars,
-      show.legend = show_legend
+      show.legend = show_legend,
+      ...
     )
 
   if (!is.null(maintitle)) {

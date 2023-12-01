@@ -235,11 +235,12 @@ dev.off()
 lookup_q <- c("Q1raw_median" = "Q1 (Sagebrush)", 
               "Q2raw_median" = "Q2 (Perennials)", 
               "Q3raw_median" = "Q3 (Annuals)", 
-              "Q5s_median" = "SEI"
+              "Q5s_median" = "Sagebrush ecological integrity"
 ) 
 
 lookup_q[] <- paste(fig_letters[1:length(lookup_q)], lookup_q) # using [] to preservenames 
 r_diffprop2 <- r_diffprop1*100 #convert to %
+
 pmax <- as.data.frame(r_diffprop2) %>% 
   map(\(x) max(abs(x), na.rm = TRUE)) %>% 
   unlist() %>% 
@@ -249,9 +250,31 @@ tmp <- r_diffprop2 %>%
   spatSample(c(500, 500), method = 'regular', as.raster = TRUE) # uncomment for testing
 
 # continue here--look at color ramps from stepwat biomass maps for better color spacing. 
-  plot_map2(tmp) +
-    facet_wrap(~band,
-               labeller = labeller(band = lookup_q)) +
-    theme(strip.text = element_text(hjust = 0)) +
-    scale_fill_gradient2(limits = c(-pmax, pmax),
-                         na.value = 'transparent')
+b <- c(25, 15, 10, 5, 1)
+breaks <- c(-100, -b, rev(b), 200) 
+colors <- RColorBrewer::brewer.pal(length(breaks) - 1, 'RdBu')
+length(colors)
+labels <- label_creator(breaks)
+labels[1] <- paste0('< ', breaks[2])
+
+colors[ceiling(length(breaks)/2)] <- 'grey' # middle color (no significant)
+
+g <- r_diffprop2 %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  plot_map2(mapping = aes(fill = cut(Q1raw_median, breaks))) +
+  facet_wrap(~band,
+             labeller = labeller(band = lookup_q)) +
+  theme(strip.text = element_text(hjust = 0)) +
+  scale_fill_manual(name = '% Change',
+                    values = colors,
+                    labels = c(labels, ""), # empty label for NA
+                    na.value = 'transparent',
+                    drop = FALSE) +
+  theme(legend.position = 'right')
+
+jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI_', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+     width = 8, height = 8, units = 'in',
+     res = 600)
+g
+dev.off()  
+

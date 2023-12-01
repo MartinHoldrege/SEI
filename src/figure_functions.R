@@ -106,6 +106,36 @@ scale_fill_c9 <- function(...) {
   scale_fill_manual(values = unname(c('transparent', c9Palette)), ...)
 }
 
+
+# fig labels --------------------------------------------------------------
+
+
+#' create legend labels
+#'
+#' @param x numeric vector of break points
+#'
+#' @return character vector, where last category is just
+#' > x[n-1] instead of showing a range
+
+#' @examples
+#' label_creator(1:5)
+label_creator <- function(x, convert2percent = FALSE) {
+  if(convert2percent) x <- x*100
+  
+  n <- length(x)
+  labels <- vector(mode = 'character', length = n-1)
+  
+  for (i in 1:(n-1)) {
+    if(i < n -1) {
+      labels[i] <- paste(x[i], "to", x[i+1])
+    } else {
+      labels[i] <- paste(">", x[i])
+    }
+  }
+  
+  labels
+}
+
 # color matrix (to add to other plots) ------------------------------------
 
 # create 9 color matrix ---------------------------------------------------
