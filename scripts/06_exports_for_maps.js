@@ -56,7 +56,7 @@ var dQ5s_fire1  = ee.Image(d_fire1.get('diffRed2')).select('Q5s_median'); // med
 
 // where are c9 transition different? (1 = same transition & same SEI
 // 2 = same transition, but fire better SEI
-// 3 = same transition, but fire worse SEI, 2= fire1 better transition, 3 = fire1 worse transition)
+// 3 = same transition, but fire worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
 var c9Diff = ee.Image(0)
       .where(c9_fire1.eq(c9_fire0)
               .and(dQ5s_fire1.eq(dQ5s_fire0)), 1) // same transitions and identical change in SEI
