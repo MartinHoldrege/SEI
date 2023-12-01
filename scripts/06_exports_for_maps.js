@@ -25,6 +25,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var d_fire1 = lyrMod.main({root: root_fire1}); // using the default args
 var d_fire0 = lyrMod.main({root: root_fire0}); // using the default args
 var d_co21 = lyrMod.main({root: root_co21}); // using the default args
+
 // c9 layer ------------------------------------------------
 
 var c9_fire1 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
@@ -97,7 +98,26 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
+
+// proportion change layers -------------------------------------
+// (proportion change from current to future conditions)
+
+var diffProp = ee.Image(d_fire1.get('diffPropRed'))
+  .select('Q\\draw_median', 'Q5s_median');
   
+var sDiff = s.replace('9ClassTransition', 'diffProp');
+
+Export.image.toDrive({
+  image: diffProp,
+  description: sDiff,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
+
 // qProp layer (for RGB maps) -----------------------------------
 
 var qPropMean = ee.Image(d_fire1.get('qPropMean'));
