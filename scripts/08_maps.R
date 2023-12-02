@@ -46,17 +46,17 @@ p1 <- newest_file_path('data_processed/transitions',
 r_c9 <- rast(p1)
 
 # * c9 diff (fire) ---------------------------------------------------------------
-# where are c9 transition different, between fire1 and fire0 simulations
-# (1 = same, 2= fire1 better, 3 = fire1 worse)
+# compare fire1 vs fire0 simulations
+# where are c9 transition different? (1 = same transition & same SEI
+# 2 = same transition, but fire1 better SEI
+# 3 = same transition, but fire1 worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
 file_regex2 <- file_regex %>% 
   str_replace('9ClassTransition', 'c9-diff') %>% 
   str_replace('fire[01]', 'fire01')
 
 if(download) {
-  files2 <- drive_ls_filtered(path = "gee", file_regex = file_regex2)
-  files2
-  
-  drive_download_from_df(files2, 'data_processed/transitions')
+ drive_ls_filtered(path = "gee", file_regex = file_regex2) %>% 
+    drive_download_from_df('data_processed/transitions')
 }
 
 p2 <- newest_file_path('data_processed/transitions',
@@ -65,8 +65,10 @@ p2 <- newest_file_path('data_processed/transitions',
 r_c9diff <- rast(p2)
 
 # * c9 diff (co2) ---------------------------------------------------------------
-# where are c9 transition different, between co21 and co20 simulations
-# (1 = same, 2= co21 better, 3 = co21 worse)
+# compare co21 and co20 simualtions
+# where are c9 transition different? (1 = same transition & same SEI
+# 2 = same transition, but co21 better SEI
+# 3 = same transition, but co21 worse SEI, 4= co21 better transition, 5 = co21 worse transition)
 file_regex3 <- file_regex %>% 
   str_replace('9ClassTransition', 'c9-diff') %>% 
   str_replace('co2[01]', 'co201')
@@ -80,7 +82,6 @@ p2 <- newest_file_path('data_processed/transitions',
                        file_regex3)
 
 r_c9diffco2 <- rast(p2)
-
 
 # * RGB lyr ---------------------------------------------------------------
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
@@ -132,7 +133,13 @@ stopifnot(dbox_l$years == years_c9,
 # fig params --------------------------------------------------------------
 
 c9Palette2 <- unname(c('transparent', c9Palette))
-cols_diff <- c('#998ec3', '#f1a340')
+#2 = same transition, but fire1 better SEI
+# 3 = same transition, but fire1 worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
+cols_diff <- c('#92c5de', # same transition, but fire1 better SEI
+               '#f4a582',# same transition, but fire1 worse SEI
+               '#053061', # fire1 better transition
+               '#67001f' #fire1 worse transition
+               ) 
 
 # c9 maps -----------------------------------------------------------------
 
@@ -157,21 +164,32 @@ dev.off()
 
 # c9-diff maps ------------------------------------------------------------
 
-
+base_diff <- function() {
+  list(
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          legend.text = element_text(size = rel(0.7))
+          ),
+    guides(fill = guide_legend(ncol = 1))
+  )
+}
 # * fire ------------------------------------------------------------------
+
+labels_fire <- c('Better SEI projected when fire incorporated, but same habitat class',
+                 'Worse SEI projected when fire incorporated, but same habitat class',
+                 'Better SEI & habitat class projected when fire incorporated',
+                 'Worse SEI & habitat class projected when fire incorporated')
 
 g <- subst(r_c9diff, from = c(0, 1), to = c(NA, NA)) %>% 
   #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   as.factor() %>% 
   plot_map2() +
   scale_fill_manual(values = cols_diff,
-                    labels = c('Better habitat projected when fire incorporated',
-                               'Worse habitat projected when fire incorporated'),
+                    labels = labels_fire,
                     na.value = 'transparent',
                     na.translate = FALSE) +
-  theme(legend.position = 'bottom',
-        legend.title = element_blank()) +
-  guides(fill = guide_legend(nrow = 2))
+  base_diff()
+
 
 name_fire <- file_regex2 %>% 
   str_replace('.tif', '') %>% 
@@ -185,18 +203,16 @@ dev.off()
 
 # * co2 -------------------------------------------------------------------
 
+labels_co2 <- str_replace(labels_fire, 'fire', 'CO2 fertilization')
 g2 <- subst(r_c9diffco2, from = c(0, 1), to = c(NA, NA)) %>% 
   #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   as.factor() %>% 
   plot_map2() +
   scale_fill_manual(values = cols_diff,
-                    labels = c('Better habitat projected when CO2 fertilization incorporated',
-                               'Worse habitat projected when CO2 fertilization incorporated'),
+                    labels = labels_co2,
                     na.value = 'transparent',
                     na.translate = FALSE) +
-  theme(legend.position = 'bottom',
-        legend.title = element_blank()) +
-  guides(fill = guide_legend(nrow = 2))
+  base_diff()
 
 
 name_co2 <- file_regex3 %>% 
