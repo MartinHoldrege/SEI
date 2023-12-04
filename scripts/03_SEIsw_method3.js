@@ -23,9 +23,9 @@ var patch = '3'; // proportional change calculated from cover (not biomass as in
 
 // which stepwat output to read in?
 // var rootList = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
-var rootList = ['fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_'];
-var RCPList =  ['RCP45', 'RCP85', 'RCP85'];
-var epochList = ['2030-2060', '2030-2060',  '2070-2100'];
+var rootList = ['fire1_eind1_c4grass0_co20_2311_'];
+var RCPList =  ['RCP45']; // list iterated over
+var epochList = ['2070-2100', '2030-2060',  '2070-2100'];
 var grazeList = ['Light', 'Light', 'Light'];
 
 // 'weight windows', these are the windows over which to change weights
