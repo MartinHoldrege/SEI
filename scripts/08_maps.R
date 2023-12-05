@@ -24,7 +24,7 @@ library(stars)
 library(patchwork)
 source("src/general_functions.R")
 source('src/figure_functions.R')
-source('src/rgb_triangle.R')
+# source('scripts/rgb_triangle.R') # run this to create rgb triangle png used below
 theme_set(theme_custom1())
 # load data ---------------------------------------------------------------
 
@@ -130,6 +130,9 @@ dbox_l <- readRDS("figures/area/c9_driver_barplot_by-run.RDS")
 stopifnot(dbox_l$years == years_c9,
           dbox_l$RCP == rcp_c9)
 
+# created in 'scripts/rgb_triangle.R'
+triangle <- magick::image_read('figures/rgb_triangle.png') %>% 
+  magick::image_ggplot()
 
 # fig params --------------------------------------------------------------
 
@@ -231,42 +234,22 @@ dev.off()
 
 # converting to a 'rgb' stars object
 s_rgb <- r_qprop1 %>% 
-  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
 
 rgb <- plot_map2(s_rgb)+
   scale_fill_identity()+
   labs(subtitle = fig_letters['a'])
-rgb
-triangle <- rgb_triangle()
-triangle
-rgb + grid::grob(triangle)
-annotation_custom(triangle)
-triangle + ggplotGrob(triangle)
-rgb + 
-  theme_classic() +
-  annotation_custom(ggplotGrob(triangle),
-                      ymax = 40)
-wrap_elements(rgb, ggplotGrob(triangle))
-rgb + 
-  inset_element(ggplotGrob(triangle + 
-                             theme(text = margin(t = 5.5, r = 20, b = 5.5, l = 20, unit = "pt"))),
-                0.002, 0.002, 500 / 1133, 230 / 1236)
 
- triangle + 
-  theme(plot.margin = margin(t = 5.5, r = 100, b = 5.5, l = 20, unit = "pt"))
-g <- rgb + 
-  patchwork::inset_element(
-    ~rgb_triangle(),
-    0.002, 0.002, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
-    align_to = "panel",
-    clip = FALSE,
-    ignore_tag = TRUE
-  )
-g
-rgb + wrap_elements(panel = ~rgb_triangle())
-comb <- rgb/dbox_l$fig + plot_layout(heights = c(3.5, 2))
+rgb2 <- rgb + 
+  inset_element(triangle,
+                0.002, 0.002, 250 / 1133, 230 / 1236,
+                align_to = "panel",
+                clip = FALSE,
+                ignore_tag = TRUE)
+
+comb <- rgb2/dbox_l$fig + plot_layout(heights = c(3.5, 2))
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
      width = 5, height = 9, units = 'in',

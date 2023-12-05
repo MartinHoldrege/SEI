@@ -27,7 +27,8 @@ rgb_triangle <-  function(){
           tern.axis.text.show = FALSE,
           plot.subtitle = element_text(hjust = 0.5),
           tern.axis.title.L = element_text(hjust = -0.2, vjust = 0.6),
-          tern.axis.title.R= element_text(hjust = 1.1, vjust = 0.6),) +
+          tern.axis.title.R= element_text(hjust = 1.1, vjust = 0.6),
+          plot.margin = margin()) +
     labs(x = 'Sagebrush',
          y = 'Perennials',
          z = 'Annuals',
@@ -35,8 +36,8 @@ rgb_triangle <-  function(){
 }
 
 
-png('figures/color_triangle.png',
-    height = 2.5,
+png('figures/rgb_triangle.png',
+    height = 2.4,
     width = 2.5,
     units = 'in',
     res = 600)
