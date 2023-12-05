@@ -20,7 +20,8 @@ source("src/general_functions.R")
 # params ------------------------------------------------------------------
 
 runs <- c('fire1_eind1_c4grass1_co20_2311', 
-          'fire1_eind1_c4grass1_co21_2311')
+          'fire1_eind1_c4grass1_co21_2311',
+          'fire1_eind1_c4grass0_co20_2311')
 date <- "20231113"
 
 graze_levels <- c("grazL" = "Light")

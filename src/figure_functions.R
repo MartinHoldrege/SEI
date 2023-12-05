@@ -73,15 +73,53 @@ theme_custom1 <- function() {
 
 
 
-# inset_element2 <- function(x) {
-#   patchwork::inset_element(
-#     x,
-#     0.005, 0.005, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
-#     align_to = "panel",
-#     clip = TRUE,
-#     ignore_tag = TRUE
-#   )
-# }
+inset_element2 <- function(x) {
+  patchwork::inset_element(
+    x,
+    0.005, 0.005, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
+    align_to = "panel",
+    clip = TRUE,
+    ignore_tag = TRUE
+  )
+}
+
+# this function relies on 
+# source("src/Functions__DisplayItems.R") (Daniels functions)
+plot_map_inset <- function(r,
+                           colors = colors,
+                           tag_label = "",
+                           scale_name = NULL,
+                           limits = NULL,
+                           add_vertical0 = FALSE,
+                           values = NULL
+)  {
+  
+  
+  limits_inset <- if(is.null(limits))  {
+    c(NA, NA)
+  }  else 
+    limits
+  
+  inset <- inset_densitycountplot(as.numeric(values(r)),
+                                  limits = limits_inset,
+                                  add_vertical0 = add_vertical0)
+  
+  s <- stars::st_as_stars(r)
+  
+  map <- plot_map(s, 
+                  st_geom_state = states,
+                  add_coords = TRUE) +
+    ggplot2_map_theme() +
+    scale_fill_gradientn(na.value = 'transparent',
+                         limits = limits,
+                         name = scale_name,
+                         colors = colors,
+                         values = values) +
+    add_tag_as_label(tag_label) 
+  
+  map + inset_element2(inset)
+  
+}
 
 # this function relies on 
 plot_map2 <- function(r, ...)  {

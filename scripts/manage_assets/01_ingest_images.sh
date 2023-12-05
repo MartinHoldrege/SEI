@@ -37,7 +37,7 @@ cd "$dir"
 
 # copy files matching this regular expression to cloud bucket:
 # (Note this code will fail if breaks in file names exists)
-files=$(find . | grep -P "fire0_eind1_c4grass1_co20_(Aforb|Sagebrush|Pherb|Cheatgrass)_biomass.*.tif$")
+files=$(find . | grep -P "fire1_eind1_c4grass0_co20_2311_(Aforb|Sagebrush|Pherb|Cheatgrass)_biomass.*.tif$")
 #files=$(find . | grep -P ".*_climate.*.tif$")
 
 # Split files into an array using newline as the delimiter

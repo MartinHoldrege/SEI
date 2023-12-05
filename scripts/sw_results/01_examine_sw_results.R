@@ -26,6 +26,7 @@ PFTs <- c("Sagebrush", 'C4Pgrass', "C3Pgrass", "PGrass", "Pforb", "Pherb", "Chea
 # PFTs for which to plot (herb calculated in code below)
 PFTs2plot <- c(PFTs, "Aherb")
 runs <- c('fire0_eind1_c4grass1_co20',
+          'fire1_eind1_c4grass0_co20_2311',
           'fire1_eind1_c4grass1_co20_2311', 
           'fire1_eind1_c4grass1_co21_2311')
 date <- "20231113"
