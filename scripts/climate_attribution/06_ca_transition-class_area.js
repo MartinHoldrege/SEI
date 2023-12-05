@@ -11,14 +11,17 @@ Started: Nov 20, 2023
 // params ---------------------------------------------------------------
 
 var roots = ['fire0_eind1_c4grass1_co20_', 
+            'fire1_eind1_c4grass0_co20_2311_', 
             'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
             'fire1_eind1_c4grass1_co21_2311_'];
 // var roots = ['fire0_eind1_c4grass1_co20_']; // for testing
 var epochList = ['2070-2100',
+            '2070-2100',
             '2030-2060', '2070-2100', '2030-2060', '2070-2100',
             '2070-2100'
 ];
 var RCPList = ['RCP45',
+              'RCP45',
               'RCP45', 'RCP45', 'RCP85', 'RCP85',
               'RCP45'];
 var resolution = 90;
@@ -46,7 +49,7 @@ for (var i = 0; i < roots.length; i++) {
     epoch: epoch,
     resolution: resolution
   }); // returns a dictionary
-  print(i)
+  print(i);
   
   // which Q dominant driver of change ---------------------------------
   
