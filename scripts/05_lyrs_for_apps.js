@@ -129,6 +129,18 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
+  // difference converted to a proportion change
+  var diffPropIc = diffIc.map(function(image) {
+    return ee.Image(image)
+      .select(diffBands)
+      // subtract current conditions
+      .multiply(cur1.select(diffBands))
+      .copyProperties(ee.Image(image));
+  });
+  
+  // reducing proportion change
+  var diffPropRed1 = diffPropIc.reduce(reducers);
+  
   // reducing to get min, max, median across GCMs for the differences
   var diffRed1 = diffIc.reduce(reducers);
   
@@ -227,9 +239,12 @@ var main = exports.main = function(args) {
     'climCur': climCur,
     'climDeltaRed': climDeltaRed,
     'p': p,
+    'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
+    'diffPropRed': diffPropRed1,
+    'diffIc': diffPropIc, // absolute change, for relavent bands, by GCM
     'diffRed2': diffRed2,
     'c9Red': c9Red,
-    'qPropMean': qPropMean,
+    'qPropMean': qPropMean, // climate attribution (proportion)
     'qPropIc': qPropIc,
     'c9Ic': c9Ic // image collection (one image per GCM) of c9 transitions
   });

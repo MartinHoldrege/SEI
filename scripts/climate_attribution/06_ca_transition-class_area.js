@@ -10,9 +10,20 @@ Started: Nov 20, 2023
 
 // params ---------------------------------------------------------------
 
-var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+var roots = ['fire0_eind1_c4grass1_co20_', 
+            'fire1_eind1_c4grass0_co20_2311_', 
+            'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
             'fire1_eind1_c4grass1_co21_2311_'];
-
+// var roots = ['fire0_eind1_c4grass1_co20_']; // for testing
+var epochList = ['2070-2100',
+            '2070-2100',
+            '2030-2060', '2070-2100', '2030-2060', '2070-2100',
+            '2070-2100'
+];
+var RCPList = ['RCP45',
+              'RCP45',
+              'RCP45', 'RCP45', 'RCP85', 'RCP85',
+              'RCP45'];
 var resolution = 90;
 
 // dependencies ---------------------------------------------------------
@@ -30,16 +41,22 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var combFc = ee.FeatureCollection([]); // empty fc that add to each loop iteration
 for (var i = 0; i < roots.length; i++) {
   var root = roots[i];
+  var RCP = RCPList[i];
+  var epoch = epochList[i];
   var d = lyrMod.main({
     root: root,
+    RCP: RCP,
+    epoch: epoch,
     resolution: resolution
   }); // returns a dictionary
+  print(i);
   
   // which Q dominant driver of change ---------------------------------
   
   // image collection of 3 banded images where bands are the proportion change 
   // of Q1-Q3, and each image is for a different GCM
   var qIc = ee.ImageCollection(d.get('qPropIc'));
+  // print(qIc)
   // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
   var driver = qIc.map(function(x) {
     var q = ee.Image(x);
@@ -79,12 +96,28 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
-  
+  // direction of change of SEI--1 = decrease, 2 = increase (or no change)
+  var dirQ5s = ee.ImageCollection(d.get('diffIc'))
+    .select('Q5s')
+    .map(function(x) {
+      var img = ee.Image(x);
+      var out = ee.Image(0)
+        .where(img.lt(0), 1)
+        .where(img.gte(0), 2);
+      return out
+        .rename('dirQ5s')
+        .copyProperties(img)
+    });
+   
   // making the 3rd digit  which PFT most dominant driver of change
-  var index = ecoC9.combine(driver).map(function(x) {
+  // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
+  // which direction the change was)
+  var index = ecoC9.combine(driver).combine(dirQ5s).map(function(x) {
     var image = ee.Image(x);
     var out = image.select('ecoC9')
       .add(image.select('driver'))
+      .multiply(10)
+      .add(image.select('dirQ5s'))
       .updateMask(SEI.mask)
       .rename('index')
       .toInt()
@@ -121,7 +154,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20231120';
+var s = d.get('versionFull').getInfo() + '_20231130';
 
 Export.table.toDrive({
   collection: combFc,

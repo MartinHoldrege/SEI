@@ -37,13 +37,13 @@
 
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
-var versionsFull = ['vsw4-3-3', 'vsw4-3-3', 'vsw4-3-3']
+var versionsFull = ['vsw4-3-3'] // looping is done over this list. 
 
 // which stepwat output to read in?
-var roots = ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
-var RCP =  'RCP45';
-var epoch = '2070-2100';
-
+// ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
+var rootList = ['fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_'];
+var RCPList =  ['RCP45', 'RCP85', 'RCP85'];
+var epochList = ['2070-2100', '2030-2060',  '2070-2100'];
 // the change in SEI from current to future that is deemed significant or 'substantial':
 var sigDelta = 0.05; // (just using a place holder value for now)
 
@@ -69,7 +69,9 @@ for (var i = 0; i < versionsFull.length; i++) {
   
   var versionFull = versionsFull[i];
   var version = SEI.removePatch(versionFull); // version name with patch removed
-  var root = roots[i];
+  var root = rootList[i];
+  var RCP = RCPList[i];
+  var epoch = epochList[i];
 
   // future SEI
   var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
