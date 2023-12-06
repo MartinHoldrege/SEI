@@ -112,13 +112,12 @@ driver2factor <- function(x) {
          labels = c('Sagebrush', 'Perennials', 'Annuals', 'None'))
 }
 run2name <- function(x) {
-  out <- case_when(str_detect(x, 'fire0.*co20') ~ 'No fire',
-                   str_detect(x, 'fire1.*co20') ~ 'Fire',
-                   str_detect(x, 'fire1.*co21') ~ 'Fire & CO2')
-  factor(out, levels = c('No fire', 'Fire', 'Fire & CO2'))
+  out <- case_when(str_detect(x, 'fire0.*c4grass1_co20') ~ 'No fire',
+                   str_detect(x, 'fire1.*c4grass1_co20') ~ 'Default',
+                   str_detect(x, 'fire1.*c4grass0_co20') ~ 'No C4 grass exp.',
+                   str_detect(x, 'fire1.*c4grass1_co21') ~ 'Include CO2')
+  factor(out, levels = c('Default', 'No fire', 'No C4 grass exp.', 'Include CO2'))
 }
-
-
 
 
 
@@ -402,7 +401,13 @@ low <- function(x) {
   if(length(x) != 13) {
     warning('length of x is no 13')
   }
-  sort(x, decreasing = FALSE)[2]
+  x2 <- if(all(is.na(x))) {
+    x
+  } else {
+    x[is.na(x)] <- 0 # doing this so that if > 1 NAs present (signifying 0 area) then return 0
+    x
+  }
+  sort(x2, decreasing = FALSE)[2]
 }
 
 #' high value across GCMS
@@ -415,6 +420,7 @@ high <- function(x) {
   if(length(x) != 13) {
     warning('length of x is no 13')
   }
+  
   sort(x, decreasing = TRUE)[2]
   
 }

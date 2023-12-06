@@ -68,8 +68,8 @@ area2 <- area1 %>%
          driverNum = as.integer(str_sub(index, 3, 3)),
          # 4th digit is whether SEI decreased or increased
          sei_dir = str_sub(index, 4, 4),
-         sei_dir = factor(sei_dir, levels = c('1', "2"),
-                          labels = c("Decrease", "Increase")),
+         sei_dir = factor(sei_dir, levels = c('2', "1"),
+                          labels = c("increasing", "decreasing")),
          ecoregion = c('Great Basin', 'Intermountain', 'Plains')[ecoregionNum],
          driver = c('none', 'sagebrush', 'pfg', 'afg')[driverNum + 1],
          driver = factor(driver, levels = c('sagebrush', 'pfg', 'afg', 'none'))) %>% 
@@ -94,6 +94,8 @@ area3 <- expand_grid(
                                 sei_dir)) %>% 
   mutate(area_km2 = ifelse(is.na(area_km2), 0, area_km2),
          c9_name = factor(c9Names[c9], levels = c9Names),
+         c12_name = create_c12_factor(c9 = c9, sei_dir = sei_dir),
+         c12 = as.numeric(c12_name),
          rcp_years = paste0(RCP, ' (', years, ')')) 
 
 # total area per ecoregion or biome-wide (for calculating % of total area)
@@ -196,6 +198,18 @@ area_med <- area_gcm_eco %>%
   summarise(across(c(area_km2, area_perc, area_tot),
                    .fns = list(med = median, lo = low, hi = high)),
             .groups = 'drop_last') 
+
+# group by c12
+area_med_dir <- area3 %>% 
+  group_by(RCP, run, years, c12_name, c12, GCM, driver) %>% 
+  summarize(area_km2 = sum(area_km2), # total area for the grouping across drivers
+         .groups = 'drop_last') %>% 
+  mutate(area_tot = sum(area_km2),
+         area_perc = area_km2/area_tot*100) %>% 
+  group_by(RCP,run, years, c12_name, c12, driver) %>% 
+  summarise(across(c(area_km2, area_perc),
+                   .fns = list(med = median, lo = low, hi = high)),
+            .groups = 'drop') 
 
 # don't need to display a c9 category that doesn't exist anywhere
 c9_to_keep <- area_med %>% 
@@ -328,7 +342,7 @@ dev.off()
 # * biome-wide figures ----------------------------------------------------
 
 # ** pub qual --------------------------------------------------------------
-# continue here
+
 g <- area_med %>% 
   filter(RCP == rcp, years == yr) %>% 
   mutate(run_name = run2name(run),
@@ -339,7 +353,7 @@ g <- area_med %>%
         legend.position = 'bottom') +
   scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
                     name = "Primary driver of change")  +
-  labs(x = "Factors included in model",
+  labs(x = "Model assumptions",
        subtitle = fig_letters['b']) +
   geom_bar(aes(y = area_km2_med), stat = 'identity',
            position = position_dodge()) +
@@ -348,6 +362,7 @@ g <- area_med %>%
                 position=position_dodge(0.9)) +
   labs(y = lab_areakm0) +
   guides(fill = guide_legend(nrow = 2))
+g
 
 list2save <- list('fig' = g,
                   RCP = rcp,
@@ -356,6 +371,36 @@ list2save <- list('fig' = g,
 
 # saving so that can be combined with a map in a downstream script
 saveRDS(list2save, "figures/area/c9_driver_barplot_by-run.RDS")
+
+
+# ** pub qual c12 ---------------------------------------------------------
+
+# 12 panel map
+g <- area_med_dir %>% 
+  filter(RCP == rcp, years == yr) %>% 
+  mutate(run_name = run2name(run),
+         driver_name = driver2factor(driver)) %>% 
+  ggplot(aes(x = run_name, fill = driver_name)) +
+  facet_wrap(~c12_name, nrow = 3) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = 'bottom') +
+  scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
+                    name = "Primary driver of change")  +
+  labs(x = "Model assumptions",
+       subtitle = fig_letters['b']) +
+  geom_bar(aes(y = area_perc_med), stat = 'identity',
+           position = position_dodge()) +
+  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
+                width = 0.3,
+                position=position_dodge(0.9)) +
+  labs(y = lab_areaperc0) +
+  guides(fill = guide_legend(nrow = 2))
+
+jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".jpg"),     
+     units = 'in', height = 7, width = 7, res = 600)
+g
+dev.off()
+
 # ** regular ---------------------------------------------------------------
 
 pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v1.pdf"),
