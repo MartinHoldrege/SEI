@@ -37,9 +37,8 @@ file_regex <- paste0("area-by-ecoregionC9Driver_",
                      "_\\d+.csv")
 
 if(download) {
-  files1 <- drive_ls_filtered(path = "SEI", file_regex = file_regex)
-  
-  drive_download_from_df(files1, 'data_processed/area')
+  drive_ls_filtered(path = "SEI", file_regex = file_regex) %>% 
+    drive_download_from_df('data_processed/area')
 }
 
 p1 <- newest_file_path('data_processed/area',
@@ -67,6 +66,10 @@ area2 <- area1 %>%
          c9 = as.integer(str_sub(index, 2, 2)),
          # 3rd digit is the primary driver of change in SEI
          driverNum = as.integer(str_sub(index, 3, 3)),
+         # 4th digit is whether SEI decreased or increased
+         sei_dir = str_sub(index, 4, 4),
+         sei_dir = factor(sei_dir, levels = c('1', "2"),
+                          labels = c("Decrease", "Increase")),
          ecoregion = c('Great Basin', 'Intermountain', 'Plains')[ecoregionNum],
          driver = c('none', 'sagebrush', 'pfg', 'afg')[driverNum + 1],
          driver = factor(driver, levels = c('sagebrush', 'pfg', 'afg', 'none'))) %>% 
@@ -85,8 +88,10 @@ area3 <- expand_grid(
   years = unique(area2$years),
   c9 = unique(area2$c9),
   driver = unique(area2$driver),
+  sei_dir = levels(area2$sei_dir),
 ) %>% 
-  left_join(area2, by = join_by(GCM, RCP, ecoregion, run, years, c9, driver)) %>% 
+  left_join(area2, by = join_by(GCM, RCP, ecoregion, run, years, c9, driver,
+                                sei_dir)) %>% 
   mutate(area_km2 = ifelse(is.na(area_km2), 0, area_km2),
          c9_name = factor(c9Names[c9], levels = c9Names),
          rcp_years = paste0(RCP, ' (', years, ')')) 
