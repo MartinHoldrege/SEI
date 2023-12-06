@@ -406,7 +406,7 @@ exports.compareFutures = function(c9Ref, c9New, seiRef, seiNew) {
       .where(c9New.eq(c9Ref)
               .and(seiDiff.abs().lt(0.01)), 1) // same transitions and nearly identical change in SEI
       .where(c9New.eq(c9Ref)
-              .and(seiDiff.abs().gte(0.01)), 2) // same transition, but new has better SEI
+              .and(seiDiff.gte(0.01)), 2) // same transition, but new has better SEI
       .where(c9New.eq(c9Ref)
               .and(seiDiff.lte(0.01)), 3) // same transition, but new has worse SEI then ref
       .where(c9New.lt(c9Ref), 4) //  new leads to a 'better' transition
