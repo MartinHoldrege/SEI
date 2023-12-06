@@ -385,6 +385,35 @@ exports.assignWeight = function(image, window) {
   return wOut;
 };
 
+
+/**
+ * Create layer showing robustness of change
+ * @param {ee.image} c9Ref contins the 9 transition classes of the reference results 
+ * @param {ee.image} c9New contins the 9 transition classes of the comparison group 
+ * @param {ee.image} seiRef contains the SEI (or delta SEI) of the reference results 
+ * @param {ee.image} seiNew contains the SEI (or delta SEI) of the comparison results
+ * @return {ee.Image} image with integers from 0 - 5, where:
+ * 1 =  same habitat class transition transitions and nearly identical change in SEI
+ * 2 = same transition, but new has better SEI
+ * 3 = same transition, but new has worse SEI then ref
+ * 4 =  new leads to a 'better' transition
+ * 5 = new leads to a worse transition
+ * 
+*/
+exports.compareFutures = function(c9Ref, c9New, seiRef, seiNew) {
+  var seiDiff = seiNew.subtract(seiRef);
+  var out = ee.Image(0)
+      .where(c9New.eq(c9Ref)
+              .and(seiDiff.abs().lt(0.01)), 1) // same transitions and nearly identical change in SEI
+      .where(c9New.eq(c9Ref)
+              .and(seiDiff.abs().gte(0.01)), 2) // same transition, but new has better SEI
+      .where(c9New.eq(c9Ref)
+              .and(seiDiff.lte(0.01)), 3) // same transition, but new has worse SEI then ref
+      .where(c9New.lt(c9Ref), 4) //  new leads to a 'better' transition
+      .where(c9New.gt(c9Ref), 5); // new leads to a worse transition
+  return out.toByte();
+};
+
 /*
  
  Datasets 
