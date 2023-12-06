@@ -117,6 +117,45 @@ run2name <- function(x) {
                    str_detect(x, 'fire1.*co21') ~ 'Fire & CO2')
   factor(out, levels = c('No fire', 'Fire', 'Fire & CO2'))
 }
+
+
+
+
+
+#' create c12 factor
+#' 
+#' @description
+#'c12 is a version of c9, but for each of the 3 stable categories
+# there are 2 categores (e.g. Stable Core with increaseing SEI, 
+# and stable core with decreasing SEI)
+#' 
+#'
+#' @param c9 change category (numeric)
+#' @param sei_dir sei increasing or decreasing?
+#'
+#' @return 12 class factor
+#' 
+#' @examples
+#' create_c12_factor(1:9, rep('decreasing', 9))
+create_c12_factor <- function(c9, sei_dir) {
+  
+  create_c12_name <- function(c9, sei_dir) {
+    stopifnot(c9 %in% 1:9,
+              sei_dir %in% c('increasing', 'decreasing'))
+    ifelse(c9 %in% c(1, 5, 9),
+           paste0(c9Names[c9], "\n", "(SEI ", as.character(sei_dir), ")"),
+           c9Names[c9])
+  }
+  
+    # creating the factor levels
+  c9_lev <- c(1, 1:5, 5:9, 9)
+  dir_lev <- rep('increasing', length(c9_lev))
+  dir_lev[c(2, 7, 12)] <- 'decreasing'
+  levels <- create_c12_name(c9 = c9_lev, sei_dir = dir_lev)
+  out <- create_c12_name(c9 = c9, sei_dir = sei_dir)
+  factor(out, levels = levels)
+}
+
 # q curve functions -------------------------------------------------------
 
 

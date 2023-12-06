@@ -112,6 +112,19 @@ if(download) {
 r_diffprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
   rast()
 
+# * prop diff (q, sei) ----------------------------------------------------
+# proportion change of Qs and SEI from current to future
+
+file_regex6 <- file_regex %>% 
+  str_replace('9ClassTransition', 'numGcmGood') 
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex6) %>% 
+    drive_download_from_df('data_processed/ca_lyrs')
+}
+
+r_numGcm1 <- newest_file_path('data_processed/ca_lyrs', file_regex6) %>% 
+  rast()
 
 # *figures ----------------------------------------------------------------
 
@@ -305,3 +318,74 @@ jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI_', version, root_c9, rc
 g
 dev.off()  
 
+
+# numGcmGood --------------------------------------------------------------
+# map showing agreement among GCMs
+
+# 113 means 13 GCMS agree will stay core (class 1)
+# note some 215s exist (i.e. grow, 15 GCMs agree on stability/improvement
+# which isn't possible, this has to do with how the pyramid is being
+# defined in GEE and disappears when you 'zoom' in on GCM (i.e. isn't a problem
+# at high resolution);
+c3_cutoffs <- c(115:112, 111:107, 106:102, 101, 100)
+replacement <- c(rep(1, 4), rep(2, 5), rep(3, 5),  4, 4)
+
+from <- c(c3_cutoffs, # currently core
+          c3_cutoffs+ 100, # currently grow
+          300, # currently other areas
+          0 # masked out areas
+          )
+
+to <- c(replacement + 10, replacement+20, 30, 
+        19 # NA values (coverting to 19 as a hack to make legend columns work)
+        )
+
+r_numGcm2 <- subst(r_numGcm1, from = from, to = to)
+# unique(as.numeric(values(r_numGcm2)))
+cols_numGcm <- c("11" = '#0571b0', 
+                 "12" = '#92c5de',
+                 "13" = '#f4a582', 
+                 "14" = '#b2182b', 
+                 "19" = 'transparent', # NA values
+                 "21" = '#762a83', 
+                 "22" = '#c2a5cf', 
+                 "23" = '#a6dba0', 
+                 "24" = '#008837', 
+                 "30" = unname(c9Palette[9]))
+
+perc1 <- paste0('(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
+perc2 <- paste0('(', round(7/13*100, digits = -1), '-', round(12/13*100, digits = -1), '% of GCMs agree)')
+names_numGcm <- c("11" = paste('Stable CSA', perc1),
+                 "12" = paste('Stable CSA', perc2),
+                 "13" = paste('Loss of CSA', perc2), 
+                 "14" = paste('Loss of CSA', perc1), 
+                 "19" = "", 
+                 "21" = paste('Stable (or improved) GOA', perc1), 
+                 "22" = paste('Stable (or improved) GOA', perc2), 
+                 "23" = paste('Loss of GOA', perc2), 
+                 "24" = paste('Loss of GOA', perc1), 
+                 "30" = 'Other rangeland area')
+
+g <- r_numGcm2 %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  as.factor() %>% 
+  plot_map2() +
+  scale_fill_manual(values = cols_numGcm,
+                    labels = names_numGcm,
+                    na.value = 'transparent') +
+  theme(legend.position = 'bottom',
+        legend.title = element_blank(),
+        legend.text = element_text(size = rel(0.5))) +
+  guides(fill = guide_legend(ncol = 2,
+                             byrow = FALSE,
+                             override.aes = list(size = 0.3)))
+
+name_numGcm <- file_regex6 %>% 
+  str_replace('.tif', '') %>% 
+  str_replace(paste0('_numGcmGood_', resolution), '')
+
+jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '.jpg'), 
+     width = 6, height = 6, units = 'in',
+     res = 800)
+g
+dev.off()
