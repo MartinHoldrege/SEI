@@ -243,6 +243,8 @@ for (var i = 0; i < versionsFull.length; i++) {
     
   // combine products -------------------------------------------------------------------------
   
+  // for now limiting the number of layers saved--because some may not be useful, and they
+  // take up a lot of storage space. 
   var comb1 = diffQ5sMed // p1 used
     .addBands(futSc3Med) // p2
     //.addBands(numPosSig) // p3
