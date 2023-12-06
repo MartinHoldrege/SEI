@@ -37,7 +37,7 @@
 
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
-var versionsFull = ['vsw4-3-3'] // looping is done over this list. 
+var versionFull = 'vsw4-3-3';
 
 // which stepwat output to read in?
 var rootList = ['fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_',
@@ -71,9 +71,9 @@ var region = SEI.region;
 
 // loop through version
 
-for (var i = 0; i < versionsFull.length; i++) {
+for (var i = 0; i < rootList.length; i++) {
   
-  var versionFull = versionsFull[i];
+  // var versionFull = versionsFull[i];
   var version = SEI.removePatch(versionFull); // version name with patch removed
   var root = rootList[i];
   var RCP = RCPList[i];
