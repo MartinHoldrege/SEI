@@ -32,9 +32,7 @@ var RCPList =  ['RCP45', 'RCP85', 'RCP85',
 var epochList = ['2030-2060', '2030-2060',  '2070-2100',
                   '2030-2060', '2030-2060',  '2070-2100',
                   '2030-2060', '2030-2060',  '2070-2100'];
-var grazeList = ['Light', 'Light', 'Light', 
-                'Light', 'Light', 'Light',
-                'Light', 'Light', 'Light'];
+var graze = 'Light';
 
 // 'weight windows', these are the windows over which to change weights
 // between proportion change and delta cover methods for calculating
@@ -88,7 +86,7 @@ for (var j=0; j<RCPList.length; j++) {
   var root = rootList[j];
   var RCP = RCPList[j];
   var epoch = epochList[j];
-  var graze = grazeList[j];
+  
   
   
   // read in current stepwat biomass -------------------------------------------------
@@ -99,7 +97,7 @@ for (var j=0; j<RCPList.length; j++) {
   var c = '_Current';
 
   // here 'ZZZZ' is replace by the pft inside the function, to read in the individual
-  var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' + graze + c;
+  var genericPathCur = path + 'stepwat_biomass/' + root + 'ZZZZ' + '_biomass' + c + c + '_' +  graze + c;
   // this function also sums cheatgrass and aforb to get aft, and also load sage and pft
   var swCur1 = SEI.readImages2Bands(genericPathCur)
   // masking so when take max only taking max of appropriate pixels
