@@ -185,6 +185,7 @@ var areaComb = areaFire
   .merge(areaCo2)
   .merge(areaGrass);
 
+Map.addLayer(c9Diff.eq(1), {palette: ['grey', 'black']}, 'no fire effect')
 var s = d_fire1.get('versionFull').getInfo() + '_20231206';
 
 Export.table.toDrive({
