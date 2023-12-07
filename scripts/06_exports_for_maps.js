@@ -15,7 +15,7 @@ var resolutionArea = 90; // resolution for area calculations
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
 var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
-var root_grass0 = 'fire1_eind1_c4grass0_co21_2311_';
+var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 // dependencies ---------------------------------------------
 
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
@@ -27,7 +27,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var d_fire1 = lyrMod.main({root: root_fire1}); // using the default args
 var d_fire0 = lyrMod.main({root: root_fire0}); // using the default args
 var d_co21 = lyrMod.main({root: root_co21}); // using the default args
-var d_grass0 = lyrMod.main({root: root_co21}); // using the default args
+var d_grass0 = lyrMod.main({root: root_grass0}); // using the default args
 
 // c9 layer ------------------------------------------------
 
