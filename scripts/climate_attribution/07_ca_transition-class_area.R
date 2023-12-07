@@ -226,11 +226,38 @@ area_med_eco <- area_med_eco %>%
 
 # c9 area -----------------------------------------------------------------
 
+base_c9_area <- function() {
+    list(
+      geom_bar_pattern(aes(pattern = rcp_years,
+                           pattern_density = rcp_years,
+                           pattern_angle = rcp_years,
+                           fill = c9_name),
+                       stat = 'identity',
+                       position = position_dodge(),
+                       pattern_fill = 'black',
+                       pattern_spacing = 0.05,
+                       color = 'white',
+                       pattern_key_scale_factor = 0.5 # relative density in the legend
+      ),
+      scale_fill_manual(values = c9Palette, guide = 'none'),
+      scale_pattern_manual(values = c("stripe", "none", "stripe", "stripe")),
+      scale_pattern_density_manual(values = rep(0.02, 4)),
+      scale_pattern_angle_manual(values = c(45, 0, 0, -45)),
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.title = element_blank(),
+            legend.position = 'bottom'),
+      guides(pattern = guide_legend(nrow = 2,
+                                    override.aes = list(fill = "white", color = 'black'))),
+      scale_y_continuous(labels = scales::comma) 
+    )
+    
+  }
 
 # * figures (pub qual) ----------------------------------------------------
 
 # note--consider whether want to include only c9 categories with >0 area
 
+# 1 panel figure 
 tmp <- area_med_c9 %>% 
   filter(run == target_run) %>% 
   # if any c9 categories have 0 area, then drop them
@@ -239,36 +266,14 @@ tmp <- area_med_c9 %>%
 
 
 g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
-  geom_bar_pattern(aes(pattern = rcp_years,
-                       pattern_density = rcp_years,
-                       pattern_angle = rcp_years,
-                       fill = c9_name),
-                   stat = 'identity',
-                   position = position_dodge(),
-                   pattern_fill = 'black',
-                   pattern_spacing = 0.05,
-                   color = 'white',
-                   pattern_key_scale_factor = 1 # relative density in the legend
-                   )  +
+  base_c9_area() +
   geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = rcp_years),
                 stat = 'identity',
                 width=.3,
                 position=position_dodge(0.9)) +
-  scale_fill_manual(values = c9Palette, guide = 'none')+
-  # scale_pattern_manual(values = c("stripe", "none", "crosshatch", "circle")) +
-  scale_pattern_manual(values = c("stripe", "none", "stripe", "stripe")) +
-  scale_pattern_density_manual(values = rep(0.02, 4))+ 
-  scale_pattern_angle_manual(values = c(45, 0, 0, -45)) +
-  guides(pattern = guide_legend(override.aes = list(fill = "white"))) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.title = element_blank(),
-        legend.position = 'bottom') +
   labs(y = lab_areakm0,
        x = NULL,
-       subtitle = fig_letters['b']) +
-  guides(pattern = guide_legend(nrow = 2, 
-                                override.aes = list(fill = "white", color = 'black'))) +
-  scale_y_continuous(labels = scales::comma) 
+       subtitle = fig_letters['b'])
 
 g
 
@@ -281,7 +286,25 @@ list2save <- list('fig' = g,
 # saving so that can be combined with a map in a downstream script
 saveRDS(list2save, "figures/area/c9_area_barplot_by-scenario.RDS")
 
+# 9 panel figure, shoing area by c9, model run, and RCP/time period
 
+g <- area_med_c9 %>% 
+  mutate(run_name = run2name(run)) %>% 
+  ggplot(aes(run_name, y = area_km2_med), fill = c9_name)  +
+  base_c9_area() +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = rcp_years),
+                stat = 'identity',
+                width=.3,
+                position=position_dodge(0.9)) +
+  facet_wrap(~c9_name) +
+  labs(y = lab_areakm0,
+       x = 'Model assumptions')
+
+
+jpeg(paste0("figures/area/c9_area_barplot_by-scenario-run", "_", version, ".jpg"),     
+     units = 'in', height = 6, width = 6, res = 600)
+g
+dev.off() 
 # * figures (exploratory) ---------------------------------------------------
 
 
