@@ -24,8 +24,20 @@ library(stars)
 library(patchwork)
 source("src/general_functions.R")
 source('src/figure_functions.R')
+source('../grazing_effects/src/fig_params.R') # for labels
 # source('scripts/rgb_triangle.R') # run this to create rgb triangle png used below
 theme_set(theme_custom1())
+
+# functions ---------------------------------------------------------------
+
+# name band based on the run (and replace parts of pattern as necessary)
+rename_lyr_by_run <- function(r, path, pattern = '', replacement = '') {
+  run <- basename(path) %>% 
+    str_extract('fire\\d+_eind\\d+_c4grass\\d+_co2\\d+_{0,1}\\d{0,4}') %>% 
+    str_replace_all(pattern = pattern, replacement = replacement)
+  names(r) <- run
+  r
+}
 # load data ---------------------------------------------------------------
 
 # most tifs exported from 06_exports_for_maps.js
@@ -63,7 +75,8 @@ if(download) {
 p2 <- newest_file_path('data_processed/transitions',
                        file_regex2)
 
-r_c9diff <- rast(p2)
+r_c9diff <- rast(p2) %>% 
+  rename_lyr_by_run(p2, pattern = 'fire01', replacement = 'fire0')
 
 # * c9 diff (co2) ---------------------------------------------------------------
 # compare co21 and co20 simualtions
@@ -79,10 +92,29 @@ if(download) {
     drive_download_from_df('data_processed/transitions')
 }
 
-p2 <- newest_file_path('data_processed/transitions',
+p3 <- newest_file_path('data_processed/transitions',
                        file_regex3)
 
-r_c9diffco2 <- rast(p2)
+r_c9diffco2 <- rast(p3)%>% 
+  rename_lyr_by_run(p3, pattern = 'co201', replacement = 'co21')
+
+# * c9 diff (grass) ---------------------------------------------------------------
+
+file_regex3g <- file_regex %>% 
+  str_replace('9ClassTransition', 'c9-diff') %>% 
+  str_replace('grass1', 'grass01')
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex3g) %>% 
+    drive_download_from_df('data_processed/transitions')
+}
+
+p4 <- newest_file_path('data_processed/transitions',file_regex3g)
+r_c9diffgrass <- rast(p4) %>% 
+  rename_lyr_by_run(p4, 'grass01', 'grass0') 
+  
+r_c9diff_all <- c(r_c9diff, r_c9diffgrass, r_c9diffco2)# combining rasters
+
 
 # * RGB lyr ---------------------------------------------------------------
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
@@ -112,20 +144,30 @@ if(download) {
 r_diffprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
   rast()
 
-# * prop diff (q, sei) ----------------------------------------------------
-# proportion change of Qs and SEI from current to future
+# * numGcmGood  ----------------------------------------------------
 
 file_regex6 <- file_regex %>% 
   str_replace('9ClassTransition', 'numGcmGood') 
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex6) %>% 
-    drive_download_from_df('data_processed/ca_lyrs')
+    drive_download_from_df('data_processed/transitions')
 }
 
-r_numGcm1 <- newest_file_path('data_processed/ca_lyrs', file_regex6) %>% 
+r_numGcm1 <- newest_file_path('data_processed/transitions', file_regex6) %>% 
   rast()
 
+# * area by c9-diff  ----------------------------------------------------
+
+file_regex7 <- paste0("area-by-c9-diff_\\d+m_", version, "_\\d{8}.csv")
+
+if(download) {
+  drive_ls_filtered(file_regex = file_regex7) %>% 
+    drive_download_from_df('data_processed/transitions')
+}
+
+area_c9diff1 <- newest_file_path('data_processed/transitions', file_regex7) %>% 
+  read_csv()
 # *figures ----------------------------------------------------------------
 
 # boxplot created in 07_ca_transition-class_area.R
@@ -152,7 +194,8 @@ triangle <- magick::image_read('figures/rgb_triangle.png') %>%
 c9Palette2 <- unname(c('transparent', c9Palette))
 #2 = same transition, but fire1 better SEI
 # 3 = same transition, but fire1 worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
-cols_diff <- c('#92c5de', # same transition, but fire1 better SEI
+cols_diff <- c('grey', # same SEI
+                '#92c5de', # same transition, but fire1 better SEI
                '#f4a582',# same transition, but fire1 worse SEI
                '#053061', # fire1 better transition
                '#67001f' #fire1 worse transition
@@ -187,59 +230,99 @@ base_diff <- function() {
           legend.title = element_blank(),
           legend.text = element_text(size = rel(0.6))
           ),
-    guides(fill = guide_legend(ncol = 1))
+    guides(fill = guide_legend(ncol = 2))
   )
 }
-# * fire ------------------------------------------------------------------
 
-labels_fire <- c('Better SEI projected when fire incorporated, but same habitat class',
-                 'Worse SEI projected when fire incorporated, but same habitat class',
-                 'Better SEI & habitat class projected when fire incorporated',
-                 'Worse SEI & habitat class projected when fire incorporated')
+labels <- c('Same SEI (+/- 0.01) projected relative to default, and same habitat class',
+            'Better SEI projected relative to default, but same habitat class',
+            'Worse SEI projected relative to default, but same habitat class',
+            'Better SEI & habitat class projected relative to default',
+            'Worse SEI & habitat class projected relative to default')
 
-g <- subst(r_c9diff, from = c(0, 1), to = c(NA, NA)) %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-  as.factor() %>% 
-  plot_map2() +
+# preparing raster (converting to factor etc.)
+r0 <- r_c9diff_all %>% 
+  # spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% 
+  subst(from = 0, to = NA)
+
+r <- r0 %>% 
+  as.factor()
+# table(as.numeric(values(r[[1]])))
+# table(as.numeric(values(r[[2]])))
+# table(as.numeric(values(r[[3]])))
+
+# setting the factor levels
+df <- data.frame(ID = 1:5, names = labels)
+set.cats(r, layer = 1, value = df) 
+set.cats(r, layer = 2, value = df) 
+set.cats(r, layer = 3, value = df) 
+let <- fig_letters[1:nlyr(r)]
+band_names <- run2name(names(r_c9diff_all)) %>% 
+  as.character() %>% 
+  str_replace('exp.', 'expansion') %>% 
+  str_replace('CO2', "CO2 fertilization")
+names(r) <- paste(let, band_names)
+#plot(r)
+
+s <- st_as_stars(r, as_attributes = FALSE)
+
+
+# ** creating map ---------------------------------------------------------
+
+
+g_map <- plot_map2(s) +
   scale_fill_manual(values = cols_diff,
-                    labels = labels_fire,
                     na.value = 'transparent',
                     na.translate = FALSE) +
-  base_diff()
+  facet_wrap(~band, ncol = 2)+
+  theme(legend.position = 'bottom',
+        legend.title = element_blank(),
+        legend.text = element_text(size = rel(0.6)),
+        strip.text = element_text(hjust = 0)
+  ) +
+  guides(fill = guide_legend(ncol = 2))
+  
+#g_map
+
+# ** creating barchart -------------------------------------------------------
+# barchart of areas in the map 
+area_c9diff2 <- area_c9diff1 %>% 
+  mutate(run = str_replace(run, "_$", ""),
+         area_km2 = area_m2/1000^2,
+         diffClass = factor(diffClass),
+         run_name = run2name(run)) %>%
+  select(-`system:index`, -`.geo`, -area_m2) %>% 
+  filter(RCP == rcp_c9,
+         years == years_c9)
+
+bar <- ggplot(area_c9diff2, aes(run_name, area_km2, fill = diffClass)) +
+  geom_bar(stat = 'identity',
+           position = position_dodge()) +
+  scale_fill_manual(values = cols_diff) +
+  labs(x = "Model assumptions",
+       y = lab_areakm0,
+       subtitle = fig_letters['d'])+
+  scale_y_continuous(labels = scales::comma) +
+  theme(legend.position = 'none',
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 
-name_fire <- file_regex2 %>% 
-  str_replace('.tif', '') %>% 
-  str_replace(paste0('_c9-diff_', resolution), '')
+# ** combine --------------------------------------------------------------
 
-jpeg(paste0('figures/transition_maps/c9-diff_', name_fire, '.jpg'), 
-     width = 5, height = 5, units = 'in',
+comb <- g_map + inset_element(bar,
+                      left = 0.52,
+                      bottom = 0,
+                      right = 0.9,
+                      top = 0.5,
+                      align_to = "panel",
+                      clip = TRUE,
+                      ignore_tag = TRUE)
+
+jpeg(paste0('figures/transition_maps/c9-diff_map-bar_', version, 
+            "_", rcp_c9, "_", years_c9, '.jpg'), 
+     width = 7, height = 8, units = 'in',
      res = 800)
-g
-dev.off()
-
-# * co2 -------------------------------------------------------------------
-
-labels_co2 <- str_replace(labels_fire, 'fire', 'CO2 fertilization')
-g2 <- subst(r_c9diffco2, from = c(0, 1), to = c(NA, NA)) %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-  as.factor() %>% 
-  plot_map2() +
-  scale_fill_manual(values = cols_diff,
-                    labels = labels_co2,
-                    na.value = 'transparent',
-                    na.translate = FALSE) +
-  base_diff()
-
-
-name_co2 <- file_regex3 %>% 
-  str_replace('.tif', '') %>% 
-  str_replace(paste0('_c9-diff_', resolution), '')
-
-jpeg(paste0('figures/transition_maps/c9-diff_', name_co2, '.jpg'), 
-     width = 5.5, height = 5, units = 'in',
-     res = 800)
-g2
+comb
 dev.off()
 
 
@@ -264,7 +347,8 @@ rgb2 <- rgb +
 
 comb <- rgb2/dbox_l$fig + plot_layout(heights = c(3.5, 2))
 
-jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
      width = 5, height = 9, units = 'in',
      res = 600)
 comb
@@ -286,8 +370,6 @@ pmax <- as.data.frame(r_diffprop2) %>%
   unlist() %>% 
   max()
 
-tmp <- r_diffprop2 %>% 
-  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) # uncomment for testing
 
 # continue here--look at color ramps from stepwat biomass maps for better color spacing. 
 b <- c(25, 15, 10, 5, 1)
