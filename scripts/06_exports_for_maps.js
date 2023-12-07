@@ -10,21 +10,24 @@ Data started: November 21, 2023
 
 // params ---------------------------------------------------
 
-var resolutionOut = 500; // resolution of output
+var resolutionOut = 500; // resolution of output maps
+var resolutionArea = 90; // resolution for area calculations
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
 var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
-
+var root_grass0 = 'fire1_eind1_c4grass0_co21_2311_';
 // dependencies ---------------------------------------------
 
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
+var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 
 // read in data --------------------------------------------
 
 var d_fire1 = lyrMod.main({root: root_fire1}); // using the default args
 var d_fire0 = lyrMod.main({root: root_fire0}); // using the default args
 var d_co21 = lyrMod.main({root: root_co21}); // using the default args
+var d_grass0 = lyrMod.main({root: root_co21}); // using the default args
 
 // c9 layer ------------------------------------------------
 
@@ -46,7 +49,6 @@ Export.image.toDrive({
 });
 
 
-
 // c9 fire difference layer -------------------------------------
 // to show where habitat classification is different
 
@@ -57,15 +59,7 @@ var dQ5s_fire1  = ee.Image(d_fire1.get('diffRed2')).select('Q5s_median'); // med
 // where are c9 transition different? (1 = same transition & same SEI
 // 2 = same transition, but fire better SEI
 // 3 = same transition, but fire worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
-var c9Diff = ee.Image(0)
-      .where(c9_fire1.eq(c9_fire0)
-              .and(dQ5s_fire1.eq(dQ5s_fire0)), 1) // same transitions and identical change in SEI
-      .where(c9_fire1.eq(c9_fire0)
-              .and(dQ5s_fire1.gt(dQ5s_fire0)), 2) // same transition, but fire better SEI
-      .where(c9_fire1.eq(c9_fire0)
-              .and(dQ5s_fire1.lt(dQ5s_fire0)), 3) // same transition, but fire worse SEI
-      .where(c9_fire1.lt(c9_fire0), 4) //  fire leads to a 'better' transition
-      .where(c9_fire1.gt(c9_fire0), 5); // fire leads to a worse transition
+var c9Diff = SEI.compareFutures(c9_fire1, c9_fire0, dQ5s_fire1, dQ5s_fire0);
     
 
 var sDiff = s.replace('9ClassTransition', 'c9-diff')
@@ -89,22 +83,37 @@ var c9_co21 = ee.Image(d_co21.get('p')).select('p6_c9Med');
 var dQ5s_co21 = ee.Image(d_co21.get('diffRed2')).select('Q5s_median'); // median change in SEI
 
 // where are c9 transition different? 
-var c9DiffCo2 = ee.Image(0)
-      .where(c9_co21.eq(c9_fire1)
-              .and(dQ5s_co21.eq(dQ5s_fire1)), 1) // same transitions and identical change in SEI
-      .where(c9_co21.eq(c9_fire1)
-              .and(dQ5s_co21.gt(dQ5s_fire1)), 2) // same transition, but co2 better SEI
-      .where(c9_co21.eq(c9_fire1)
-              .and(dQ5s_co21.lt(dQ5s_fire1)), 3) // same transition, but co2 worse SEI
-      .where(c9_co21.lt(c9_fire1), 4) //  co2 leads to a 'better' transition
-      .where(c9_co21.gt(c9_fire1), 5); // co2 leads to a worse transition
-    
+var c9DiffCo2 = SEI.compareFutures(c9_fire1, c9_co21, dQ5s_fire1, dQ5s_co21);
+      
 var sDiffCo2 = s.replace('9ClassTransition', 'c9-diff')
   .replace('co20', 'co201');
 
 Export.image.toDrive({
   image: c9DiffCo2,
   description: sDiffCo2,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
+
+// c9 c4grass1 difference layer -------------------------------------
+// to show where habitat classification is different when c4 grass expansion is not allowed
+
+var c9_grass0 = ee.Image(d_grass0.get('p')).select('p6_c9Med');
+var dQ5s_grass0 = ee.Image(d_grass0.get('diffRed2')).select('Q5s_median'); // median change in SEI
+
+// where are c9 transition different? 
+var c9DiffGrass = SEI.compareFutures(c9_fire1, c9_grass0, dQ5s_fire1, dQ5s_grass0);
+      
+var sDiffGrass = s.replace('9ClassTransition', 'c9-diff')
+  .replace('grass1', 'grass01');
+
+Export.image.toDrive({
+  image: c9DiffGrass,
+  description: sDiffGrass,
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
@@ -148,3 +157,41 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
+
+// calculating c9-diff area -----------------------------------
+// calculating the area in the 5 categories of the transition comparison lyrs;
+// in all cases the comparison is to the 'default' simulations
+// first argument is the 5 class different image, the section is the dictionary for the run
+var areaAndProperties = function(image, d) {
+   var areas = fnsRr.areaByGroup(image, 'diffClass', SEI.region, resolutionArea)
+    .map(function(x) {
+      return ee.Feature(x)
+       // adding additional proprties to the feature
+          .set('run', ee.String(d.get('root')))
+          .set('default_run', root_fire1)
+          .set('RCP', ee.String(d.get('RCP')))
+          .set('years', ee.String(d.get('epoch')));
+    });
+
+  return areas;
+};
+
+// area for difference classes between fire1 and fire0 runs
+var areaFire =  areaAndProperties(c9Diff, d_fire0);
+var areaCo2 =  areaAndProperties(c9DiffCo2, d_co21); // no vs yes co2 
+var areaGrass =  areaAndProperties(c9DiffGrass, d_grass0); // yes vs no c4 grass expansion
+
+var areaComb = areaFire
+  .merge(areaCo2)
+  .merge(areaGrass);
+
+var s = d_fire1.get('versionFull').getInfo() + '_20231206';
+
+Export.table.toDrive({
+  collection: areaComb,
+  description: 'area-by-c9-diff_' + resolutionArea + 'm_' + s,
+  folder: 'SEI',
+  fileFormat: 'CSV'
+});
+
+
