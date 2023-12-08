@@ -230,7 +230,38 @@ var main = exports.main = function(args) {
   // won't sum to 1
   var qPropMean = qPropIc.reduce('mean')
     .regexpRename('_mean', '');
+    
+  // climate confidence layers -----------------------------------
+  // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
+  // for areas that are currently core the the number of GCMs that agree that will be core in the futre
+  // for areas that are currently grow, the number of GCMS that agree that will be Core or Grow in the future
   
+  // re-creating current c3, to avoid slight reproducibility problems, that make original c3 not fully align with c9
+  var c3 = p.select('p6_c9Med')
+    .remap(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [1, 1, 1, 2, 2, 2, 3, 3, 3]
+    );
+  
+  // number of GCMs that agree on core classification in the future
+  var csa = p
+    .select('p5_numCSA');
+  // number of GCMs that agree on grow classification in the future
+  var goa = p
+    .select('p5_numGOA');
+    
+  var numGood = ee.Image(0)
+    // for current cores, number of GCMs where stayed core. 
+    .where(c3.eq(1), csa)
+    // for current grows, number of GCMs where classification stayed the same or got better
+    .where(c3.eq(2), csa.add(goa));
+
+  // first digit is c3 classification, 2nd and 3rd digit is number of gcms that suggest things get better or stay the same (for grows and cores)
+  var numGoodC3 = c3
+    .multiply(100)
+    .add(numGood);
+  
+  // combining into single dictionary ----------------------------------------
   var out = ee.Dictionary({
     'versionFull': versionFull,
     'root': root,
@@ -246,7 +277,8 @@ var main = exports.main = function(args) {
     'c9Red': c9Red,
     'qPropMean': qPropMean, // climate attribution (proportion)
     'qPropIc': qPropIc,
-    'c9Ic': c9Ic // image collection (one image per GCM) of c9 transitions
+    'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
+    'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
   });
   
   return out;
