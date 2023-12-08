@@ -259,7 +259,8 @@ var main = exports.main = function(args) {
   // first digit is c3 classification, 2nd and 3rd digit is number of gcms that suggest things get better or stay the same (for grows and cores)
   var numGoodC3 = c3
     .multiply(100)
-    .add(numGood);
+    .add(numGood)
+    .rename('numGcmGood');
   
   // combining into single dictionary ----------------------------------------
   var out = ee.Dictionary({
