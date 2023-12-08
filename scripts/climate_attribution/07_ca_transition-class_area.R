@@ -226,9 +226,9 @@ area_med_eco <- area_med_eco %>%
 
 # c9 area -----------------------------------------------------------------
 
-base_c9_area <- function() {
-    list(
-      geom_bar_pattern(aes(pattern = rcp_years,
+base_c9_area <- function(include_bar_pattern = TRUE) {
+    out <- list(
+      bar_pattern = geom_bar_pattern(aes(pattern = rcp_years,
                            pattern_density = rcp_years,
                            pattern_angle = rcp_years,
                            fill = c9_name),
@@ -250,6 +250,10 @@ base_c9_area <- function() {
                                     override.aes = list(fill = "white", color = 'black'))),
       scale_y_continuous(labels = scales::comma) 
     )
+    if(!include_bar_pattern) {
+      out$bar_pattern <- NULL
+    }
+    out
     
   }
 
@@ -290,18 +294,28 @@ saveRDS(list2save, "figures/area/c9_area_barplot_by-scenario.RDS")
 
 g <- area_med_c9 %>% 
   mutate(run_name = run2name(run)) %>% 
-  ggplot(aes(run_name, y = area_km2_med), fill = c9_name)  +
-  base_c9_area() +
-  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = rcp_years),
+  ggplot(aes(rcp_years, y = area_km2_med), fill = c9_name)  +
+  base_c9_area(include_bar_pattern = FALSE) +
+  geom_bar_pattern(aes(pattern = run_name,
+                       pattern_density = run_name,
+                       pattern_angle = run_name,
+                       fill = c9_name),
+                   stat = 'identity',
+                   position = position_dodge(),
+                   pattern_fill = 'black',
+                   pattern_spacing = 0.05,
+                   color = 'white',
+                   pattern_key_scale_factor = 0.5 # relative density in the legend
+  ) +
+  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = run_name),
                 stat = 'identity',
                 width=.3,
                 position=position_dodge(0.9)) +
-  facet_wrap(~c9_name) +
+  facet_wrap(~c9_name, scales = 'free_y') +
   labs(y = lab_areakm0,
-       x = 'Model assumptions')
+       x = 'Scenario')
 
-
-jpeg(paste0("figures/area/c9_area_barplot_by-scenario-run", "_", version, ".jpg"),     
+jpeg(paste0("figures/area/c9_area_barplot_by-scenario-run", "_", version, "_v2.jpg"),     
      units = 'in', height = 6, width = 6, res = 600)
 g
 dev.off() 
