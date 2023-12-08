@@ -158,6 +158,26 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
 
+// climate confidence layers -----------------------------------
+// for areas that are currently core the the number of GCMs that agree that will be core in the futre
+// for areas that are currently grow, the number of GCMS that agree that will be Core or Grow in the future
+
+// first digit is c3 classification, 2nd and 3rd digit is number of gcms that suggest things get better or stay the same (for grows and cores)
+var numGoodC3 = ee.Image(d_fire1.get('numGcmGood'));
+  
+var sNumGood = s.replace('9ClassTransition', 'numGcmGood'); 
+  
+Export.image.toDrive({
+  image: numGoodC3,
+  description: sNumGood,
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
+
 // calculating c9-diff area -----------------------------------
 // calculating the area in the 5 categories of the transition comparison lyrs;
 // in all cases the comparison is to the 'default' simulations
