@@ -8,23 +8,6 @@ Author: Martin Holdrege
 Started: Nov 20, 2023
 */
 
-// params ---------------------------------------------------------------
-
-var roots = ['fire0_eind1_c4grass1_co20_', 
-            'fire1_eind1_c4grass0_co20_2311_', 
-            'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_','fire1_eind1_c4grass1_co20_2311_',
-            'fire1_eind1_c4grass1_co21_2311_'];
-// var roots = ['fire0_eind1_c4grass1_co20_']; // for testing
-var epochList = ['2070-2100',
-            '2070-2100',
-            '2030-2060', '2070-2100', '2030-2060', '2070-2100',
-            '2070-2100'
-];
-var RCPList = ['RCP45',
-              'RCP45',
-              'RCP45', 'RCP45', 'RCP85', 'RCP85',
-              'RCP45'];
-var resolution = 90;
 
 // dependencies ---------------------------------------------------------
 
@@ -34,6 +17,18 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 // this is where the data wrangling occurs
 // contains one main function
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
+
+// params ---------------------------------------------------------------
+
+// repeat each element of the list the desired number of times
+var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+                          'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
+                          [4, 4, 4, 4]);
+var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
+
+var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
+
+var resolution = 90;
 
 
 // dictionary of data objections --------------------------------------
