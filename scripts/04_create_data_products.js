@@ -37,13 +37,19 @@
 
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
-var versionsFull = ['vsw4-3-3'] // looping is done over this list. 
+var versionFull = 'vsw4-3-3';
 
 // which stepwat output to read in?
-// ['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
-var rootList = ['fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_', 'fire1_eind1_c4grass1_co20_2311_'];
-var RCPList =  ['RCP45', 'RCP85', 'RCP85'];
-var epochList = ['2070-2100', '2030-2060',  '2070-2100'];
+var rootList = ['fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_',
+                'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_',
+                'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
+
+var RCPList =  ['RCP45', 'RCP85', 'RCP85',
+                'RCP45', 'RCP85', 'RCP85',
+                'RCP45', 'RCP85', 'RCP85'];
+var epochList = ['2030-2060', '2030-2060',  '2070-2100',
+                  '2030-2060', '2030-2060',  '2070-2100',
+                  '2030-2060', '2030-2060',  '2070-2100'];
 // the change in SEI from current to future that is deemed significant or 'substantial':
 var sigDelta = 0.05; // (just using a place holder value for now)
 
@@ -65,9 +71,9 @@ var region = SEI.region;
 
 // loop through version
 
-for (var i = 0; i < versionsFull.length; i++) {
+for (var i = 0; i < rootList.length; i++) {
   
-  var versionFull = versionsFull[i];
+  // var versionFull = versionsFull[i];
   var version = SEI.removePatch(versionFull); // version name with patch removed
   var root = rootList[i];
   var RCP = RCPList[i];
@@ -237,16 +243,18 @@ for (var i = 0; i < versionsFull.length; i++) {
     
   // combine products -------------------------------------------------------------------------
   
-  var comb1 = diffQ5sMed // p1
+  // for now limiting the number of layers saved--because some may not be useful, and they
+  // take up a lot of storage space. 
+  var comb1 = diffQ5sMed // p1 used
     .addBands(futSc3Med) // p2
-    .addBands(numPosSig) // p3
-    .addBands(numNegSig) // p3
-    .addBands(numAgree) // 3
+    //.addBands(numPosSig) // p3
+    //.addBands(numNegSig) // p3
+    //.addBands(numAgree) // 3
     // p4 still needed
     .addBands(numCSA) // p5
     .addBands(numGOA) // p5
-    .addBands(c9Med) // p6
-    .addBands(c9); // p7
+    .addBands(c9Med); // p6 used
+    //.addBands(c9); // p7
     
   //
   Map.addLayer(comb1.select('p6_c9Med'), fig.visc9, versionFull + ' c9Med', false)
