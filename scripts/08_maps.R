@@ -157,6 +157,20 @@ if(download) {
 r_numGcm1 <- newest_file_path('data_processed/transitions', file_regex6) %>% 
   rast()
 
+
+# ** area by numGcmGood ---------------------------------------------------
+
+file_regex6a <- paste0("area-by-numGcmGood_\\d+m_", version, "_\\d{8}.csv")
+
+# file created in  06_ca_transition-class_area.js
+if(download) {
+  drive_ls_filtered(path = "SEI", file_regex = file_regex6a) %>% 
+    drive_download_from_df('data_processed/transitions')
+}
+
+area_numGcm1 <- newest_file_path('data_processed/transitions', file_regex6a) %>% 
+  read_csv()
+
 # * area by c9-diff  ----------------------------------------------------
 
 file_regex7 <- paste0("area-by-c9-diff_\\d+m_", version, "_\\d{8}.csv")
@@ -168,6 +182,7 @@ if(download) {
 
 area_c9diff1 <- newest_file_path('data_processed/transitions', file_regex7) %>% 
   read_csv()
+
 # *figures ----------------------------------------------------------------
 
 # boxplot created in 07_ca_transition-class_area.R
@@ -419,7 +434,7 @@ from <- c(c3_cutoffs, # currently core
           )
 
 to <- c(replacement + 10, replacement+20, 30, 
-        19 # NA values (coverting to 19 as a hack to make legend columns work)
+        NA # NA values 
         )
 
 r_numGcm2 <- subst(r_numGcm1, from = from, to = to)
@@ -428,20 +443,18 @@ cols_numGcm <- c("11" = '#0571b0',
                  "12" = '#92c5de',
                  "13" = '#f4a582', 
                  "14" = '#b2182b', 
-                 "19" = 'transparent', # NA values
                  "21" = '#762a83', 
                  "22" = '#c2a5cf', 
                  "23" = '#a6dba0', 
                  "24" = '#008837', 
                  "30" = unname(c9Palette[9]))
 
-perc1 <- paste0('(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
-perc2 <- paste0('(', round(7/13*100, digits = -1), '-', round(12/13*100, digits = -1), '% of GCMs agree)')
+perc1 <- paste0('\n(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
+perc2 <- paste0('\n(', round(7/13*100, digits = -1), '-', round(12/13*100, digits = -1), '% of GCMs agree)')
 names_numGcm <- c("11" = paste('Stable CSA', perc1),
                  "12" = paste('Stable CSA', perc2),
                  "13" = paste('Loss of CSA', perc2), 
                  "14" = paste('Loss of CSA', perc1), 
-                 "19" = "", 
                  "21" = paste('Stable (or improved) GOA', perc1), 
                  "22" = paste('Stable (or improved) GOA', perc2), 
                  "23" = paste('Loss of GOA', perc2), 
@@ -457,17 +470,47 @@ g <- r_numGcm2 %>%
                     na.value = 'transparent') +
   theme(legend.position = 'bottom',
         legend.title = element_blank(),
-        legend.text = element_text(size = rel(0.5))) +
-  guides(fill = guide_legend(ncol = 2,
-                             byrow = FALSE,
-                             override.aes = list(size = 0.3)))
+        legend.text = element_text(size = rel(0.6)),
+        legend.box.margin = margin()) +
+  guides(fill = guide_legend(ncol = 1))+
+  labs(subtitle = fig_letters['a'])
+
+
+# * bar chart -------------------------------------------------------------
+
+area_numGcm2 <- area_numGcm1 %>% 
+  mutate(area_km2 = area_m2/1000^2,
+         category = factor(numGcmGood, levels = from, labels = to),
+         run = str_replace(run, '_$', '')) %>% 
+  select(-`system:index`, -`.geo`, -area_m2) 
+
+bar <- area_numGcm2 %>% 
+  filter(RCP == rcp_c9, years == years_c9, run == root_c9) %>% 
+  ggplot(aes(category, area_km2, fill = category)) +
+  geom_bar(stat = 'identity') +
+  scale_fill_manual(values = cols_numGcm) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(y = lab_areakm0,
+       x = NULL,
+       subtitle = fig_letters['b']) +
+  theme(legend.position = 'none',
+        axis.text.x = element_blank())
+
+
+# *combine ----------------------------------------------------------------
+design <- "
+1112
+1113
+1113
+"
+comb <- g + bar + guide_area() + plot_layout(design=design, guides = "collect") 
 
 name_numGcm <- file_regex6 %>% 
   str_replace('.tif', '') %>% 
   str_replace(paste0('_numGcmGood_', resolution), '')
-
 jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '.jpg'), 
-     width = 6, height = 6, units = 'in',
+     width = 7, height = 5.4, units = 'in',
      res = 800)
-g
+comb
 dev.off()
+
