@@ -3,6 +3,11 @@ Purpose: Calculate the area where each Q component (sage, pfg, afg) are
 the dominant reason for change. Do this seperately for each of the 9 transition
 classes, and the 3 ecoregions. seperate areas etc. calculated for each GCM
 
+Additionally, here we also calculate the amount of area falling into each
+numGcmGood categoreis (for core and grow the number of GCMs that project things stay the same 
+get better. This is done here (although it's not climate attribution) b/ to piggy back off
+the other code developed here)
+
 Author: Martin Holdrege
 
 Started: Nov 20, 2023
@@ -34,6 +39,7 @@ var resolution = 90;
 // dictionary of data objections --------------------------------------
 
 var combFc = ee.FeatureCollection([]); // empty fc that add to each loop iteration
+var combFcGood = ee.FeatureCollection([]); // empty fc for the numGcm good area calculations
 for (var i = 0; i < roots.length; i++) {
   var root = roots[i];
   var RCP = RCPList[i];
@@ -144,16 +150,41 @@ for (var i = 0; i < roots.length; i++) {
   
 
   var combFc = combFc.merge(areaFc1.flatten());
+  
+  // calculating area for the numGcmGood categories
+  
+    // calculate area for unique values of the spatial index ----------------
+  
+  var numGcmGood = ee.Image(d.get('numGcmGood'));
+  var areaFcGood = fnsRr.areaByGroup(numGcmGood, 'numGcmGood', SEI.region, resolution)
+    // adding additional proprties to the feature
+      .map(function(x) {
+        var out = ee.Feature(x)
+          .set('run', ee.String(root))
+          .set('RCP', ee.String(d.get('RCP')))
+          .set('years', ee.String(d.get('epoch')));
+        return out;
+      });
+      
+  var combFcGood = combFcGood.merge(areaFcGood);
 
 } // end loop
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20231130';
+var s = d.get('versionFull').getInfo() + '_20231208';
 
 Export.table.toDrive({
   collection: combFc,
   description: 'area-by-ecoregionC9Driver_' + resolution + 'm_' + s,
+  folder: 'SEI',
+  fileFormat: 'CSV'
+});
+
+
+Export.table.toDrive({
+  collection: combFcGood,
+  description: 'area-by-numGcmGood_' + resolution + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
