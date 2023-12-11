@@ -36,7 +36,7 @@ var main = exports.main = function(args) {
   if (RCP === undefined){var RCP =  'RCP45';}
   if (epoch === undefined){var epoch = '2070-2100';}
   // which version used to calculate SEI?
-  if (versionFull === undefined){var versionFull = 'vsw4-3-3'}
+  if (versionFull === undefined){var versionFull = 'vsw4-3-4'}
   // output (and input) resolution
   if (resolution === undefined){var resolution = 90}
   
