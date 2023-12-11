@@ -19,10 +19,10 @@ var resolution = 90;     // output resolution, 90 eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 (deltaS is based on proportional change (but not divided by max)
-var patch = '4'; // using delta approach to correct Q5s
+var patch = '4'; // using delta approach to correct Q5s, and v1/v11 (not v3) of SEI
 
 // which stepwat output to read in?
-var rootList = ['fire1_eind1_c4grass0_co20_2311_'];
+var rootList = ['fire1_eind1_c4grass1_co20_2311_'];
 
 var RCPList =  ['RCP45'];
 var epochList = ['2030-2060'];
@@ -275,8 +275,8 @@ for (var j=0; j<RCPList.length; j++) {
   // these rounding differences lead to movement of the 'edge' of what is classified as core, growth, other, so they 
   // are important
   var Q5s_delta = outputByGCMTemp.select('Q5s_.*').subtract(outputByGCM.select('Q5s_control'));
-  var Q5s_corrected = Q5s_delta.add(cur.select('Q5s'))
-  print(Q5s_corrected)
+  var Q5s_corrected = Q5s_delta.add(cur.select('Q5s'));
+
   // remove 'empty' band
   var bandsToKeep = outputByGCM.bandNames().removeAll(['empty']);
   var outputByGCM = outputByGCM.select(bandsToKeep);
@@ -284,21 +284,25 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-
-/**
-     * Step 6. Classify (here classifying the delta corrected Q5s)
-     * Calculate and classify Q5s into decile classes.
-     */
-     
-    // decile-based classes, derived and hard-coded from Q5s_deciles
-    // then Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
-    var Q5sc3 = SEI.decileFixedClasses(Q5s_corrected)
-      .remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
-    print(Q5sc3)
-      
-
-    // Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes' + s,false);
-/*
+  
+  /**
+  * Step 6. Classify (here classifying the delta corrected Q5s)
+  * Calculate and classify Q5s into decile classes.
+  */
+  
+  // decile-based classes, derived and hard-coded from Q5s_deciles
+  // then Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
+  var Q5scdeciles_corrected = SEI.decileFixedClasses(Q5s_corrected);
+  
+  var Q5sc3_corrected = SEI.remapAllBands(Q5scdeciles_corrected, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+    .regexpRename('Q5s_', 'Q5sc3_');
+  
+  // add correct c3 classification to the output image;
+  var outputByGCM = outputByGCM
+    .addBands(Q5s_corrected)
+    .addBands(Q5sc3_corrected);
+  
+  // print(outputByGCM.bandNames())
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -306,11 +310,11 @@ for (var j=0; j<RCPList.length; j++) {
     maxPixels: 1e13, scale: resolution, region: region,
     crs: 'EPSG:4326'
   });
-*/
+
   
 }// end loop over scenario
 
 //Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "median future SEI", false);
 
 // red in this map signifies places where there is a original sc3 reproducibility problem. 
-//Map.addLayer(outputByGCM.select('Q5sc3_control').neq(cur.select('Q5sc3')).selfMask(), {min: 0, max: 1, palette: ['red']}, 'where sc3 diff', false);
+// Map.addLayer(outputByGCM.select('Q5sc3_control').neq(cur.select('Q5sc3')).selfMask(), {min: 0, max: 1, palette: ['red']}, 'where sc3 diff', false);
