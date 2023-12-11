@@ -13,6 +13,11 @@
  *    
 */
 
+// Load module with functions 
+// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // contains coefficients for biomass-cover equations
+
 // User-defined variables.
 
 var resolution = 90;     // output resolution, 90 eventually
@@ -22,10 +27,18 @@ var minorV = '3'; // modified method 1 (deltaS is based on proportional change (
 var patch = '4'; // using delta approach to correct Q5s, and v1/v11 (not v3) of SEI
 
 // which stepwat output to read in?
-var rootList = ['fire1_eind1_c4grass1_co20_2311_'];
 
-var RCPList =  ['RCP45'];
-var epochList = ['2030-2060'];
+// repeat each element of the list the desired number of times
+var rootList = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+                          'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
+                          [4, 4, 4, 4]);
+var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
+
+var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
+
+// var rootList = ['fire1_eind1_c4grass1_co20_2311_']; 
+// var RCPList =  ['RCP45'];
+// var epochList = ['2030-2060'];
 var graze = 'Light';
 
 // 'weight windows', these are the windows over which to change weights
@@ -36,10 +49,6 @@ var wwProp = [0.75, 1.25]; // range of proportion change over which to change
 var wwCov = [30, 40]; // range of future cover of RAP (calculated via the ratio approach)
 // over which to changes weights. 
 
-// Load module with functions 
-// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // contains coefficients for biomass-cover equations
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
