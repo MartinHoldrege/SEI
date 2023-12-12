@@ -17,7 +17,7 @@
 
 // User-defined variables -----------------------------------------------------
  
-var root = 'fire1_eind1_c4grass1_co20_2311_'
+var root = 'fire1_eind1_c4grass1_co20_2311_';
 // dependencies -----------------------------------------------------------
 
 // Load module with functions 
