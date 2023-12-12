@@ -13,8 +13,8 @@ source $".bashrc" # b/ of aliases etc. for conda environment (just needed b/ idi
 conda activate ee # earthengine commandline environment
 
 # Set the Earth Engine asset folder
- FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI" #earth engine directory
-# FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/climate" #earth engine directory
+# FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/stepwat_biomass" #earth engine directory
+FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/vsw4-3" #earth engine directory
 
 earthengine authenticate
 earthengine set_project "usgs-gee-drylandecohydrology"
@@ -25,11 +25,14 @@ earthengine ls -r $FOLDER > temp_assets.txt
 while read -r ASSET; do
   echo "$ASSET"
     # I'm not quite sure why eval echo was needed here but didn't work without
-  $(eval echo earthengine acl set public $ASSET) # provide public read access
-
-  $(eval echo earthengine acl ch -u martinholdrege@gmail.com:W $ASSET) # granting write permissions
+  #$(eval echo earthengine acl set public $ASSET) # provide public read access (not working)
+  COMMAND="earthengine acl set public $ASSET"
+  eval $COMMAND # not sure why the straight 'eval' didn't work but this is working now
+  # $(eval echo earthengine acl ch -u martinholdrege@gmail.com:W $ASSET) # granting write permissions
 done < temp_assets.txt
 
 
 # Remove the temporary file
 rm temp_assets.txt
+
+
