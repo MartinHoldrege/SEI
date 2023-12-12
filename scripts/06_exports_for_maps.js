@@ -11,6 +11,7 @@ Data started: November 21, 2023
 // params ---------------------------------------------------
 
 var resolutionOut = 500; // resolution of output maps
+var resolutionOutC9 = 180; // resolution of output for c9 maps (needs higher resolution b/ pyramid artifacts)
 var resolutionArea = 90; // resolution for area calculations
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
@@ -33,16 +34,16 @@ var d_grass0 = lyrMod.main({root: root_grass0}); // using the default args
 
 var c9_fire1 = ee.Image(d_fire1.get('p')).select('p6_c9Med');
 
-var s = d_fire1.get('versionFull').getInfo() + '_9ClassTransition_'
-  + resolutionOut + '_' + d_fire1.get('root').getInfo()
+var s0 = d_fire1.get('versionFull').getInfo() + '_9ClassTransition_'
+  + resolutionOutC9 + '_' + d_fire1.get('root').getInfo()
   + d_fire1.get('RCP').getInfo()  + '_' + d_fire1.get('epoch').getInfo();
 
 Export.image.toDrive({
   image: c9_fire1,
-  description: s,
+  description: s0,
   folder: 'gee',
   maxPixels: 1e13, 
-  scale: resolutionOut,
+  scale: resolutionOutC9,
   region: SEI.region,
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
@@ -61,7 +62,10 @@ var dQ5s_fire1  = ee.Image(d_fire1.get('diffRed2')).select('Q5s_median'); // med
 // 3 = same transition, but fire worse SEI, 4= fire1 better transition, 5 = fire1 worse transition)
 var c9Diff = SEI.compareFutures(c9_fire1, c9_fire0, dQ5s_fire1, dQ5s_fire0);
     
-
+var s = d_fire1.get('versionFull').getInfo() + '_9ClassTransition_'
+  + resolutionOut + '_' + d_fire1.get('root').getInfo()
+  + d_fire1.get('RCP').getInfo()  + '_' + d_fire1.get('epoch').getInfo();
+  
 var sDiff = s.replace('9ClassTransition', 'c9-diff')
   .replace('fire1', 'fire01');
 
