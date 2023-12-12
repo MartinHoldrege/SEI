@@ -130,7 +130,7 @@ for (var j = 0; j < diffBands.length; j++) {
 }
 // c3 ------------------------------------------------------------------------------
 
-map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v30)', false);
+map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v11)', false);
 
 // c9 maps ----------------------------------------------------------------------
 
