@@ -9,7 +9,7 @@
 
 download <- FALSE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
-version <- 'vsw4-3-3'
+version <- 'vsw4-3-4'
 
 # paramaters specific to the c9 map
 root_c9 <- 'fire1_eind1_c4grass1_co20_2311'
@@ -39,22 +39,22 @@ rename_lyr_by_run <- function(r, path, pattern = '', replacement = '') {
   r
 }
 # load data ---------------------------------------------------------------
+file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '_', 
+                     rcp_c9, '_', years_c9, '.tif')
 
 # most tifs exported from 06_exports_for_maps.js
 # *c9 ---------------------------------------------------------------------
 
-file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '_', 
+file_regex0 <- paste0(version, '_9ClassTransition_', 180, '_', root_c9, '_', 
                      rcp_c9, '_', years_c9, '.tif')
 
 if(download) {
-  files1 <- drive_ls_filtered(path = "gee", file_regex = file_regex)
-  files1
-  
-  drive_download_from_df(files1, 'data_processed/transitions')
+  drive_ls_filtered(path = "gee", file_regex = file_regex0) %>% 
+    drive_download_from_df('data_processed/transitions')
 }
 
 p1 <- newest_file_path('data_processed/transitions',
-                       file_regex)
+                       file_regex0)
 
 r_c9 <- rast(p1)
 
@@ -183,22 +183,16 @@ if(download) {
 area_c9diff1 <- newest_file_path('data_processed/transitions', file_regex7) %>% 
   read_csv()
 
-# *figures ----------------------------------------------------------------
+`# *figures ----------------------------------------------------------------
 
 # boxplot created in 07_ca_transition-class_area.R
-box_l <- readRDS("figures/area/c9_area_barplot_by-scenario.RDS")
+box_l <- readRDS(paste0("figures/area/c9_area_barplot_by-scenario_",
+                        version, "_", root_c9, ".RDS"))
 
-# make sure boxplot used the same scenarios/runs
-stopifnot(box_l$run == root_c9,
-          box_l$years == years_c9,
-          box_l$RCP == rcp_c9)
 
 # boxplot of primary drivers, created in 07_ca_transition-class_area.R
-dbox_l <- readRDS("figures/area/c9_driver_barplot_by-run.RDS")
-
-# make sure boxplot used the same scenarios/runs
-stopifnot(dbox_l$years == years_c9,
-          dbox_l$RCP == rcp_c9)
+dbox <- readRDS(paste0("figures/area/c12_driver", "_", version, "_", rcp_c9, 
+                       "_", years_c9, ".RDS"))
 
 # created in 'scripts/rgb_triangle.R'
 triangle <- magick::image_read('figures/rgb_triangle.png') %>% 
@@ -219,19 +213,37 @@ cols_diff <- c('grey', # same SEI
 # c9 maps -----------------------------------------------------------------
 
 #tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
-
-g1 <- plot_map2(as.factor(r_c9)) +
-  labs(subtitle = fig_letters[1])+
+g1 <- r_c9 %>% 
+  spatSample(c(2000, 2000), method = 'regular', as.raster = TRUE) %>% 
+  as.factor() %>% 
+  plot_map2(panel_tag = fig_letters[1]) +
+  # labs(subtitle = fig_letters[1])+
   scale_fill_c9() +
-  theme(legend.position = 'none')
-
-g2 <- g1 +
+  theme(legend.position = 'none', plot.margin = margin()) +
   inset_color_matrix()
 
-comb <- g2/box_l$fig + plot_layout(heights = c(3, 1))
+box2 <- box_l$fig +
+  labs(subtitle = NULL,
+       tag = fig_letters[2]
+       ) +
+  theme(plot.tag = element_text(face = 'plain'),
+        legend.position = c(0.25, 0.8), # c(0.7, 0.8)
+        legend.text = element_text(size = ),
+        legend.key.size = unit(0.12, 'in'),
+         legend.background = element_rect(fill = 'transparent')) # +
+#   patchwork::inset_element(
+#   color_matrix(),
+#     0.005, 0.32, 0.45, 0.97, # left, bottom, right, top in npc units
+#     align_to = "panel",
+#     clip = TRUE,
+#     ignore_tag = TRUE
+# )
 
+# box2
+comb <- wrap_elements(g1)/wrap_elements(box2) + plot_layout(heights = c(1.9, 1), tag_level = 'keep') 
+# comb
 jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
-     width = 6, height = 10.5, units = 'in',
+     width = 5.63, height = 9, units = 'in',
      res = 600)
 comb
 dev.off()
@@ -345,13 +357,14 @@ dev.off()
 
 # converting to a 'rgb' stars object
 s_rgb <- r_qprop1 %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
 
-rgb <- plot_map2(s_rgb)+
-  scale_fill_identity()+
-  labs(subtitle = fig_letters['a'])
+rgb <- plot_map2(s_rgb#,
+                 #panel_tag = fig_letters[1]
+                 )+
+  scale_fill_identity()
 
 rgb2 <- rgb + 
   inset_element(triangle,
@@ -360,11 +373,22 @@ rgb2 <- rgb +
                 clip = FALSE,
                 ignore_tag = TRUE)
 
-comb <- rgb2/dbox_l$fig + plot_layout(heights = c(3.5, 2))
+dbox2 <- dbox +
+  labs(subtitle = NULL
+       #tag = fig_letters[2]
+       ) +
+  theme(plot.tag = element_text(face = 'plain'),
+        text = element_text(size = 8))
+comb <- (wrap_elements(plot = rgb2) + 
+  plot_annotation(tag_levels = as.list(fig_letters[1])))  +
+  (wrap_elements(plot = dbox2) + 
+  plot_annotation(tag_levels = as.list(fig_letters[2])))  +
+  plot_layout(ncol = 2, widths = c(2, 2)) 
+comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
                   root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
-     width = 5, height = 9, units = 'in',
+     width = 9, height = 5, units = 'in',
      res = 600)
 comb
 dev.off()

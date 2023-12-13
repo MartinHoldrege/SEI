@@ -131,12 +131,17 @@ plot_map2 <- function(r, ...)  {
                   st_geom_state = states,
                   add_coords = TRUE,
                   ...) +
-    ggplot2_map_theme()
+    ggplot2_map_theme() +
+    theme(plot.tag = element_text(face = 'plain'))
 
   map
   
 }
 
+place_label <- function(label, size = 5, ...) {
+  annotate("text", label = label, x = -Inf, y = Inf, 
+           hjust = 0, vjust = 1, size = size, ...)
+}
 
 # colors ------------------------------------------------------------------
 
@@ -201,7 +206,7 @@ df_c9$label[c(4, 7, 8)] <- "Increase"
 
 # color of text in color matrix
 text_color <- rep('black', 9)
-text_color[c(1, 3, 7)] <- 'white' # background is dark
+text_color[c(1, 2, 3, 4, 7)] <- 'white' # background is dark
 names(text_color) <- c9Names
 
 color_matrix <- function() {
@@ -217,7 +222,8 @@ color_matrix <- function() {
     theme(panel.grid = element_blank(),
           legend.position = 'none',
           text = element_text(size = 8),
-          plot.background = element_rect(fill = 'white', color = 'white'))
+          # alternatively make the background white
+          plot.background = element_rect(fill = 'transparent', color = 'transparent'))
 }
 
 if(FALSE){
@@ -230,7 +236,7 @@ dev.off()
 inset_color_matrix <-  function() {
   patchwork::inset_element(
     color_matrix(),
-    0.002, 0.002, 360 / 1133, 230 / 1236, # left, bottom, right, top in npc units
+    0.002, 0.002, 390 / 1133, 260 / 1236, # left, bottom, right, top in npc units
     align_to = "panel",
     clip = TRUE,
     ignore_tag = TRUE

@@ -12,7 +12,7 @@
 # params ------------------------------------------------------------------
 
 download <- FALSE # try and download the newest version of the file?
-version <- 'vsw4-3-3'
+version <- 'vsw4-3-4'
 resolution <- 90
 
 yr <- '2070-2100'
@@ -175,6 +175,9 @@ area_gcm_eco <- area3 %>%
   filter(! c9 %in% c(1, 5, 9))
 
 area_med_eco <- area_gcm_eco %>% 
+  group_by(run, GCM, RCP, years, rcp_years, c9_name, c9, ecoregion, driver) %>% 
+  summarise(area_km2 = sum(area_km2),
+            .groups = 'drop_last') %>% 
   group_by(RCP, ecoregion, run, years, c9_name, c9, GCM) %>% 
   mutate(area_tot = sum(area_km2), # total area for the grouping across drivers
          area_perc = area_km2/area_tot*100,
@@ -234,20 +237,19 @@ base_c9_area <- function(include_bar_pattern = TRUE) {
                            fill = c9_name),
                        stat = 'identity',
                        position = position_dodge(),
-                       pattern_fill = 'black',
-                       pattern_spacing = 0.05,
+                       pattern_fill = '#636363',
+                       pattern_color = '#636363',
+                       pattern_spacing = 0.02,
                        color = 'white',
                        pattern_key_scale_factor = 0.5 # relative density in the legend
       ),
       scale_fill_manual(values = c9Palette, guide = 'none'),
       scale_pattern_manual(values = c("stripe", "none", "stripe", "stripe")),
-      scale_pattern_density_manual(values = rep(0.02, 4)),
+      scale_pattern_density_manual(values = rep(0.01, 4)),
       scale_pattern_angle_manual(values = c(45, 0, 0, -45)),
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
             legend.title = element_blank(),
             legend.position = 'bottom'),
-      guides(pattern = guide_legend(nrow = 2,
-                                    override.aes = list(fill = "white", color = 'black'))),
       scale_y_continuous(labels = scales::comma) 
     )
     if(!include_bar_pattern) {
@@ -275,20 +277,22 @@ g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
                 stat = 'identity',
                 width=.3,
                 position=position_dodge(0.9)) +
+  guides(pattern = guide_legend(ncol = 1,
+                              override.aes = list(fill = "white", color = 'black',
+                                                  size = 0.1))) + 
   labs(y = lab_areakm0,
        x = NULL,
        subtitle = fig_letters['b'])
 
 g
 
-list2save <- list('fig' = g,
+box_l <- list('fig' = g,
                   run = target_run,
-                  RCP = rcp,
-                  years = yr,
                   version = version)
 
 # saving so that can be combined with a map in a downstream script
-saveRDS(list2save, "figures/area/c9_area_barplot_by-scenario.RDS")
+saveRDS(box_l, paste0("figures/area/c9_area_barplot_by-scenario_",
+                          version, "_", target_run, ".RDS"))
 
 # 9 panel figure, shoing area by c9, model run, and RCP/time period
 
@@ -302,7 +306,7 @@ g <- area_med_c9 %>%
                        fill = c9_name),
                    stat = 'identity',
                    position = position_dodge(),
-                   pattern_fill = 'black',
+                   pattern_fill = 'darkgrey',
                    pattern_spacing = 0.05,
                    color = 'white',
                    pattern_key_scale_factor = 0.5 # relative density in the legend
@@ -311,16 +315,22 @@ g <- area_med_c9 %>%
                 stat = 'identity',
                 width=.3,
                 position=position_dodge(0.9)) +
+  guides(pattern = guide_legend(ncol = 2,
+                                override.aes = list(fill = "white", color = 'black'))) +
   facet_wrap(~c9_name, scales = 'free_y') +
   labs(y = lab_areakm0,
        x = 'Scenario')
 
-jpeg(paste0("figures/area/c9_area_barplot_by-scenario-run", "_", version, "_v2.jpg"),     
+filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v2")
+jpeg(paste0("figures/area/", filename, ".jpg"),     
      units = 'in', height = 6, width = 6, res = 600)
 g
 dev.off() 
-# * figures (exploratory) ---------------------------------------------------
 
+saveRDS(g, paste0("figures/area/", filename, ".RDS"))
+
+
+# * figures (exploratory) ---------------------------------------------------
 
 pdf(paste0("figures/area/c9_area_barplots_", version, "_v1.pdf"), height = 8, width = 8)
 # panels for each ecoregion
@@ -350,7 +360,7 @@ g +
 # biome-wide values
 g <- area_med_c9 %>% 
   filter(RCP == rcp, years == yr) %>% 
-  ggplot(aes(fill = c9_name)) +
+  ggplot(aes(x = c9_name, fill = c9_name)) +
   facet_wrap(~run) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = 'none') +
@@ -380,34 +390,34 @@ dev.off()
 
 # ** pub qual --------------------------------------------------------------
 
-g <- area_med %>% 
-  filter(RCP == rcp, years == yr) %>% 
-  mutate(run_name = run2name(run),
-         driver_name = driver2factor(driver)) %>% 
-  ggplot(aes(x = run_name, fill = driver_name)) +
-  facet_wrap(~c9_name, nrow = 2) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = 'bottom') +
-  scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
-                    name = "Primary driver of change")  +
-  labs(x = "Model assumptions",
-       subtitle = fig_letters['b']) +
-  geom_bar(aes(y = area_km2_med), stat = 'identity',
-           position = position_dodge()) +
-  geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
-                width = 0.3,
-                position=position_dodge(0.9)) +
-  labs(y = lab_areakm0) +
-  guides(fill = guide_legend(nrow = 2))
-g
-
-list2save <- list('fig' = g,
-                  RCP = rcp,
-                  years = yr,
-                  version = version)
-
-# saving so that can be combined with a map in a downstream script
-saveRDS(list2save, "figures/area/c9_driver_barplot_by-run.RDS")
+# g <- area_med %>% 
+#   filter(RCP == rcp, years == yr) %>% 
+#   mutate(run_name = run2name(run),
+#          driver_name = driver2factor(driver)) %>% 
+#   ggplot(aes(x = run_name, fill = driver_name)) +
+#   facet_wrap(~c9_name, nrow = 2) +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+#         legend.position = 'bottom') +
+#   scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
+#                     name = "Primary driver of change")  +
+#   labs(x = "Model assumptions",
+#        subtitle = fig_letters['b']) +
+#   geom_bar(aes(y = area_km2_med), stat = 'identity',
+#            position = position_dodge()) +
+#   geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
+#                 width = 0.3,
+#                 position=position_dodge(0.9)) +
+#   labs(y = lab_areakm0) +
+#   guides(fill = guide_legend(nrow = 2))
+# g
+# 
+# list2save <- list('fig' = g,
+#                   RCP = rcp,
+#                   years = yr,
+#                   version = version)
+# 
+# # saving so that can be combined with a map in a downstream script
+# saveRDS(list2save, "figures/area/c9_driver_barplot_by-run.RDS")
 
 
 # ** pub qual c12 ---------------------------------------------------------
@@ -437,6 +447,9 @@ jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".jpg"),
      units = 'in', height = 7, width = 7, res = 600)
 g
 dev.off()
+
+saveRDS(g, paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".RDS"))
+
 
 # ** regular ---------------------------------------------------------------
 
