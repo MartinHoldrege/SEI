@@ -183,7 +183,7 @@ if(download) {
 area_c9diff1 <- newest_file_path('data_processed/transitions', file_regex7) %>% 
   read_csv()
 
-`# *figures ----------------------------------------------------------------
+# *figures ----------------------------------------------------------------
 
 # boxplot created in 07_ca_transition-class_area.R
 box_l <- readRDS(paste0("figures/area/c9_area_barplot_by-scenario_",
@@ -319,7 +319,7 @@ area_c9diff2 <- area_c9diff1 %>%
          area_km2 = area_m2/1000^2,
          diffClass = factor(diffClass),
          run_name = run2name(run)) %>%
-  select(-`system:index`, -`.geo`, -area_m2) %>% 
+  select(-"system:index", -".geo", -"area_m2") %>% 
   filter(RCP == rcp_c9,
          years == years_c9)
 
@@ -407,7 +407,7 @@ lookup_q[] <- paste(fig_letters[1:length(lookup_q)], lookup_q) # using [] to pre
 r_diffprop2 <- r_diffprop1*100 #convert to %
 
 pmax <- as.data.frame(r_diffprop2) %>% 
-  map(\(x) max(abs(x), na.rm = TRUE)) %>% 
+  map(.f = function(x) max(abs(x), na.rm = TRUE)) %>% 
   unlist() %>% 
   max()
 
@@ -508,7 +508,7 @@ area_numGcm2 <- area_numGcm1 %>%
   mutate(area_km2 = area_m2/1000^2,
          category = factor(numGcmGood, levels = from, labels = to),
          run = str_replace(run, '_$', '')) %>% 
-  select(-`system:index`, -`.geo`, -area_m2) 
+  select(-"system:index", -".geo", -area_m2) 
 
 bar <- area_numGcm2 %>% 
   filter(RCP == rcp_c9, years == years_c9, run == root_c9) %>% 

@@ -341,8 +341,7 @@ g <- area_med_c9_eco %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = 'none') +
   scale_fill_manual(values = c9Palette)  +
-  labs(x = NULL,
-       caption = cap1)
+  labs(x = NULL, caption = cap1)
 
 g + 
   geom_bar(aes(y = area_km2_med), stat = 'identity') +

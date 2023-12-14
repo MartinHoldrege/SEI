@@ -54,6 +54,10 @@ STEPWAT results
     Patch 3 -- same as patch 3 but proportional change [(future - historical)/historical] calculated using cover 
     (i.e. STEPWAT biomass converted to cover using linear equations (based on RAP relationsions for annuals and perennials
     and S. Carpenter's equation for sagebrush))
+    
+    Patch 4 -- same method as patch 3, except now started using v11 of SEI as inputs (original version of SEI from Doherty et al 2022)
+      and calculated future SEI based on adding a delta SEI to current SEI. the delta SEI was calculated as SEI for a given GCM minus
+      control SEI. This corrects for some rounding problems that led c9 classification to not perfectly align with current c3 classes. 
   
   
   Minor version 4 -- `Script 03_SEIsw_method4.js` used. 
