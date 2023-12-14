@@ -37,8 +37,8 @@ rgb_triangle <-  function(){
 
 
 png('figures/rgb_triangle.png',
-    height = 2.4,
-    width = 2.5,
+    height = 1.6,
+    width = 1.7,
     units = 'in',
     res = 600)
 rgb_triangle()

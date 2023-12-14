@@ -215,6 +215,7 @@ cols_diff <- c('grey', # same SEI
 #tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
 g1 <- r_c9 %>% 
   spatSample(c(2000, 2000), method = 'regular', as.raster = TRUE) %>% 
+  # spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
   as.factor() %>% 
   plot_map2(panel_tag = fig_letters[1]) +
   # labs(subtitle = fig_letters[1])+
@@ -240,10 +241,10 @@ box2 <- box_l$fig +
 # )
 
 # box2
-comb <- wrap_elements(g1)/wrap_elements(box2) + plot_layout(heights = c(1.9, 1), tag_level = 'keep') 
+comb <- wrap_elements(full = g1)/wrap_elements(full = box2) + plot_layout(heights = c(1.9, 1), tag_level = 'keep') 
 # comb
 jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
-     width = 5.63, height = 9, units = 'in',
+     width = 5.5, height = 9, units = 'in',
      res = 600)
 comb
 dev.off()
@@ -357,7 +358,7 @@ dev.off()
 
 # converting to a 'rgb' stars object
 s_rgb <- r_qprop1 %>% 
-  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
 
@@ -368,7 +369,7 @@ rgb <- plot_map2(s_rgb#,
 
 rgb2 <- rgb + 
   inset_element(triangle,
-                0.002, 0.002, 250 / 1133, 230 / 1236,
+                0.002, 0.002, 0.25, 0.2,
                 align_to = "panel",
                 clip = FALSE,
                 ignore_tag = TRUE)
@@ -379,12 +380,13 @@ dbox2 <- dbox +
        ) +
   theme(plot.tag = element_text(face = 'plain'),
         text = element_text(size = 8))
-comb <- (wrap_elements(plot = rgb2) + 
-  plot_annotation(tag_levels = as.list(fig_letters[1])))  +
-  (wrap_elements(plot = dbox2) + 
-  plot_annotation(tag_levels = as.list(fig_letters[2])))  +
-  plot_layout(ncol = 2, widths = c(2, 2)) 
-comb
+comb <- wrap_elements(full = rgb2) + 
+  wrap_elements(full = dbox2) + 
+  # plot_layout(ncol = 2, widths = c(2, 2)) +
+  plot_annotation(tag_levels = list(fig_letters[1:2])) &
+  theme(plot.tag.position = c(0.04, 0.97),
+        plot.tag = element_text(face = 'plain'))
+#comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
                   root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
