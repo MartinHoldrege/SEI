@@ -155,6 +155,13 @@ create_c12_factor <- function(c9, sei_dir) {
   factor(out, levels = levels)
 }
 
+c9_to_c3 <- function(x) {
+  stopifnot(x %in% 1:9)
+  factor(x, levels = 1:9,
+         labels = c('Core', 'Core', 'Core',
+                    'Grow', 'Grow', 'Grow',
+                    'Other', 'Other', 'Other'))
+}
 # q curve functions -------------------------------------------------------
 
 

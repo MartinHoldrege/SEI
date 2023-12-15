@@ -14,6 +14,36 @@ cap2 <- paste0(cap1, '\n Bars are median, and range is 2nd lowest to 2nd highest
 
 # c9 area -----------------------------------------------------------------
 
+base_c9_area <- function(include_bar_pattern = TRUE) {
+  out <- list(
+    bar_pattern = geom_bar_pattern(aes(pattern = rcp_years,
+                                       pattern_density = rcp_years,
+                                       pattern_angle = rcp_years,
+                                       fill = c9_name),
+                                   stat = 'identity',
+                                   position = position_dodge(),
+                                   pattern_fill = '#636363',
+                                   pattern_color = '#636363',
+                                   pattern_spacing = 0.02,
+                                   color = 'white',
+                                   pattern_key_scale_factor = 0.5 # relative density in the legend
+    ),
+    scale_fill_manual(values = c9Palette, guide = 'none'),
+    scale_pattern_manual(values = c("stripe", "none", "stripe", "stripe")),
+    scale_pattern_density_manual(values = rep(0.01, 4)),
+    scale_pattern_angle_manual(values = c(45, 0, 0, -45)),
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          legend.title = element_blank(),
+          legend.position = 'bottom'),
+    scale_y_continuous(labels = scales::comma) 
+  )
+  if(!include_bar_pattern) {
+    out$bar_pattern <- NULL
+  }
+  out
+  
+}
+
 # * figures (pub qual) ----------------------------------------------------
 
 # note--consider whether want to include only c9 categories with >0 area
