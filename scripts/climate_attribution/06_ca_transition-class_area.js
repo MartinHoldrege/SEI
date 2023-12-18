@@ -1,7 +1,8 @@
 /*
 Purpose: Calculate the area where each Q component (sage, pfg, afg) are 
 the dominant reason for change. Do this seperately for each of the 9 transition
-classes, and the 3 ecoregions. seperate areas etc. calculated for each GCM
+classes, and the 3 ecoregions. seperate areas etc. calculated for each GCM.
+also calculate this pixelwise for low, median, and high summarized values
 
 Additionally, here we also calculate the amount of area falling into each
 numGcmGood categoreis (for core and grow the number of GCMs that project things stay the same 
@@ -29,6 +30,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
+// var roots = ['fire1_eind1_c4grass1_co20_2311_'] // for testing
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
@@ -84,9 +86,26 @@ for (var i = 0; i < roots.length; i++) {
   
   var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
     .updateMask(SEI.mask);
+    
+  var c9Ica = ee.ImageCollection(d.get('c9Ic'))
+  var c9Reda = ee.Image(d.get('c9Red'))
+    .select(['low', 'median', 'high']);
+    
+  // creating image collection where the reduced values (low, median, and high) estimates
+  // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
+  // and summaries will be made for all. 
+  // these low, median, high values are pixel wise
+  var imageList = c9Reda.bandNames().map(function(band) {
+    return c9Reda.select([band])
+      .rename('c9')
+      .set('GCM', ee.String(band));
+  })
   
+  var c9RedIc = ee.ImageCollection.fromImages(imageList);
+  var c9Icb = c9Ica.merge(c9RedIc);
+
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
-  var ecoC9 = ee.ImageCollection(d.get('c9Ic')).map(function(x) {
+  var ecoC9 = c9Icb.map(function(x) {
     var c9 = ee.Image(x);
     var out = eco
       .multiply(10)
@@ -172,7 +191,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20231208';
+var s = d.get('versionFull').getInfo() + '_20231218';
 
 Export.table.toDrive({
   collection: combFc,
