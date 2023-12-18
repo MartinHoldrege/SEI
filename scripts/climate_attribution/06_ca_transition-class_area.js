@@ -30,13 +30,34 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
-// var roots = ['fire1_eind1_c4grass1_co20_2311_'] // for testing
+var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
 
 var resolution = 90;
 
+// functions ---------------------------------------------------------
+
+// this function factory is for two banded images (x) that contain a driver and q5s bands
+// if the Q5s band is (approximately) equal to the redImage band (reduced image)
+// then that pixel is not masked, otherwise it is, 
+// this is then applied to an IC, and median taken, so that you get the
+// driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
+var maskDriverFactory = function(redImage, reducerName) {
+  var f = function(x) {
+    var image = ee.Image(x);
+    var mask = image.select('Q5s')
+      .subtract(redImage.select('Q5s_' + reducerName))
+      .abs()
+      // if the SEI is very closed to the estimated reduced value, 
+      // then assume that is the correct GCM
+      .lt(0.0001) 
+      .rename(reducerName);
+    return image.select('driver').updateMask(mask);
+  };
+  return f;
+};
 
 // dictionary of data objections --------------------------------------
 
@@ -61,7 +82,7 @@ for (var i = 0; i < roots.length; i++) {
   var qIc = ee.ImageCollection(d.get('qPropIc'));
   // print(qIc)
   // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
-  var driver = qIc.map(function(x) {
+  var driver0 = qIc.map(function(x) {
     var q = ee.Image(x);
     var out = ee.Image(0)
       .where(q.select('Q1raw')
@@ -82,14 +103,47 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
+  // pixelwise determination of the driver for the GCMs with the 2nd lowest, median, and 2nd highest SEI
+  var driver1  = ee.ImageCollection(d.get('diffIc'))
+    .select('Q5s')
+    .combine(driver0);
+  
+  
+    
+  var diffRed = ee.Image(d.get('diffRed2'))
+  print(diffRed)
+  
+
+  // reduce the driver across GCMs, pixelwise
+  // relies on objects in the environment of the loop
+  var driverReducer = function(reducerName) {
+    var f = maskDriverFactory(diffRed, reducerName);
+    return driver1.map(f)
+      .reduce(ee.Reducer.median())
+      .rename('driver')
+      .set('GCM', reducerName);
+  }
+  
+  var driverLow = driverReducer('low')
+    
+  var driverMedian = driverReducer('median')
+    
+  var driverHigh = driverReducer('high')
+
+  Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
+  var driverRed = ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh])
+
+  var driver2 = driver1.merge(driverRed);
+  print(driver2)
   // prepare spatial index -----------------------------------------------
   
   var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
     .updateMask(SEI.mask);
     
   var c9Ica = ee.ImageCollection(d.get('c9Ic'))
+  var bandsRed = ee.List(['low', 'median', 'high'])
   var c9Reda = ee.Image(d.get('c9Red'))
-    .select(['low', 'median', 'high']);
+    .select(bandsRed);
     
   // creating image collection where the reduced values (low, median, and high) estimates
   // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
@@ -116,9 +170,21 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
+  //print(ee.Image(d.get('diffRed2')))
+  var diffRedb = bandsRed.map(function(band) {
+    return ee.Image(d.get('diffRed2'))
+      .select(ee.String('Q5s_').cat(ee.String(band)))
+      .rename('Q5s')
+      .set('GCM', ee.String(band));
+  })
+  
   // direction of change of SEI--1 = decrease, 2 = increase (or no change)
-  var dirQ5s = ee.ImageCollection(d.get('diffIc'))
+
+  var diffIcb = ee.ImageCollection(d.get('diffIc'))
     .select('Q5s')
+    .merge(diffRedb);
+
+  var dirQ5s = diffIcb
     .map(function(x) {
       var img = ee.Image(x);
       var out = ee.Image(0)
@@ -132,7 +198,7 @@ for (var i = 0; i < roots.length; i++) {
   // making the 3rd digit  which PFT most dominant driver of change
   // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
   // which direction the change was)
-  var index = ecoC9.combine(driver).combine(dirQ5s).map(function(x) {
+  var index = ecoC9.combine(driver2).combine(dirQ5s).map(function(x) {
     var image = ee.Image(x);
     var out = image.select('ecoC9')
       .add(image.select('driver'))
