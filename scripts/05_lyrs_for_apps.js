@@ -285,4 +285,4 @@ var main = exports.main = function(args) {
   return out;
 };
 
-//print(main())
+// print(ee.Image(main({root: 'fire1_eind1_c4grass1_co20_2311_'}).get('c9Red')))
