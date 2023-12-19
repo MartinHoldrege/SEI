@@ -44,15 +44,27 @@ area_c9b <- area_c9a %>%
       # adding a lagging 0 which got removed by as.character
       units == "km2" & value >= 1 & !str_detect(value_char, "\\.") ~ paste0(value_char, '.0'),
       TRUE ~ value_char
-    )) %>% 
+    ),
+    # reordering c9_name so stable comes first for each category (to make table easier to read)
+    c9_order2 = c(1, 2, 3, 5, 4, 6, 8, 9, 7)[as.numeric(c9)],
+    c9_name = fct_reorder(c9_name, .x = as.numeric(c9_order2))) %>% 
+  select(-c9_order2) %>% 
+  arrange(c9_name) %>% 
   pivot_wider(id_cols = c(run, RCP, years, units,  summary),
               names_from = 'c9_name',
               values_from = 'value_char') %>% 
   mutate(summary = factor(summary, levels = c('lo', 'med', 'hi')),
          units = str_replace(units, 'km2', '1000km2')) %>% 
   arrange(run, RCP, years, units, summary)
-  
-area_c9b
+
+names(area_c9b)
+
+area_c3b <- area_c3 %>% 
+  mutate(tot_area = tot_area/100,
+         units = '1000km2') %>% 
+  pivot_wider(values_from = "tot_area",
+              names_from = 'c3_name')
 # write output ------------------------------------------------------------
 
 write_csv(area_c9b, paste0('data_processed/summary_stats/area-by-c9_summaries_', version, '.csv'))
+write_csv(area_c3b, paste0('data_processed/summary_stats/area-by-c3_', version, '.csv'))
