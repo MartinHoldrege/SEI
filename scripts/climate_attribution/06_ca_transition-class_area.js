@@ -30,7 +30,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
-// var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
@@ -108,8 +108,6 @@ for (var i = 0; i < roots.length; i++) {
     .select('Q5s')
     .combine(driver0);
   
-  
-    
   var diffRed = ee.Image(d.get('diffRed2'))
   print(diffRed)
   
@@ -211,7 +209,8 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
-  
+  // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
+  // Map.addLayer(SEI.mask, {palette: 'grey'}, 'mask')
   // calculate area for unique values of the spatial index ----------------
   
   // returns feature collection of feature collections
