@@ -507,8 +507,12 @@ g <- r_numGcm2 %>%
 area_numGcm2 <- area_numGcm1 %>% 
   mutate(area_km2 = area_m2/1000^2,
          category = factor(numGcmGood, levels = from, labels = to),
-         run = str_replace(run, '_$', '')) %>% 
-  select(-"system:index", -".geo", -area_m2) 
+         run = str_replace(run, '_$', ''),
+         category_name = names_numGcm[as.character(category)]) %>% 
+  select(-"system:index", -".geo", -area_m2) %>% 
+  group_by(RCP, run, years, category, category_name) %>% 
+  summarize(area_km2 = sum(area_km2),
+            .groups = 'drop')
 
 bar <- area_numGcm2 %>% 
   filter(RCP == rcp_c9, years == years_c9, run == root_c9) %>% 
@@ -540,3 +544,22 @@ jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '.jpg'),
 comb
 dev.off()
 
+
+# * output numGcmGood area summaries --------------------------------------
+
+# summary stats for use in paper
+# calculating e.g. the percent of stable core where there is high vs low agreement
+area_numGcm3 <- area_numGcm2 %>% 
+  mutate(approx_c9= factor(category, levels = c(11, 12, 13, 14, 
+                                                21, 22, 23, 24, 
+                                                30),
+                        labels = c(c9Names[1], c9Names[1], c9Names[2], c9Names[2],
+                                   c9Names[5], c9Names[5], c9Names[6], c9Names[6],
+                                   'Other'))) %>% 
+  group_by(RCP, run, years, approx_c9) %>% 
+  mutate(area_pcent = area_km2/sum(area_km2)*100,
+         area_pcent = round(area_pcent, 1),
+         # \n is causing problems when writing to csv
+         category_name = str_replace(category_name, '\n', ''))
+
+write_csv(area_numGcm3, paste0('data_processed/summary_stats/area-by-agreement_', version, '.csv'))

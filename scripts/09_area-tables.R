@@ -60,10 +60,15 @@ area_c9b <- area_c9a %>%
 names(area_c9b)
 
 area_c3b <- area_c3 %>% 
-  mutate(tot_area = tot_area/100,
+  mutate(tot_area = tot_area/1000,
          units = '1000km2') %>% 
   pivot_wider(values_from = "tot_area",
               names_from = 'c3_name')
+
+# area by c3 as percent of total
+area_c3 %>% 
+  mutate(percent = tot_area/sum(tot_area) *100)
+
 # write output ------------------------------------------------------------
 
 write_csv(area_c9b, paste0('data_processed/summary_stats/area-by-c9_summaries_', version, '.csv'))

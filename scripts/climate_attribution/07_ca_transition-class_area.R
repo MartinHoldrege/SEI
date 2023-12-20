@@ -182,7 +182,7 @@ area_med_c9 <- area_gcm_c90 %>%
 
 # historical total area in each of the three categories
 tmp <- area3 %>% 
-  filter(GCM == 'median') %>% 
+  filter(!GCM %in% names_red) %>% 
   mutate(c3_name = c9_to_c3(c9)) %>% 
   group_by(run, GCM, RCP, years, rcp_years, c3_name) %>% 
   summarize(area_km2 = sum(area_km2)) %>% 
@@ -198,6 +198,7 @@ area_c3 <- tmp %>%
 
 
 area_gcm_eco <- area3 %>% 
+  filter(!GCM %in% names_red) %>% 
   # exclude 'stable' categories
   filter(! c9 %in% c(1, 5, 9))
 
@@ -231,6 +232,7 @@ area_med <- area_gcm_eco %>%
 
 # group by c12
 area_med_dir <- area3 %>% 
+  filter(!GCM %in% names_red) %>% 
   group_by(RCP, run, years, c12_name, c12, GCM, driver) %>% 
   summarize(area_km2 = sum(area_km2), # total area for the grouping across drivers
          .groups = 'drop_last') %>% 
