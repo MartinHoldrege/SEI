@@ -132,7 +132,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // in all cases the comparison is to the 'default' simulations
   // first argument is the 5 class different image, the section is the dictionary for the run
   var areaAndProperties = function(image, d) {
-     var areas = fnsRr.areaByGroup(image, rcp_yr, SEI.region, resolutionArea)
+     var areas = fnsRr.areaByGroup(image, 'diffClass', SEI.region, resolutionArea)
       .map(function(x) {
         return ee.Feature(x)
          // adding additional proprties to the feature
@@ -146,9 +146,9 @@ for(var i = 0; i<rcpList.length; i++) {
   };
   
   // area for difference classes between fire1 and fire0 runs
-  var areaFire =  areaAndProperties(c9Diff, d_fire0);
-  var areaCo2 =  areaAndProperties(c9DiffCo2, d_co21); // no vs yes co2 
-  var areaGrass =  areaAndProperties(c9DiffGrass, d_grass0); // yes vs no c4 grass expansion
+  var areaFire =  areaAndProperties(c9Diff.rename('diffClass'), d_fire0);
+  var areaCo2 =  areaAndProperties(c9DiffCo2.rename('diffClass'), d_co21); // no vs yes co2 
+  var areaGrass =  areaAndProperties(c9DiffGrass.rename('diffClass'), d_grass0); // yes vs no c4 grass expansion
   
   var areaComb = areaComb // combining across loops
     .merge(areaFire)
