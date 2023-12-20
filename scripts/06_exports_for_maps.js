@@ -164,7 +164,7 @@ for(var i = 0; i<rcpList.length; i++) {
 // c9 
 Export.image.toDrive({
   image: c9_fireComb,
-  description: v + '9ClassTransitionMed_' + resolutionOutC9 + '_' + root_fire1.replace(/_$/, ""),
+  description: v + '_9ClassTransitionMed_' + resolutionOutC9 + '_' + root_fire1.replace(/_$/, ""),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOutC9,
