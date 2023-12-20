@@ -20,7 +20,7 @@ var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 
 var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85'];
 // var rcpList = ['RCP45']; // for testing
-var epochList = ['2030-2060', '2030-2060', '2070-2100', '2070-2100'];
+var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100'];
 // dependencies ---------------------------------------------
 
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
