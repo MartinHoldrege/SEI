@@ -19,7 +19,7 @@ var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
 var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 
 var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85'];
-var rcpList = ['RCP45']; // for testing
+// var rcpList = ['RCP45']; // for testing
 var epochList = ['2030-2060', '2030-2060', '2070-2100', '2070-2100'];
 // dependencies ---------------------------------------------
 
@@ -132,7 +132,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // in all cases the comparison is to the 'default' simulations
   // first argument is the 5 class different image, the section is the dictionary for the run
   var areaAndProperties = function(image, d) {
-     var areas = fnsRr.areaByGroup(image, 'diffClass', SEI.region, resolutionArea)
+     var areas = fnsRr.areaByGroup(image, rcp_yr, SEI.region, resolutionArea)
       .map(function(x) {
         return ee.Feature(x)
          // adding additional proprties to the feature
@@ -164,7 +164,7 @@ for(var i = 0; i<rcpList.length; i++) {
 // c9 
 Export.image.toDrive({
   image: c9_fireComb,
-  description: v + '_9ClassTransitionMed_' + resolutionOutC9 + '_' + root_fire1.replace(/_$/, ""),
+  description: v + '9ClassTransitionMed_' + resolutionOutC9 + '_' + root_fire1.replace(/_$/, ""),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOutC9,
@@ -250,7 +250,7 @@ Export.image.toDrive({
 
 // area -------------------------------------------------
 // outputting Fc with results from all iterations of the loop
-var s = d_fire1.get('versionFull').getInfo() + '_20231206';
+var s = d_fire1.get('versionFull').getInfo() + '_20231220';
 
 Export.table.toDrive({
   collection: areaComb,
