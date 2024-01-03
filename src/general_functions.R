@@ -119,7 +119,24 @@ run2name <- function(x) {
   factor(out, levels = c('Default', 'No fire', 'No C4 grass exp.', 'Include CO2'))
 }
 
-
+#' set factor levels of all layers of raster
+#'
+#' @param r spat raster
+#' @param ID vector of unique factor levels
+#' @param names names of the factor levels
+#'
+#' @return a spatraster
+set_all_cats <- function(r, ID, names) {
+  df <- data.frame(ID = ID, names = names)
+  r2 <- as.factor(r)
+  n <- terra::nlyr(r2)
+  
+  for(i in 1:n) {
+    terra::set.cats(r2, layer = i, value = df)
+  }
+  names(r2) <- names(r)
+  r2
+}
 
 #' create c12 factor
 #' 

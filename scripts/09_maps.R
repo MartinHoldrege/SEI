@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- FALSE # re-download files from drive?
+download <- TRUE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -39,14 +39,12 @@ rename_lyr_by_run <- function(r, path, pattern = '', replacement = '') {
   r
 }
 # load data ---------------------------------------------------------------
-file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '_', 
-                     rcp_c9, '_', years_c9, '.tif')
+file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '.tif')
 
 # most tifs exported from 06_exports_for_maps.js
 # *c9 ---------------------------------------------------------------------
 
-file_regex0 <- paste0(version, '_9ClassTransition_', 180, '_', root_c9, '_', 
-                     rcp_c9, '_', years_c9, '.tif')
+file_regex0 <- paste0(version, '_9ClassTransitionMed_', 180, '_', root_c9,'.tif')
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex0) %>% 
@@ -75,8 +73,8 @@ if(download) {
 p2 <- newest_file_path('data_processed/transitions',
                        file_regex2)
 
-r_c9diff <- rast(p2) %>% 
-  rename_lyr_by_run(p2, pattern = 'fire01', replacement = 'fire0')
+r_c9diff <- rast(p2) # %>% 
+  # rename_lyr_by_run(p2, pattern = 'fire01', replacement = 'fire0')
 
 # * c9 diff (co2) ---------------------------------------------------------------
 # compare co21 and co20 simualtions
@@ -95,8 +93,12 @@ if(download) {
 p3 <- newest_file_path('data_processed/transitions',
                        file_regex3)
 
-r_c9diffco2 <- rast(p3)%>% 
-  rename_lyr_by_run(p3, pattern = 'co201', replacement = 'co21')
+r_c9diffco2 <- rast(p3) #%>% 
+  #rename_lyr_by_run(p3, pattern = 'co201', replacement = 'co21')
+
+r_c9diff_all <- list(
+  
+)
 
 # * c9 diff (grass) ---------------------------------------------------------------
 
@@ -110,10 +112,14 @@ if(download) {
 }
 
 p4 <- newest_file_path('data_processed/transitions',file_regex3g)
-r_c9diffgrass <- rast(p4) %>% 
-  rename_lyr_by_run(p4, 'grass01', 'grass0') 
+r_c9diffgrass <- rast(p4) # %>% 
+  # rename_lyr_by_run(p4, 'grass01', 'grass0') 
   
-r_c9diff_all <- c(r_c9diff, r_c9diffgrass, r_c9diffco2)# combining rasters
+# list named by run the default is being compared to. 
+r_c9diff_all <- list(
+  'fire0_eind1_c4grass1_co20' = r_c9diff,
+  'fire1_eind1_c4grass0_co20_2311' = r_c9diffgrass, 
+  'fire1_eind1_c4grass1_co21_2311' = r_c9diffco2)# combining rasters
 
 
 # * RGB lyr ---------------------------------------------------------------
@@ -213,7 +219,7 @@ cols_diff <- c('grey', # same SEI
 # c9 maps -----------------------------------------------------------------
 
 #tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
-g1 <- r_c9 %>% 
+g1 <- r_c9[["RCP45_2070-2100"]] %>% 
   spatSample(c(2000, 2000), method = 'regular', as.raster = TRUE) %>% 
   # spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
   as.factor() %>% 
@@ -250,6 +256,41 @@ comb
 dev.off()
 
 
+# * 4 panel ---------------------------------------------------------------
+# 4 panel c9 map, 1 panel for each scenario (for appendix)
+
+r <- r_c9 %>% 
+  spatSample(c(2000, 2000), method = 'regular', as.raster = TRUE) %>% 
+  subst(from = 0, to = NA) %>% 
+  set_all_cats(ID = 1:9, names = c9Names)
+
+names(r) <- names(r) %>% 
+  str_replace('_', " ") %>% 
+  paste(fig_letters[1:4], .)
+names(r)
+tmp <- plot_map2(st_as_stars(r, as_attributes = FALSE)) +
+  scale_fill_manual(values = c9Palette,
+                    na.value = 'transparent',
+                    na.translate = FALSE) +
+  facet_wrap(~band, ncol = 2) +
+  theme(strip.text = element_text(hjust = 0),
+        legend.position = 'none')
+
+design <- "
+11
+11
+2#
+"
+comb <- tmp + wrap_elements(color_matrix()) + plot_layout(heights = c(1, 1, 0.5),
+                                           widths = c(0.7, 1), 
+                                           design=design)
+jpeg(paste0(paste('figures/transition_maps/c9_by-scenario', 
+                  version, root_c9, sep = "_"), '.jpg'), 
+     width = 5, height = 7, units = 'in',
+     res = 600)
+comb
+dev.off()
+
 # c9-diff maps ------------------------------------------------------------
 
 base_diff <- function() {
@@ -269,8 +310,11 @@ labels <- c('Same SEI (+/- 0.01) projected relative to default, and same habitat
             'Worse SEI & habitat class projected relative to default')
 
 # preparing raster (converting to factor etc.)
-r0 <- r_c9diff_all %>% 
-  # spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% 
+lyr <- "RCP45_2070-2100"
+
+# continue here (rename layers so code below works)
+r0 <- c(r_c9diff[[lyr]], r_c9diffgrass[[lyr]], r_c9diffco2[[lyr]]) %>% 
+  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% 
   subst(from = 0, to = NA)
 
 r <- r0 %>% 
@@ -280,10 +324,9 @@ r <- r0 %>%
 # table(as.numeric(values(r[[3]])))
 
 # setting the factor levels
-df <- data.frame(ID = 1:5, names = labels)
-set.cats(r, layer = 1, value = df) 
-set.cats(r, layer = 2, value = df) 
-set.cats(r, layer = 3, value = df) 
+
+r <- set_all_cats(r, ID = 1:5, names = labels)
+
 let <- fig_letters[1:nlyr(r)]
 band_names <- run2name(names(r_c9diff_all)) %>% 
   as.character() %>% 
@@ -357,7 +400,7 @@ dev.off()
 # RGB-maps ----------------------------------------------------------------
 
 # converting to a 'rgb' stars object
-s_rgb <- r_qprop1 %>% 
+s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>% 
   #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
@@ -396,21 +439,63 @@ comb
 dev.off()
 
 
+# * 4 panel ---------------------------------------------------------------
+
+scenarios <- names(r_qprop1) %>% 
+  str_replace('Q\\draw_', "") %>% 
+  unique() %>% 
+  sort()
+
+# creating rgb maps for each scenario
+rgb_l <- map2(scenarios, fig_letters[1:length(scenarios)], function(x, let) {
+  s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_", x)]] %>% 
+    #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # for testing
+    subst(from = c(-Inf, Inf),
+          to = c(NA, NA)) %>% 
+    stars::st_as_stars() %>% 
+    stars::st_rgb(maxColorValue = 1)
+  
+  rgb <- plot_map2(s_rgb#,
+                   #panel_tag = fig_letters[1]
+  )+
+    scale_fill_identity() +
+    labs(subtitle = paste(let, str_replace(x, "_", " ")))
+  
+  rgb
+})
+
+design <- "
+1#
+12
+1#
+"
+
+tmp <- wrap_elements(wrap_plots(rgb_l))
+comb <- tmp + wrap_elements(triangle) + 
+  plot_layout(heights = c(1, 0.5, 1),
+              widths = c(1, 0.2), 
+              design=design)
+
+#comb
+
+jpeg(paste0('figures/climate_attribution/maps/rgb_by-scenario_', 
+            version, "_", root_c9, '.jpg'), 
+     width = 6.5, height = 6, units = 'in',
+     res = 600)
+comb
+dev.off()
+
 # proportion change maps --------------------------------------------------
-lookup_q <- c("Q1raw_median" = "Q1 (Sagebrush)", 
-              "Q2raw_median" = "Q2 (Perennials)", 
-              "Q3raw_median" = "Q3 (Annuals)", 
-              "Q5s_median" = "Sagebrush ecological integrity"
+lookup_q <- c("Q1raw_median_RCP45_2070-2100" = "Q1 (Sagebrush)", 
+              "Q2raw_median_RCP45_2070-2100" = "Q2 (Perennials)", 
+              "Q3raw_median_RCP45_2070-2100" = "Q3 (Annuals)", 
+              "Q5s_median_RCP45_2070-2100" = "Sagebrush ecological integrity"
 ) 
 
 lookup_q[] <- paste(fig_letters[1:length(lookup_q)], lookup_q) # using [] to preservenames 
 r_diffprop2 <- r_diffprop1*100 #convert to %
 
-pmax <- as.data.frame(r_diffprop2) %>% 
-  map(.f = function(x) max(abs(x), na.rm = TRUE)) %>% 
-  unlist() %>% 
-  max()
-
+lyrs <- names(r_diffprop2)
 
 # continue here--look at color ramps from stepwat biomass maps for better color spacing. 
 b <- c(25, 15, 10, 5, 1)
@@ -422,25 +507,67 @@ labels[1] <- paste0('< ', breaks[2])
 
 colors[ceiling(length(breaks)/2)] <- 'grey' # middle color (no significant)
 
-g <- r_diffprop2 %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-  plot_map2(mapping = aes(fill = cut(Q1raw_median, breaks))) +
-  facet_wrap(~band,
-             labeller = labeller(band = lookup_q)) +
-  theme(strip.text = element_text(hjust = 0)) +
+fill_diff <- function() {
   scale_fill_manual(name = '% Change',
                     values = colors,
                     labels = c(labels, ""), # empty label for NA
                     na.value = 'transparent',
-                    drop = FALSE) +
+                    drop = FALSE) 
+}
+
+g <- r_diffprop2[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
+  # for some reason an error is thrown when this sampling step not taken
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  #st_as_stars(as_attributes = FALSE) %>% 
+  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
+  facet_wrap(~band,
+             labeller = labeller(band = lookup_q)) +
+  theme(strip.text = element_text(hjust = 0)) +
+  fill_diff() +
   theme(legend.position = 'right')
 
-jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI_', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
+                  rcp_c9, years_c9, sep = "_"), '.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
 dev.off()  
 
+
+# * 4 panel maps -----------------------------------------------------------
+# 4 panel maps (1 panel per scenario) for change in each of Q1, Q2, Q3 and SEI
+Qs <- str_extract(lyrs, 'Q\\d[a-z]+') %>% 
+  unique() %>% 
+  sort()
+
+for(Q in Qs) {
+  r <- r_diffprop2[[str_subset(lyrs, Q)]]
+  
+  lyr_names <- names(r) %>% 
+    str_extract('RCP.+') %>% 
+    str_replace("_", " ") %>% 
+    paste(fig_letters[1:length(.)], .)
+  names(r) <- letters[1:nlyr(r)]
+  names(lyr_names) <- letters[1:nlyr(r)]
+  
+  g <- r %>% 
+    # for some reason an error is thrown when this sampling step not taken
+    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+    #st_as_stars(as_attributes = FALSE) %>% 
+    plot_map2(mapping = aes(fill = cut(a, breaks))) +
+    facet_wrap(~band,
+               labeller = labeller(band = lyr_names)) +
+    theme(strip.text = element_text(hjust = 0)) +
+    fill_diff() +
+    theme(legend.position = 'right')
+  
+  jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
+                    version, "_", root_c9, '.jpg'), 
+       width = 6, height = 6, units = 'in',
+       res = 600)
+    print(g)
+  dev.off()  
+}
 
 # numGcmGood --------------------------------------------------------------
 # map showing agreement among GCMs
