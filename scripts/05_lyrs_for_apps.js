@@ -220,8 +220,8 @@ var main = exports.main = function(args) {
     // (ie. for each q) so they fall between 0 and 1, 1 meaning
     // all the change was due to that q
     var absPropNorm = absProp.divide(sum)
-      // mask out areas where denominator would be 0
-      .updateMask(sum.gt(0));
+      // replaced values where denominator would be 0, with 0 (otherwise undefined)
+      .where(sum.eq(0), 0);
     return absPropNorm.copyProperties(ee.Image(x));
   });
   
