@@ -120,13 +120,15 @@ for (var i = 0; i < roots.length; i++) {
       .reduce(ee.Reducer.median())
       .rename('driver')
       .set('GCM', reducerName);
-  }
+  };
   
-  var driverLow = driverReducer('low')
+  // note--there is an error occuring in this, step
+  var driverLow = driverReducer('low') 
     
   var driverMedian = driverReducer('median')
     
   var driverHigh = driverReducer('high')
+
 
   Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
   var driverRed = ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh])
@@ -209,6 +211,25 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
+  
+    // testing ~~~~~~~~
+    
+    var tmp = index.toBands()
+    print('tmp', tmp)
+    
+    var maskGcm = tmp.select('1_0_index').gt(0).unmask()
+    var maskMin = tmp.select('2_0_index').gt(0).unmask()
+    Map.addLayer(maskMin.neq(maskGcm), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (gcm index vs cellwise min)", false)
+    var driverMask = driverLow.gt(-100);
+    var maskC9 = c9Reda.select('median').gt(-100).unmask()
+    var maskdriver = driverMask.unmask();
+    Map.addLayer(maskC9.neq(maskdriver), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (c9 vs driver)", false)
+    Map.addLayer(maskdriver, {min: 0, max: 1, palette: ['grey', 'blue']}, "driver mask", false)
+  // print('driverLow', driverLow)
+  // Map.addLayer(driverMask.unmask().lt(SEI.mask.unmask()), {min: 0, max: 1, palette: ['white', 'black']}, "mask difference")
+  
+  // end testing ~~~~~~~
+  
   // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
   // Map.addLayer(SEI.mask, {palette: 'grey'}, 'mask')
   // calculate area for unique values of the spatial index ----------------
@@ -256,20 +277,20 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20231218';
+var s = d.get('versionFull').getInfo() + '_20240109';
 
 Export.table.toDrive({
   collection: combFc,
-  description: 'area-by-ecoregionC9Driver_' + resolution + 'm_' + s,
+  description: 'test-area-by-ecoregionC9Driver_' + resolution + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
 
-
+/*
 Export.table.toDrive({
   collection: combFcGood,
   description: 'area-by-numGcmGood_' + resolution + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
-
+*/
