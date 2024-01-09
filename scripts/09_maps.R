@@ -706,7 +706,31 @@ dev.off()
 
 # 4 component area barchart to accompany the 4 panel map
 # To Do
+g <- area_numGcm2 %>% 
+  filter(run == root_c9) %>% 
+  arrange(RCP, years) %>% 
+  mutate(rcp_yr = rcp_label(RCP, years, include_parenth = FALSE,
+                            add_letters = TRUE)) %>% 
+  ggplot(aes(category, area_km2, fill = category)) +
+  facet_wrap(~rcp_yr) +
+  geom_bar(stat = 'identity') +
+  scale_fill_manual(values = cols_numGcm,
+                    labels = names_numGcm,
+                    name = 'Confidence in \nprojected habitat class') +
+  scale_y_continuous(labels = scales::comma) +
+  labs(y = lab_areakm0,
+       x = NULL) +
+  theme(legend.position = 'right',
+        axis.text.x = element_blank(),
+        legend.title = element_blank(),
+        strip.text = element_text(hjust = 0)
+        )
 
+jpeg(paste0('figures/area/numGcm_area_barplot_by-scenario_', name_numGcm , '.jpg'), 
+     width = 7, height = 5.5, units = 'in',
+     res = 600)
+g
+dev.off()
 
 # * output numGcmGood area summaries --------------------------------------
 

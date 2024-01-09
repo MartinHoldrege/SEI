@@ -27,8 +27,32 @@ states <- sf::st_as_sf(spData::us_states) %>%
 
 # label functions ---------------------------------------------------------
 
-rcp_label <- function(rcp, years) {
-  ifelse(rcp == "Current", "(Historical)", paste0("(",rcp,", ",years, ")"))
+#' paste rcp and years into a vector
+#'
+#' @param rcp character vector of RCPs
+#' @param years character vector of year ranges
+#' @param add_letters add letters (for figure labeling)
+#' @param include_parenth put year in parantheses
+#'
+#' @return character vector
+rcp_label <- function(rcp, years, add_letters = FALSE,
+                      include_parenth = TRUE) {
+  if (include_parenth) {
+    x1 <- ifelse(rcp == "Current", "(Historical)", paste0("(",rcp,", ",years, ")"))
+  } else {
+    x1 <- ifelse(rcp == "Current", "Historica)", paste(rcp,years))
+  }
+  
+  
+  
+  if(add_letters) {
+    levs <- sort(unique(x1))
+    labels <- paste(fig_letters[1:length(levs)], levs)
+    x2 <- factor(x1, levels = levs, labels = labels)
+  } else {
+    x2 <- x1
+  }
+  x2
 }
 
 
