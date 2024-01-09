@@ -37,19 +37,15 @@
 
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
-var versionFull = 'vsw4-3-3';
+var versionFull = 'vsw4-3-4';
 
 // which stepwat output to read in?
-var rootList = ['fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_',
-                'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_',
-                'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
+var rootList = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+                          'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
+                          [4, 4, 4, 4]);
+var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
-var RCPList =  ['RCP45', 'RCP85', 'RCP85',
-                'RCP45', 'RCP85', 'RCP85',
-                'RCP45', 'RCP85', 'RCP85'];
-var epochList = ['2030-2060', '2030-2060',  '2070-2100',
-                  '2030-2060', '2030-2060',  '2070-2100',
-                  '2030-2060', '2030-2060',  '2070-2100'];
+var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
 // the change in SEI from current to future that is deemed significant or 'substantial':
 var sigDelta = 0.05; // (just using a place holder value for now)
 

@@ -32,7 +32,7 @@ exports.sldRampDiff1 =
 
 // legend for c9 transition maps ----------------------------------------
 
-
+/* old palette (stables are black, decrease red, increase blues)
 var c9Palette = ['#000000', // stable core (black)
              '#f4a582', // core becomes grow
              '#b2182b', // core becomes impacted
@@ -42,6 +42,17 @@ var c9Palette = ['#000000', // stable core (black)
              '#2166ac', // impacted becomes core
              '#4393c3', // impacted becomes grow
              '#D9D9D9']; // stable impacted
+*/   
+
+var c9Palette =  ['#142b65', // stable core (black)
+              '#b30000', //'#d7301f', # core becomes grow # reds from 9-class OrRd
+             '#67001f',  // core becomes impacted
+             '#757170', // grow becomes core
+             '#99d4e7', // stable grow
+             '#fc8d59',// grow becomes impacted
+             '#000000', // impacted becomes core
+             '#D9D9D9', // impacted becomes grow
+             '#eee1ba'] // stable impacted
              
 var c9Names =  [
   'Stable core',

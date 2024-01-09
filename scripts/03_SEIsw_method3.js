@@ -13,25 +13,32 @@
  *    
 */
 
+// Load module with functions 
+// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // contains coefficients for biomass-cover equations
+
 // User-defined variables.
 
 var resolution = 90;     // output resolution, 90 eventually
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var majorV = '4'; // major version
 var minorV = '3'; // modified method 1 (deltaS is based on proportional change (but not divided by max)
-var patch = '3'; // proportional change calculated from cover (not biomass as in 2)
+var patch = '4'; // using delta approach to correct Q5s, and v1/v11 (not v3) of SEI
 
 // which stepwat output to read in?
-var rootList = ['fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_', 'fire0_eind1_c4grass1_co20_',
-                'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_', 'fire1_eind1_c4grass0_co20_2311_',
-                'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_', 'fire1_eind1_c4grass1_co21_2311_'];
 
-var RCPList =  ['RCP45', 'RCP85', 'RCP85',
-                'RCP45', 'RCP85', 'RCP85',
-                'RCP45', 'RCP85', 'RCP85'];
-var epochList = ['2030-2060', '2030-2060',  '2070-2100',
-                  '2030-2060', '2030-2060',  '2070-2100',
-                  '2030-2060', '2030-2060',  '2070-2100'];
+// repeat each element of the list the desired number of times
+var rootList = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
+                          'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
+                          [4, 4, 4, 4]);
+var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
+
+var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
+
+// var rootList = ['fire1_eind1_c4grass1_co20_2311_']; 
+// var RCPList =  ['RCP45'];
+// var epochList = ['2030-2060'];
 var graze = 'Light';
 
 // 'weight windows', these are the windows over which to change weights
@@ -42,10 +49,6 @@ var wwProp = [0.75, 1.25]; // range of proportion change over which to change
 var wwCov = [30, 40]; // range of future cover of RAP (calculated via the ratio approach)
 // over which to changes weights. 
 
-// Load module with functions 
-// The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var Q = require("users/mholdrege/SEI:src/qCurves4StepwatOutput2.js"); // contains coefficients for biomass-cover equations
 
 // datasets, constants etc. defined in SEIModule
 var path = SEI.path;
@@ -110,7 +113,7 @@ for (var j=0; j<RCPList.length; j++) {
 
   // image to which bands will be added
   var outputByGCM = ee.Image(0).rename('empty');
-  
+  var outputByGCMTemp = ee.Image([]); // temporary image to which bands will be added
 
   // Loop over GCMs ---------------------------------------------------------------------
   for (var g=0; g<GCMList.length; g++) {
@@ -241,27 +244,14 @@ for (var j=0; j<RCPList.length; j++) {
       .unmask(0)
       .reduceNeighborhood(ee.Reducer.mean(),ee.Kernel.gaussian(radiusCore,radiusCore * 1,'meters'),null, false)
       .multiply(mask);
-    
+      
     // here the updateMask call dictates that 0 SEI values aren't shown 
     // Map.addLayer(Q5s.updateMask(Q5s.gt(0.0)),imageVisQ,'Q5s mask (SEI2000)' + s,false);
     
-    /**
-     * Step 6. Classify
-     * Calculate and classify Q5s into decile classes.
-     */
-     
-    // decile-based classes, derived and hard-coded from Q5s_deciles
-    var Q5scdeciles = SEI.decileFixedClasses(Q5s);
-      
-    // Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
-    // Note that the team had discussions about removing "island" < corePatchSize. V1.1 results did NOT include their removal.
-    var Q5sc3 = Q5scdeciles.remap([1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1]);
-
-    Map.addLayer(Q5sc3.selfMask(),{"min":1, "max":3},'Q5s 3 classes' + s,false);
+    
     
 
     /**
-     * Step 7. Export stack of images into bands sent to GEE asset.
      * Build a multi-band image for more compact storage of an GEE asset. This is internal to GEE
      * and needs to be unpacked when exporting to GeoTIFF.
     */
@@ -277,12 +267,25 @@ for (var j=0; j<RCPList.length; j++) {
         Q4.float().rename('Q4raw_' + GCM),
         Q5.float().rename('Q5raw_' + GCM),
         Q5s.float().rename('Q5s_' + GCM),
-        Q5scdeciles.byte().rename('Q5scdeciles_' + GCM),
-        Q5sc3.byte().rename('Q5sc3_' + GCM)
+        // Q5scdeciles.byte().rename('Q5scdeciles_' + GCM),
+        // Q5sc3.byte().rename('Q5sc3_' + GCM)
       ]);
+    
+    // temporary Q5s bands (prior to delta correction)  
+    var outputByGCMTemp = outputByGCMTemp.addBands(
+      Q5s.float().rename('Q5s_' + GCM)
+    );
     
   }// end loop over GCM
   
+  // calculating delta Q5s
+  // this is to deal with the problem that there are slight rounding differences between the 'control' band
+  // and the original SEI calculated SEI (possibly due to data type, or projection differences at time of smoothing?)
+  // these rounding differences lead to movement of the 'edge' of what is classified as core, growth, other, so they 
+  // are important
+  var Q5s_delta = outputByGCMTemp.select('Q5s_.*').subtract(outputByGCM.select('Q5s_control'));
+  var Q5s_corrected = Q5s_delta.add(cur.select('Q5s'));
+
   // remove 'empty' band
   var bandsToKeep = outputByGCM.bandNames().removeAll(['empty']);
   var outputByGCM = outputByGCM.select(bandsToKeep);
@@ -290,7 +293,25 @@ for (var j=0; j<RCPList.length; j++) {
   var version = 'vsw' + majorV + '-' + minorV;
   var versionFull = version + '-' + patch;
   var fileName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
-
+  
+  /**
+  * Step 6. Classify (here classifying the delta corrected Q5s)
+  * Calculate and classify Q5s into decile classes.
+  */
+  
+  // decile-based classes, derived and hard-coded from Q5s_deciles
+  // then Classify Q5sdeciles into 3 major classes, called: core, grow, treat.
+  var Q5scdeciles_corrected = SEI.decileFixedClasses(Q5s_corrected);
+  
+  var Q5sc3_corrected = SEI.remapAllBands(Q5scdeciles_corrected, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+    .regexpRename('Q5s_', 'Q5sc3_');
+  
+  // add correct c3 classification to the output image;
+  var outputByGCM = outputByGCM
+    .addBands(Q5s_corrected)
+    .addBands(Q5sc3_corrected);
+  
+  // print(outputByGCM.bandNames())
   Export.image.toAsset({ 
     image: outputByGCM, //single image with multiple bands
     assetId: path + version + '/forecasts/' + fileName,
@@ -302,7 +323,7 @@ for (var j=0; j<RCPList.length; j++) {
   
 }// end loop over scenario
 
-Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "median future SEI", false);
+//Map.addLayer(outputByGCM.select('Q5sc3_CESM1-CAM5'), {min: 1, max: 3}, "median future SEI", false);
 
 // red in this map signifies places where there is a original sc3 reproducibility problem. 
-Map.addLayer(outputByGCM.select('Q5sc3_control').neq(cur.select('Q5sc3')).selfMask(), {min: 0, max: 1, palette: ['red']}, 'where sc3 diff', false);
+// Map.addLayer(outputByGCM.select('Q5sc3_control').neq(cur.select('Q5sc3')).selfMask(), {min: 0, max: 1, palette: ['red']}, 'where sc3 diff', false);

@@ -17,7 +17,7 @@
 
 // User-defined variables -----------------------------------------------------
  
-var root = 'fire1_eind1_c4grass1_co20_2311_'
+var root = 'fire1_eind1_c4grass1_co20_2311_';
 // dependencies -----------------------------------------------------------
 
 // Load module with functions 
@@ -130,7 +130,7 @@ for (var j = 0; j < diffBands.length; j++) {
 }
 // c3 ------------------------------------------------------------------------------
 
-map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v30)', false);
+map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v11)', false);
 
 // c9 maps ----------------------------------------------------------------------
 
