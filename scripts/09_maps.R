@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # re-download files from drive?
+download <- FALSE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -312,9 +312,9 @@ labels <- c('Same SEI (+/- 0.01) projected relative to default, and same habitat
 # preparing raster (converting to factor etc.)
 lyr <- "RCP45_2070-2100"
 
-# continue here (rename layers so code below works)
+
 r0 <- c(r_c9diff[[lyr]], r_c9diffgrass[[lyr]], r_c9diffco2[[lyr]]) %>% 
-  spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% 
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
   subst(from = 0, to = NA)
 
 r <- r0 %>% 
@@ -497,7 +497,6 @@ r_diffprop2 <- r_diffprop1*100 #convert to %
 
 lyrs <- names(r_diffprop2)
 
-# continue here--look at color ramps from stepwat biomass maps for better color spacing. 
 b <- c(25, 15, 10, 5, 1)
 breaks <- c(-100, -b, rev(b), 200) 
 colors <- RColorBrewer::brewer.pal(length(breaks) - 1, 'RdBu')
@@ -614,7 +613,7 @@ names_numGcm <- c("11" = paste('Stable CSA', perc1),
                  "24" = paste('Loss of GOA', perc1), 
                  "30" = 'Other rangeland area')
 
-g <- r_numGcm2 %>% 
+g <- r_numGcm2[["numGcmGood_RCP45_2070-2100"]] %>% 
   #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   as.factor() %>% 
   plot_map2() +
@@ -670,6 +669,43 @@ jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '.jpg'),
      res = 800)
 comb
 dev.off()
+
+
+# * 4 panel -----------------------------------------------------------------
+# 4 panel map
+
+r_numGcm3 <- r_numGcm2[[sort(names(r_numGcm2))]]
+names <- names(r_numGcm3) %>% 
+  str_replace('numGcmGood_', '') %>% 
+  str_replace('_', " ") %>% 
+  paste(fig_letters[1:4], .)
+r_numGcm4 <- r_numGcm3 %>% 
+  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # for testing
+  as.factor() 
+names(r_numGcm4) <- names  
+  
+g <- r_numGcm4 %>% 
+  st_as_stars(as_attributes = FALSE) %>% 
+  plot_map2() +
+  facet_wrap(~band) +
+  scale_fill_manual(values = cols_numGcm,
+                    labels = names_numGcm,
+                    na.value = 'transparent') +
+  theme(legend.title = element_blank(),
+        strip.text = element_text(hjust = 0),
+        legend.position = 'right',
+        legend.text = element_text(size = rel(0.6)),
+        legend.box.margin = margin())
+
+
+jpeg(paste0('figures/transition_maps/numGcm_by-scenario_', name_numGcm , '.jpg'), 
+     width = 7, height = 5.5, units = 'in',
+     res = 800)
+g
+dev.off()
+
+# 4 component area barchart to accompany the 4 panel map
+# To Do
 
 
 # * output numGcmGood area summaries --------------------------------------
