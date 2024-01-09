@@ -45,10 +45,10 @@ for(var i = 0; i<rcpList.length; i++) {
   
   // read in data --------------------------------------------
   // other than those specified, using the default args
-  var d_fire1 = lyrMod.main({root: root_fire1, rcp: rcp, epoch: epoch}); 
-  var d_fire0 = lyrMod.main({root: root_fire0, rcp: rcp, epoch: epoch}); 
-  var d_co21 = lyrMod.main({root: root_co21, rcp: rcp, epoch: epoch}); 
-  var d_grass0 = lyrMod.main({root: root_grass0, rcp: rcp, epoch: epoch});
+  var d_fire1 = lyrMod.main({root: root_fire1, RCP: rcp, epoch: epoch}); 
+  var d_fire0 = lyrMod.main({root: root_fire0, RCP: rcp, epoch: epoch}); 
+  var d_co21 = lyrMod.main({root: root_co21, RCP: rcp, epoch: epoch}); 
+  var d_grass0 = lyrMod.main({root: root_grass0, RCP: rcp, epoch: epoch});
   var v = d_fire1.get('versionFull').getInfo() + '_';
   
   // c9 layer ------------------------------------------------
