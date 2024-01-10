@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- FALSE # re-download files from drive?
+download <- TRUE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -401,7 +401,8 @@ dev.off()
 
 # converting to a 'rgb' stars object
 s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  # for some reason code breaks when not using spatsample
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
 
@@ -541,12 +542,12 @@ Qs <- str_extract(lyrs, 'Q\\d[a-z]+') %>%
 
 for(Q in Qs) {
   r <- r_diffprop2[[str_subset(lyrs, Q)]]
-  
   lyr_names <- names(r) %>% 
     str_extract('RCP.+') %>% 
     str_replace("_", " ") %>% 
     paste(fig_letters[1:length(.)], .)
   names(r) <- letters[1:nlyr(r)]
+  
   names(lyr_names) <- letters[1:nlyr(r)]
   
   g <- r %>% 
@@ -561,11 +562,11 @@ for(Q in Qs) {
     theme(legend.position = 'right')
   
   jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
-                    version, "_", root_c9, '.jpg'), 
+                    version, "_", root_c9, '.jpg'),
        width = 6, height = 6, units = 'in',
        res = 600)
     print(g)
-  dev.off()  
+  dev.off()
 }
 
 # numGcmGood --------------------------------------------------------------
@@ -680,7 +681,7 @@ names <- names(r_numGcm3) %>%
   str_replace('_', " ") %>% 
   paste(fig_letters[1:4], .)
 r_numGcm4 <- r_numGcm3 %>% 
-  #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # for testing
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # for testing
   as.factor() 
 names(r_numGcm4) <- names  
   
@@ -697,7 +698,7 @@ g <- r_numGcm4 %>%
         legend.text = element_text(size = rel(0.6)),
         legend.box.margin = margin())
 
-
+#g
 jpeg(paste0('figures/transition_maps/numGcm_by-scenario_', name_numGcm , '.jpg'), 
      width = 7, height = 5.5, units = 'in',
      res = 800)
@@ -750,3 +751,4 @@ area_numGcm3 <- area_numGcm2 %>%
          category_name = str_replace(category_name, '\n', ''))
 
 write_csv(area_numGcm3, paste0('data_processed/summary_stats/area-by-agreement_', version, '.csv'))
+
