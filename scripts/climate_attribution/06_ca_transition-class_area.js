@@ -201,7 +201,7 @@ for (var i = 0; i < roots.length; i++) {
   var index = ecoC9.combine(driver2).combine(dirQ5s).map(function(x) {
     var image = ee.Image(x);
     var out = image.select('ecoC9')
-      .add(image.select('driver'))
+      .add(image.select('driver').unmask()) // temporarily commenting out to see if driver layer is causing the problem
       .multiply(10)
       .add(image.select('dirQ5s'))
       .updateMask(SEI.mask)
@@ -277,7 +277,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20240109';
+var s = d.get('versionFull').getInfo() + '_20240110';
 
 Export.table.toDrive({
   collection: combFc,
