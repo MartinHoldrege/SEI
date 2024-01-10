@@ -198,10 +198,15 @@ for (var i = 0; i < roots.length; i++) {
   // making the 3rd digit  which PFT most dominant driver of change
   // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
   // which direction the change was)
-  var index = ecoC9.combine(driver2).combine(dirQ5s).map(function(x) {
+  var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
+  
+  // for now treating GCM level and reducer level indices differently (because problem with driver layer)
+  var ecoC9Gcm = ecoC9comb.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+  var ecoC9Red = ecoC9comb.filter(ee.Filter.inList("GCM", bandsRed))
+  var indexGcm = ecoC9Gcm.map(function(x) {
     var image = ee.Image(x);
     var out = image.select('ecoC9')
-      .add(image.select('driver').unmask()) // temporarily commenting out to see if driver layer is causing the problem
+      .add(image.select('driver'))
       .multiply(10)
       .add(image.select('dirQ5s'))
       .updateMask(SEI.mask)
@@ -211,15 +216,31 @@ for (var i = 0; i < roots.length; i++) {
     return out;
   });
   
+  var indexRed = ecoC9Red.map(function(x) {
+    var image = ee.Image(x);
+    var out = image.select('ecoC9')
+      //.add(image.select('driver')) // temporary fix, is excluding driver here
+      .multiply(10)
+      .add(image.select('dirQ5s'))
+      .updateMask(SEI.mask)
+      .rename('index')
+      .toInt()
+      .copyProperties(ee.Image(x));
+    return out;
+  });
+  
+  var index = indexGcm.merge(indexRed);
+  // print('index', index)
+  
   
     // testing ~~~~~~~~
     
     var tmp = index.toBands()
     print('tmp', tmp)
     
-    var maskGcm = tmp.select('1_0_index').gt(0).unmask()
-    var maskMin = tmp.select('2_0_index').gt(0).unmask()
-    Map.addLayer(maskMin.neq(maskGcm), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (gcm index vs cellwise min)", false)
+    // var maskGcm = tmp.select('1_1_0_index').gt(0).unmask()
+    // var maskMin = tmp.select('2_2_0_index').gt(0).unmask()
+    // Map.addLayer(maskMin.neq(maskGcm), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (gcm index vs cellwise min)", false)
     var driverMask = driverLow.gt(-100);
     var maskC9 = c9Reda.select('median').gt(-100).unmask()
     var maskdriver = driverMask.unmask();
@@ -285,8 +306,8 @@ Export.table.toDrive({
   folder: 'SEI',
   fileFormat: 'CSV'
 });
-
 /*
+
 Export.table.toDrive({
   collection: combFcGood,
   description: 'area-by-numGcmGood_' + resolution + 'm_' + s,
