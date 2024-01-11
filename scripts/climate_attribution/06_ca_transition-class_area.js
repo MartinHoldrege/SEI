@@ -30,7 +30,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
-var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+// var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
@@ -80,18 +80,32 @@ var detDomDriver = function(x) {
       .rename('driver')
       .copyProperties(q);
     return out;
-  };
+};
   
   // determine direction of change if Q5s
-  var detDir = function(x) {
-      var img = ee.Image(x);
-      var out = ee.Image(0)
-        .where(img.lt(0), 1)
-        .where(img.gte(0), 2);
-      return out
-        .rename('dirQ5s')
-        .copyProperties(img)
-    }
+var detDir = function(x) {
+    var img = ee.Image(x);
+    var out = ee.Image(0)
+      .where(img.lt(0), 1)
+      .where(img.gte(0), 2);
+    return out
+      .rename('dirQ5s')
+      .copyProperties(img);
+};
+
+// convert bands, with names of GCMs to individual
+// images in image collection with GCM property
+var bandsToGcmIc = function(x, newBandName) {
+  var list = ee.Image(x)
+    .bandNames()
+    .map(function(band) {
+      return c9Reda.select([band])
+        .rename(newBandName)
+        .set('GCM', ee.String(band));
+    });
+  return ee.ImageCollection.fromImages(list);
+};
+
 
 // dictionary of data objections --------------------------------------
 
@@ -142,13 +156,13 @@ for (var i = 0; i < roots.length; i++) {
     
   var driverMedian = driverReducer('median')
     
-  var driverHigh = driverReducer('high')
+  var driverHigh = driverReducer('high');
 
 
-  Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
-  var driverRed = ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh])
-
-  var driver2 = driver1.merge(driverRed);
+  // Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
+  var driver2 = driver1
+    .merge(ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh]));
+  
   // print(driver2)
   // prepare spatial index -----------------------------------------------
   
@@ -164,13 +178,8 @@ for (var i = 0; i < roots.length; i++) {
   // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
   // and summaries will be made for all. 
   // these low, median, high values are pixel wise
-  var imageList = c9Reda.bandNames().map(function(band) {
-    return c9Reda.select([band])
-      .rename('c9')
-      .set('GCM', ee.String(band));
-  })
+  var c9RedIc = bandsToGcmIc(c9Reda, 'c9') // converting to IC where each image has one band, named c9 
   
-  var c9RedIc = ee.ImageCollection.fromImages(imageList);
   var c9Icb = c9Ica.merge(c9RedIc);
 
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
