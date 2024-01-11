@@ -30,7 +30,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
-// var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
@@ -59,6 +59,40 @@ var maskDriverFactory = function(redImage, reducerName) {
   return f;
 };
 
+// determine whether sagebrush, perennials, or annuals has the largest scaled
+// proportional change
+var detDomDriver = function(x) {
+    var q = ee.Image(x);
+    var out = ee.Image(0)
+      .where(q.select('Q1raw')
+        .gt(q.select('Q2raw'))
+        .and(q.select('Q1raw').gt(q.select('Q3raw'))),
+        1) // sagebrush dominant driver of change
+      .where(q.select('Q2raw')
+        .gt(q.select('Q1raw'))
+        .and(q.select('Q2raw').gt(q.select('Q3raw'))),
+        2) // perennials
+      .where(q.select('Q3raw')
+        .gt(q.select('Q1raw'))
+        .and(q.select('Q3raw').gt(q.select('Q2raw'))),
+        3)// annuals
+      .toByte()
+      .rename('driver')
+      .copyProperties(q);
+    return out;
+  };
+  
+  // determine direction of change if Q5s
+  var detDir = function(x) {
+      var img = ee.Image(x);
+      var out = ee.Image(0)
+        .where(img.lt(0), 1)
+        .where(img.gte(0), 2);
+      return out
+        .rename('dirQ5s')
+        .copyProperties(img)
+    }
+
 // dictionary of data objections --------------------------------------
 
 var combFc = ee.FeatureCollection([]); // empty fc that add to each loop iteration
@@ -82,26 +116,7 @@ for (var i = 0; i < roots.length; i++) {
   var qIc = ee.ImageCollection(d.get('qPropIc'));
   // print(qIc)
   // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
-  var driver0 = qIc.map(function(x) {
-    var q = ee.Image(x);
-    var out = ee.Image(0)
-      .where(q.select('Q1raw')
-        .gt(q.select('Q2raw'))
-        .and(q.select('Q1raw').gt(q.select('Q3raw'))),
-        1) // sagebrush dominant driver of change
-      .where(q.select('Q2raw')
-        .gt(q.select('Q1raw'))
-        .and(q.select('Q2raw').gt(q.select('Q3raw'))),
-        2) // perennials
-      .where(q.select('Q3raw')
-        .gt(q.select('Q1raw'))
-        .and(q.select('Q3raw').gt(q.select('Q2raw'))),
-        3)// annuals
-      .toByte()
-      .rename('driver')
-      .copyProperties(q);
-    return out;
-  });
+  var driver0 = qIc.map(detDomDriver);
   
   // pixelwise determination of the driver for the GCMs with the 2nd lowest, median, and 2nd highest SEI
   var driver1  = ee.ImageCollection(d.get('diffIc'))
@@ -109,7 +124,7 @@ for (var i = 0; i < roots.length; i++) {
     .combine(driver0);
   
   var diffRed = ee.Image(d.get('diffRed2'))
-  print(diffRed)
+  // print(diffRed)
   
 
   // reduce the driver across GCMs, pixelwise
@@ -134,7 +149,7 @@ for (var i = 0; i < roots.length; i++) {
   var driverRed = ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh])
 
   var driver2 = driver1.merge(driverRed);
-  print(driver2)
+  // print(driver2)
   // prepare spatial index -----------------------------------------------
   
   var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
@@ -184,16 +199,7 @@ for (var i = 0; i < roots.length; i++) {
     .select('Q5s')
     .merge(diffRedb);
 
-  var dirQ5s = diffIcb
-    .map(function(x) {
-      var img = ee.Image(x);
-      var out = ee.Image(0)
-        .where(img.lt(0), 1)
-        .where(img.gte(0), 2);
-      return out
-        .rename('dirQ5s')
-        .copyProperties(img)
-    });
+  var dirQ5s = diffIcb.map(detDir);
    
   // making the 3rd digit  which PFT most dominant driver of change
   // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
@@ -201,40 +207,42 @@ for (var i = 0; i < roots.length; i++) {
   var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
   
   // for now treating GCM level and reducer level indices differently (because problem with driver layer)
-  var ecoC9Gcm = ecoC9comb.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
-  var ecoC9Red = ecoC9comb.filter(ee.Filter.inList("GCM", bandsRed))
-  var indexGcm = ecoC9Gcm.map(function(x) {
-    var image = ee.Image(x);
-    var out = image.select('ecoC9')
-      .add(image.select('driver'))
-      .multiply(10)
-      .add(image.select('dirQ5s'))
-      .updateMask(SEI.mask)
-      .rename('index')
-      .toInt()
-      .copyProperties(ee.Image(x));
-    return out;
-  });
+  var indexGcm = ecoC9comb
+    .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+    .map(function(x) {
+      var image = ee.Image(x);
+      var out = image.select('ecoC9')
+        .add(image.select('driver'))
+        .multiply(10)
+        .add(image.select('dirQ5s'))
+        .updateMask(SEI.mask)
+        .rename('index')
+        .toInt()
+        .copyProperties(ee.Image(x));
+      return out;
+    });
   
-  var indexRed = ecoC9Red.map(function(x) {
-    var image = ee.Image(x);
-    var out = image.select('ecoC9')
-      //.add(image.select('driver')) // temporary fix, is excluding driver here
-      .multiply(10)
-      .add(image.select('dirQ5s'))
-      .updateMask(SEI.mask)
-      .rename('index')
-      .toInt()
-      .copyProperties(ee.Image(x));
-    return out;
-  });
+  var indexRed = ecoC9comb
+    .filter(ee.Filter.inList("GCM", bandsRed))
+    .map(function(x) {
+      var image = ee.Image(x);
+      var out = image.select('ecoC9')
+        //.add(image.select('driver')) // temporary fix, is excluding driver here
+        .multiply(10)
+        .add(image.select('dirQ5s'))
+        .updateMask(SEI.mask)
+        .rename('index')
+        .toInt()
+        .copyProperties(ee.Image(x));
+      return out;
+    });
   
   var index = indexGcm.merge(indexRed);
   // print('index', index)
   
   
     // testing ~~~~~~~~
-    
+    /*
     var tmp = index.toBands()
     print('tmp', tmp)
     
@@ -246,9 +254,9 @@ for (var i = 0; i < roots.length; i++) {
     var maskdriver = driverMask.unmask();
     Map.addLayer(maskC9.neq(maskdriver), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (c9 vs driver)", false)
     Map.addLayer(maskdriver, {min: 0, max: 1, palette: ['grey', 'blue']}, "driver mask", false)
-  // print('driverLow', driverLow)
-  // Map.addLayer(driverMask.unmask().lt(SEI.mask.unmask()), {min: 0, max: 1, palette: ['white', 'black']}, "mask difference")
-  
+    print('driverLow', driverLow)
+    Map.addLayer(driverMask.unmask().lt(SEI.mask.unmask()), {min: 0, max: 1, palette: ['white', 'black']}, "mask difference")
+  */
   // end testing ~~~~~~~
   
   // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
@@ -287,8 +295,8 @@ for (var i = 0; i < roots.length; i++) {
       .map(function(x) {
         var out = ee.Feature(x)
           .set('run', ee.String(root))
-          .set('RCP', ee.String(d.get('RCP')))
-          .set('years', ee.String(d.get('epoch')));
+          .set('RCP', ee.String(RCP))
+          .set('years', ee.String(epoch));
         return out;
       });
       
@@ -298,7 +306,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20240110';
+var s = d.get('versionFull').getInfo() + '_20240111';
 
 Export.table.toDrive({
   collection: combFc,
