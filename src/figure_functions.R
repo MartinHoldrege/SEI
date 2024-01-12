@@ -55,6 +55,25 @@ rcp_label <- function(rcp, years, add_letters = FALSE,
   x2
 }
 
+#' rename bands of a raster
+#'
+#' @param x raster, with band names like RCP45_2070-2100
+#'
+#' @return
+#' @export
+#'
+#' @examples
+rename_bands <- function(x) {
+  m <- str_split_fixed(names(x), pattern = "_", n = 2)
+  RCP <- as.vector(m[, 1])
+  new_name <- rcp_label(rcp = as.vector(m[, 1]),
+                        years = as.vector(m[, 2]),
+                        add_letters = TRUE,
+                        include_parenth = FALSE)
+  names(x) <- new_name
+  x
+}
+
 
 # ggplot themes -----------------------------------------------------------
 

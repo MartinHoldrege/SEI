@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # re-download files from drive?
+download <- FALSE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -291,7 +291,8 @@ jpeg(paste0(paste('figures/transition_maps/c9_by-scenario',
 comb
 dev.off()
 
-# c9-diff maps ------------------------------------------------------------
+# c9-diff (vs default) -----------------------------------------------------
+# maps showing effects of modelling assumptions
 
 base_diff <- function() {
   list(
@@ -313,19 +314,25 @@ labels <- c('Same SEI (+/- 0.01) projected relative to default, and same habitat
 lyr <- "RCP45_2070-2100"
 
 
-r0 <- c(r_c9diff[[lyr]], r_c9diffgrass[[lyr]], r_c9diffco2[[lyr]]) %>% 
-  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
-  subst(from = 0, to = NA)
 
-r <- r0 %>% 
-  as.factor()
-# table(as.numeric(values(r[[1]])))
-# table(as.numeric(values(r[[2]])))
-# table(as.numeric(values(r[[3]])))
+# preparing raster
+prepare_r_diff <- function(x) {
+  r0 <- x %>% 
+    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
+    subst(from = 0, to = NA)
+  
+  r <- r0 %>% 
+    as.factor()
+  
+  
+  # setting the factor levels
+  r <- set_all_cats(r, ID = 1:5, names = labels)
+  names(r) <- names(x)
+  r
+}
 
-# setting the factor levels
-
-r <- set_all_cats(r, ID = 1:5, names = labels)
+r0 <- c(r_c9diff[[lyr]], r_c9diffgrass[[lyr]], r_c9diffco2[[lyr]]) 
+r <- prepare_r_diff(r0)
 
 let <- fig_letters[1:nlyr(r)]
 band_names <- run2name(names(r_c9diff_all)) %>% 
@@ -395,6 +402,39 @@ jpeg(paste0('figures/transition_maps/c9-diff_map-bar_', version,
      res = 800)
 comb
 dev.off()
+
+
+# ** 4 panel --------------------------------------------------------------
+# for e.g. diff from default for no grass show for each RCP/time-period
+
+
+all_f <- map(r_c9diff_all, prepare_r_diff)
+all_rename <- map(all_f, rename_bands)
+all_s <- map(all_rename, st_as_stars, as_attributes = FALSE)
+
+all_g <- map(all_s, function(s) {
+  plot_map2(s) +
+    scale_fill_manual(values = cols_diff,
+                      na.value = 'transparent',
+                      na.translate = FALSE) +
+    facet_wrap(~band, ncol = 2)+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          legend.text = element_text(size = rel(0.8)),
+          strip.text = element_text(hjust = 0)
+    ) +
+    guides(fill = guide_legend(ncol = 1))
+})
+
+map2(all_g, names(all_g), function(g, run) {
+  jpeg(paste0('figures/transition_maps/c9-diff_by-scenario_', version, 
+              "_", run, '.jpg'), 
+       width = 7, height = 8, units = 'in',
+       res = 800)
+  print(g)
+  dev.off()
+})
+
 
 
 # RGB-maps ----------------------------------------------------------------
