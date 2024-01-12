@@ -121,6 +121,14 @@ var main = exports.main = function(args) {
   // each image in collection from a different GCM
   var futIc = ee.ImageCollection(futList);
   
+  // future SEI (reduced), so that all other downstream metrics (c9 etc can
+  // be re-calculated, and correctly correspond to to the low, median, high SEI)
+  var futRed0 = futIc
+    .select(diffBands)
+    .reduce(reducers);
+    
+  var futRed = SEI.image2Ic(futSeiRed0); // converting to image collection 
+    
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) {
     return ee.Image(image).select(diffBands)
@@ -142,7 +150,7 @@ var main = exports.main = function(args) {
   var diffPropRed1 = diffPropIc.reduce(reducers);
   
   // reducing to get min, max, median across GCMs for the differences
-  var diffRed1 = diffIc.reduce(reducers);
+  // var diffRed1 = diffIc.reduce(reducers); // update
   
   // future values for the given GCM
   var futGCM = futIc.filter(ee.Filter.eq('GCM', GCM))
@@ -156,12 +164,14 @@ var main = exports.main = function(args) {
     .regexpRename('$', '_' + GCM);
   
   // combing min, max etc. deltas with delta for one specific GCM
-  var diffRed2 = diffRed1.addBands(diffGCM);
+  // var diffRed2 = diffRed1.addBands(diffGCM);
   
   // calculating 'worst and best' case c9
-  // reduced c3 (i.e., includes layers for best and worst)
-  var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
-    .addBands(futGCM.select('Q5sc3').rename(GCM));
+  
+  // first recalculating c3 for low, median, high SEI
+  var c3Red = futRed.map(function(x) {
+    return SEI.sei2C3(ee.Image(x).select('Q5s'))
+  });
    
   // c9 transition for each GCM 
   var c9Ic = futIc.map(function(x) {
