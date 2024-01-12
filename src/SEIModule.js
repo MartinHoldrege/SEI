@@ -416,6 +416,60 @@ exports.compareFutures = function(c9Ref, c9New, seiRef, seiNew) {
     .selfMask();
 };
 
+
+/*
+function used inside image2Ic 
+
+returns unique suffixes used in image band names (anything after the last underscore)
+*/
+var uniqueImageSuffix = function(image) {
+  var list = image.bandNames()
+  .map(function(x) {
+    var suffix1 = ee.String(x)
+      .match('_[[:alpha:]]+$')
+      .get(0);
+      
+    var suffix = ee.String(suffix1)
+      .match('[[:alpha:]]+$')// excluding the underscore
+      .get(0);
+      
+    return ee.String(suffix);
+  });
+  return list.distinct();
+};
+
+/**
+ * convert and image to an image collection, each new image comes from bands with 
+ * the same suffix, this suffix then become a property
+ * @param {ee.image} image an image with multiple bands and band names have suffixes preceded by _
+ * @param {ee.String} propertyName string is the name of the image property to be created
+ * @return {ee.ImageCollection}
+
+*/
+var image2Ic = function(image, propertyName) {
+  // default settings
+  if (propertyName === undefined){var propertyName = 'GCM';}
+  var reducerSuffix = uniqueImageSuffix(image); // unique suffixes
+  
+  var imageList = reducerSuffix.map(function(x) {
+    var red = ee.String(x)
+    return image
+      .select(ee.String('.*_').cat(red))
+      .regexpRename(ee.String('_').cat(red), '')
+      .set(ee.String(propertyName), red);
+  })
+  return ee.ImageCollection.fromImages(imageList);
+}
+exports.image2Ic = image2Ic; 
+/*
+// testing image2Ic function
+
+var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
+  .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
+print(image2Ic(image, 'reducer'))
+*/
+
+
 /*
  
  Datasets 
