@@ -133,7 +133,7 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
  *     (i.e. described as SEI2000 in the manuscript draft)
  * @return {ee.Image} values from 1 to 10, denoting the decile class
  */
-decileFixedClasses = function(Q5s) {
+var decileFixedClasses = function(Q5s) {
   var out = Q5s.gt(0.002)
   .add(Q5s.gte(0.009))
   .add(Q5s.gt(0.068))
