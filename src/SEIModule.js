@@ -133,7 +133,7 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
  *     (i.e. described as SEI2000 in the manuscript draft)
  * @return {ee.Image} values from 1 to 10, denoting the decile class
  */
-exports.decileFixedClasses = function(Q5s) {
+decileFixedClasses = function(Q5s) {
   var out = Q5s.gt(0.002)
   .add(Q5s.gte(0.009))
   .add(Q5s.gt(0.068))
@@ -145,7 +145,7 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.565)).add(1); // so range is 1-10
   return(out);
 };
-
+exports.decileFixedClasses = decileFixedClasses;
 /**
  * Smooth pixels within a 560 m neighborhood
  * @param {ee.Image} image to smooth
@@ -271,7 +271,22 @@ var remapAllBands = function(image, from, to) {
   return remappedImage;
 };
 
+
 exports.remapAllBands = remapAllBands;
+
+/**
+ * convert continuous SEI to 3 categories
+ * @param {ee.Image} Q5s image of continuous SEI
+ * @return {ee.Image} Image with 3 values (1 core, 2 growth, 3 other)
+*/
+exports.seiToC3 = function(Q5s) {
+  var Q5scdeciles = SEI.decileFixedClasses(Q5s);
+  
+  var Q5sc3 = SEI.remapAllBands(Q5scdeciles_corrected, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+    .regexpRename('Q5s', 'Q5sc3');
+  return Q5sc3
+}
+
 
 // transitions between classes (median) --------------------------------------
   
