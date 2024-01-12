@@ -282,7 +282,7 @@ exports.remapAllBands = remapAllBands;
 exports.seiToC3 = function(Q5s) {
   var Q5scdeciles = decileFixedClasses(Q5s);
   
-  var Q5sc3 = remapAllBands(Q5scdeciles_corrected, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+  var Q5sc3 = remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
     .regexpRename('Q5s', 'Q5sc3');
   return Q5sc3
 }
