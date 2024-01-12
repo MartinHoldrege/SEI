@@ -93,18 +93,18 @@ var detDir = function(x) {
       .copyProperties(img);
 };
 
-// convert bands, with names of GCMs to individual
-// images in image collection with GCM property
-var bandsToGcmIc = function(x, newBandName) {
-  var list = ee.Image(x)
-    .bandNames()
-    .map(function(band) {
-      return c9Reda.select([band])
-        .rename(newBandName)
-        .set('GCM', ee.String(band));
-    });
-  return ee.ImageCollection.fromImages(list);
-};
+// // convert bands, with names of GCMs to individual
+// // images in image collection with GCM property
+// var bandsToGcmIc = function(x, newBandName) {
+//   var list = ee.Image(x)
+//     .bandNames()
+//     .map(function(band) {
+//       return c9Reda.select([band])
+//         .rename(newBandName)
+//         .set('GCM', ee.String(band));
+//     });
+//   return ee.ImageCollection.fromImages(list);
+// };
 
 
 // dictionary of data objections --------------------------------------
@@ -169,44 +169,19 @@ for (var i = 0; i < roots.length; i++) {
   var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
     .updateMask(SEI.mask);
     
-  var c9Ica = ee.ImageCollection(d.get('c9Ic'))
-  var bandsRed = ee.List(['low', 'median', 'high'])
-  var c9Reda = ee.Image(d.get('c9Red'))
-    .select(bandsRed);
-    
+  var bandsRed = ee.List(['low', 'median', 'high']);
+  
   // creating image collection where the reduced values (low, median, and high) estimates
   // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
   // and summaries will be made for all. 
   // these low, median, high values are pixel wise
-  var c9RedIc = bandsToGcmIc(c9Reda, 'c9') // converting to IC where each image has one band, named c9 
-  
-  var c9Icb = c9Ica.merge(c9RedIc);
 
-  // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
-  var ecoC9 = c9Icb.map(function(x) {
-    var c9 = ee.Image(x);
-    var out = eco
-      .multiply(10)
-      .add(c9)
-      .multiply(10)
-      .rename('ecoC9')
-      .copyProperties(c9);
-    return out;
-  });
-  
-  //print(ee.Image(d.get('diffRed2')))
-  var diffRedb = bandsRed.map(function(band) {
-    return ee.Image(d.get('diffRed2'))
-      .select(ee.String('Q5s_').cat(ee.String(band)))
-      .rename('Q5s')
-      .set('GCM', ee.String(band));
-  })
-  
   // direction of change of SEI--1 = decrease, 2 = increase (or no change)
 
   var diffIcb = ee.ImageCollection(d.get('diffIc'))
     .select('Q5s')
-    .merge(diffRedb);
+    // merging in pixel wise
+    .merge(ee.ImageCollection(d.get('diffRed')).select('Q5s'));
 
   var dirQ5s = diffIcb.map(detDir);
    
@@ -317,13 +292,14 @@ for (var i = 0; i < roots.length; i++) {
 
 var s = d.get('versionFull').getInfo() + '_20240111';
 
+/*
 Export.table.toDrive({
   collection: combFc,
   description: 'area-by-ecoregionC9Driver_' + resolution + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
-/*
+
 
 Export.table.toDrive({
   collection: combFcGood,
