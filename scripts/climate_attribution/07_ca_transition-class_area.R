@@ -11,7 +11,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # try and download the newest version of the file?
+download <- FALSE # try and download the newest version of the file?
 version <- 'vsw4-3-4'
 resolution <- 90
 
@@ -31,7 +31,7 @@ theme_set(theme_custom1())
 # read in data ------------------------------------------------------------
 
 # file created in 05_ca_transition-class_area.js
-file_regex <- paste0("area-by-ecoregionC9Driver_",
+file_regex <- paste0("^area-by-ecoregionC9Driver_",
                      resolution , "m_",
                      version,
                      "_\\d+.csv")
@@ -46,6 +46,17 @@ p1 <- newest_file_path('data_processed/area',
 p1
 
 area1 <- read_csv(p1, show_col_types = FALSE)
+
+
+# functions ---------------------------------------------------------------
+
+# shorten names of reducers for column names
+red2short <- function(x) {
+  case_when(x == 'high' ~ 'hi',
+            x == 'low' ~ 'lo',
+            x == 'median' ~ 'med',
+            TRUE ~ x)
+}
 
 # clean -------------------------------------------------------------------
 
@@ -138,55 +149,42 @@ area_gcm_c90 <- area_gcm_c9_eco0 %>%
             .groups = 'drop')%>% 
   mutate(area_perc = area_km2/tot_area*100)
 
-# median, low, and high across GCMS
+# median, low, and high across GCMS (pixelwise)
+
 area_med_c9_eco <- area_gcm_c9_eco0 %>% 
-  filter(!GCM %in% names_red) %>% 
-  group_by(run, RCP, years, rcp_years, c9_name, c9, ecoregion) %>% 
-  summarise(area_km2_med = median(area_km2),
-            area_km2_lo = low(area_km2),
-            area_km2_hi = high(area_km2),
-            .groups = 'drop') %>% 
-  left_join(tot_area_eco, by = 'ecoregion') %>% 
-  mutate(across(matches('area_km2'), 
-                .fns = \(x) x/.data[["tot_area"]]*100,
-                .names = "{.col}_perc")) %>% 
-  rename_with(.fn = \(x) str_replace(str_replace(x, '_km2', '_perc'),
-                                     "_perc$", ""),
-              .cols = matches('km2_.*_perc'))
+  filter(GCM %in% names_red) %>% 
+  mutate(GCM = red2short(GCM)) %>% 
+  pivot_wider(id_cols = c(run, RCP, rcp_years, years, c9, c9_name, ecoregion, tot_area),
+              values_from = c("area_km2", "area_perc"),
+              names_from = 'GCM')
 
-# GCM level summaries
+# pixel level (across GCM at each pixel) wide format
 area_med_c9 <- area_gcm_c90 %>% 
-  filter(!GCM %in% names_red) %>% 
+  #filter(!GCM %in% names_red) %>% 
   group_by(run, RCP, years, rcp_years, c9_name, c9) %>% 
-  summarise(area_km2_med = median(area_km2),
-            area_km2_lo = low(area_km2),
-            area_km2_hi = high(area_km2),
-            .groups = 'drop')%>% 
-  mutate(across(matches('area_km2'), 
-                .fns = \(x) x/tot_area*100,
-                .names = "{.col}_perc"
-                )) %>% 
-  rename_with(.fn = \(x) str_replace(str_replace(x, '_km2', '_perc'),
-                                     "_perc$", ""),
-              .cols = matches('km2_.*_perc'))
+  filter(GCM %in% names_red) %>% 
+  mutate(GCM = red2short(GCM)) %>% 
+  pivot_wider(id_cols = c(run, RCP, years, rcp_years, c9_name, c9),
+              values_from = c("area_km2", "area_perc"),
+              names_from = 'GCM')
 
-# area_med_c9 <- area_gcm_c90 %>% 
-#   filter(GCM %in% names_red) %>% 
-#   mutate(GCM = lookup_red[GCM]) %>% 
-#   select(-area_perc) %>% 
-#   pivot_wider(values_from = 'area_km2',
-#               names_from = 'GCM',
-#               names_prefix = 'area_km2_')
-  
 # area_c3 -----------------------------------------------------------------
 
 # historical total area in each of the three categories
 tmp <- area3 %>% 
-  filter(!GCM %in% names_red) %>% 
+  #filter(!GCM %in% names_red) %>% 
+  #filter(GCM %in% c('CESM1-CAM5', 'median', 'low')) %>% 
   mutate(c3_name = c9_to_c3(c9)) %>% 
   group_by(run, GCM, RCP, years, rcp_years, c3_name) %>% 
   summarize(area_km2 = sum(area_km2)) %>% 
   mutate(area_km2 = round(area_km2))
+
+# area3 %>% 
+#   filter(GCM %in% c('CESM1-CAM5', 'median', 'low')) %>% 
+#   mutate(c3_name = c9_to_c3(c9)) %>% 
+#   group_by(GCM, c3_name) %>%
+#   summarise(area_km2 = sum(area_km2)) %>%
+#   arrange(c3_name)
 
 stopifnot(length(unique(tmp$area_km2)) == 3) # should only be 3 unique areas (1 for core, grow other)
 
@@ -195,14 +193,17 @@ area_c3 <- tmp %>%
   summarise(tot_area = mean(area_km2))
 
 # * drivers ---------------------------------------------------------------
-
+# note--objectes ending in 'gw' means the low, median, high are gcm wise,
+# ie area from the 2nd lowest gcm, median gcm etc (not pixelwise)
+# this is done for the metrics that include 'driver' which 
+# aren't yet successfully calculated pixelwise (gee implementation problems)
 
 area_gcm_eco <- area3 %>% 
   filter(!GCM %in% names_red) %>% 
   # exclude 'stable' categories
   filter(! c9 %in% c(1, 5, 9))
 
-area_med_eco <- area_gcm_eco %>% 
+area_med_eco_gw <- area_gcm_eco %>% 
   group_by(run, GCM, RCP, years, rcp_years, c9_name, c9, ecoregion, driver) %>% 
   summarise(area_km2 = sum(area_km2),
             .groups = 'drop_last') %>% 
@@ -216,7 +217,7 @@ area_med_eco <- area_gcm_eco %>%
                    .fns = list(med = median, lo = low, hi = high)),
             .groups = 'drop_last') 
 
-area_med <- area_gcm_eco %>% 
+area_med_gw <- area_gcm_eco %>% 
   group_by(RCP, run, years, c9_name, c9, GCM, driver) %>% 
   # summing over ecoregions
   summarise(area_km2 = sum(area_km2),
@@ -244,15 +245,15 @@ area_med_dir <- area3 %>%
             .groups = 'drop') 
 
 # don't need to display a c9 category that doesn't exist anywhere
-c9_to_keep <- area_med %>% 
+c9_to_keep <- area_med_gw %>% 
   filter(area_tot_hi > 0) %>% 
   pull(c9_name) %>% 
   unique()
 
-area_med <- area_med %>% 
+area_med_gw <- area_med_gw %>% 
   filter(c9_name %in% c9_to_keep)
 
-area_med_eco <- area_med_eco %>% 
+area_med_eco_gw <- area_med_eco_gw %>% 
   filter(c9_name %in% c9_to_keep)
 
 
