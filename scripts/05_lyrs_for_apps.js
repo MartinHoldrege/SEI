@@ -164,7 +164,9 @@ var main = exports.main = function(args) {
   
   // first recalculating c3 for low, median, high SEI
   var futC3Red = futRed.map(function(x) {
-    return SEI.seiToC3(ee.Image(x).select('Q5s'));
+    return SEI.seiToC3(ee.Image(x).select('Q5s'))
+      .rename('c3')
+      .copyProperties(ee.Image(x));
   });
    
   // c9 transition for each GCM 
@@ -179,10 +181,10 @@ var main = exports.main = function(args) {
   
   // re-calculating c9 for the reduced layers
   var c9Red = futC3Red.map(function(x) {
-      var out = SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x))
+      var out = SEI.calcTransitions(cur1.select('Q5sc3').rename('c3'), ee.Image(x))
         .copyProperties(ee.Image(x));
-      return ee.Image(out).rename('c3')
-        
+      
+      return ee.Image(out).regexpRename('c3', 'c9')
   })
 
   // contributions by each Q compontent to changes --------------------------------------
@@ -281,6 +283,8 @@ var main = exports.main = function(args) {
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
     // 'diffPropRed': diffPropRed1,
+    'futIc': futIc, // image collection future sei etc by GCM
+    'futRed': futRed, // future SEI by reduction (IC)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
     'diffRed': diffRed,
     'c9Red': c9Red,
@@ -293,4 +297,10 @@ var main = exports.main = function(args) {
   return out;
 };
 
-print(ee.Image(main({root: 'fire1_eind1_c4grass1_co20_2311_'})))
+
+// for testing
+/*
+var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
+print(d)
+print(ee.ImageCollection(d.get('c9Red')))
+*/
