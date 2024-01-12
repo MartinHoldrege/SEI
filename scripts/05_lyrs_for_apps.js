@@ -121,6 +121,14 @@ var main = exports.main = function(args) {
   // each image in collection from a different GCM
   var futIc = ee.ImageCollection(futList);
   
+  // future SEI (reduced), so that all other downstream metrics (c9 etc can
+  // be re-calculated, and correctly correspond to to the low, median, high SEI)
+  var futRed0 = futIc
+    .select(diffBands)
+    .reduce(reducers);
+    
+  var futRed = SEI.image2Ic(futRed0); // converting to image collection 
+    
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) {
     return ee.Image(image).select(diffBands)
@@ -139,29 +147,27 @@ var main = exports.main = function(args) {
   });
   
   // reducing proportion change
-  var diffPropRed1 = diffPropIc.reduce(reducers);
+  // var diffPropRed1 = diffPropIc.reduce(reducers); // not correct when calculated this way
   
   // reducing to get min, max, median across GCMs for the differences
-  var diffRed1 = diffIc.reduce(reducers);
-  
-  // future values for the given GCM
-  var futGCM = futIc.filter(ee.Filter.eq('GCM', GCM))
-    // IC only has one image, but this way just have the image
-    .first();
-    
-  // difference relative to current conditions
-  var diffGCM = futGCM
-    .select(diffBands)
-    .subtract(cur1.select(diffBands))
-    .regexpRename('$', '_' + GCM);
-  
-  // combing min, max etc. deltas with delta for one specific GCM
-  var diffRed2 = diffRed1.addBands(diffGCM);
+
+  // for now only including Q5s b/ reduced cover, etc. need to calculated more carefully
+  // and correspond to low, median, high SEI values
+  var diffRed = futRed.map(function(image) {
+    return ee.Image(image).select('Q5s')
+      // subtract current conditions
+      .subtract(cur1.select('Q5s'))
+      .copyProperties(ee.Image(image));
+  });
   
   // calculating 'worst and best' case c9
-  // reduced c3 (i.e., includes layers for best and worst)
-  var c3Red = fut1.select('Q5sc3_.*').reduce(reducers)
-    .addBands(futGCM.select('Q5sc3').rename(GCM));
+  
+  // first recalculating c3 for low, median, high SEI
+  var futC3Red = futRed.map(function(x) {
+    return SEI.seiToC3(ee.Image(x).select('Q5s'))
+      .rename('c3')
+      .copyProperties(ee.Image(x));
+  });
    
   // c9 transition for each GCM 
   var c9Ic = futIc.map(function(x) {
@@ -173,10 +179,14 @@ var main = exports.main = function(args) {
       return ee.Image(x).rename('c9'); // not sure wy rename in map above doesn't work
     });
   
-  
-  var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
-  
-  
+  // re-calculating c9 for the reduced layers
+  var c9Red = futC3Red.map(function(x) {
+      var out = SEI.calcTransitions(cur1.select('Q5sc3').rename('c3'), ee.Image(x))
+        .copyProperties(ee.Image(x));
+      
+      return ee.Image(out).regexpRename('c3', 'c9')
+  })
+
   // contributions by each Q compontent to changes --------------------------------------
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
   // and then dividing by the sum changes in Q that are in the same direction, then taking 
@@ -220,8 +230,8 @@ var main = exports.main = function(args) {
     // (ie. for each q) so they fall between 0 and 1, 1 meaning
     // all the change was due to that q
     var absPropNorm = absProp.divide(sum)
-      // mask out areas where denominator would be 0
-      .updateMask(sum.gt(0));
+      // replaced values where denominator would be 0, with 0 (otherwise undefined)
+      .where(sum.eq(0), 0);
     return absPropNorm.copyProperties(ee.Image(x));
   });
   
@@ -272,9 +282,11 @@ var main = exports.main = function(args) {
     'climDeltaRed': climDeltaRed,
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
-    'diffPropRed': diffPropRed1,
+    // 'diffPropRed': diffPropRed1,
+    'futIc': futIc, // image collection future sei etc by GCM
+    'futRed': futRed, // future SEI by reduction (IC)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
-    'diffRed2': diffRed2,
+    'diffRed': diffRed,
     'c9Red': c9Red,
     'qPropMean': qPropMean, // climate attribution (proportion)
     'qPropIc': qPropIc,
@@ -285,4 +297,10 @@ var main = exports.main = function(args) {
   return out;
 };
 
-// print(ee.Image(main({root: 'fire1_eind1_c4grass1_co20_2311_'}).get('c9Red')))
+
+// for testing
+/*
+var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
+print(d)
+print(ee.ImageCollection(d.get('c9Red')))
+*/

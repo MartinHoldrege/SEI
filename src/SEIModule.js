@@ -133,7 +133,7 @@ exports.raw2HSI = function( image, lst, e) { // generate a linear interpolated r
  *     (i.e. described as SEI2000 in the manuscript draft)
  * @return {ee.Image} values from 1 to 10, denoting the decile class
  */
-exports.decileFixedClasses = function(Q5s) {
+var decileFixedClasses = function(Q5s) {
   var out = Q5s.gt(0.002)
   .add(Q5s.gte(0.009))
   .add(Q5s.gt(0.068))
@@ -145,7 +145,7 @@ exports.decileFixedClasses = function(Q5s) {
   .add(Q5s.gt(0.565)).add(1); // so range is 1-10
   return(out);
 };
-
+exports.decileFixedClasses = decileFixedClasses;
 /**
  * Smooth pixels within a 560 m neighborhood
  * @param {ee.Image} image to smooth
@@ -271,7 +271,22 @@ var remapAllBands = function(image, from, to) {
   return remappedImage;
 };
 
+
 exports.remapAllBands = remapAllBands;
+
+/**
+ * convert continuous SEI to 3 categories
+ * @param {ee.Image} Q5s image of continuous SEI
+ * @return {ee.Image} Image with 3 values (1 core, 2 growth, 3 other)
+*/
+exports.seiToC3 = function(Q5s) {
+  var Q5scdeciles = decileFixedClasses(Q5s);
+  
+  var Q5sc3 = remapAllBands(Q5scdeciles, [1,2,3,4,5,6,7,8,9,10],[3,3,3,2,2,2,2,2,1,1])
+    .regexpRename('Q5s', 'Q5sc3');
+  return Q5sc3
+}
+
 
 // transitions between classes (median) --------------------------------------
   
@@ -415,6 +430,61 @@ exports.compareFutures = function(c9Ref, c9New, seiRef, seiNew) {
     .rename('diffClass')
     .selfMask();
 };
+
+
+/*
+function used inside image2Ic 
+
+returns unique suffixes used in image band names (anything after the last underscore)
+*/
+var uniqueImageSuffix = function(image) {
+  var list = image.bandNames()
+  .map(function(x) {
+    var suffix1 = ee.String(x)
+      .match('_[[:alpha:]]+$')
+      .get(0);
+      
+    var suffix = ee.String(suffix1)
+      .match('[[:alpha:]]+$')// excluding the underscore
+      .get(0);
+      
+    return ee.String(suffix);
+  });
+  return list.distinct();
+};
+
+/**
+ * convert and image to an image collection, each new image comes from bands with 
+ * the same suffix, this suffix then become a property
+ * @param {ee.image} image an image with multiple bands and band names have suffixes preceded by _
+ * @param {ee.String} propertyName string is the name of the image property to be created
+ * @return {ee.ImageCollection}
+
+*/
+var image2Ic = function(image, propertyName) {
+  // default settings
+  if (propertyName === undefined){var propertyName = 'GCM';}
+  var reducerSuffix = uniqueImageSuffix(image); // unique suffixes
+  
+  var imageList = reducerSuffix.map(function(x) {
+    var red = ee.String(x)
+    return image
+      .select(ee.String('.*_').cat(red))
+      .regexpRename(ee.String('_').cat(red), '')
+      .set(ee.String(propertyName), red);
+  })
+  return ee.ImageCollection.fromImages(imageList);
+}
+exports.image2Ic = image2Ic; 
+
+/*
+// testing image2Ic function
+
+var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
+  .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
+print(image2Ic(image, 'reducer'))
+*/
+
 
 /*
  
