@@ -127,7 +127,7 @@ var main = exports.main = function(args) {
     .select(diffBands)
     .reduce(reducers);
     
-  var futRed = SEI.image2Ic(futSeiRed0); // converting to image collection 
+  var futRed = SEI.image2Ic(futRed0); // converting to image collection 
     
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) {
@@ -147,30 +147,24 @@ var main = exports.main = function(args) {
   });
   
   // reducing proportion change
-  var diffPropRed1 = diffPropIc.reduce(reducers);
+  // var diffPropRed1 = diffPropIc.reduce(reducers); // not correct when calculated this way
   
   // reducing to get min, max, median across GCMs for the differences
-  // var diffRed1 = diffIc.reduce(reducers); // update
-  
-  // future values for the given GCM
-  var futGCM = futIc.filter(ee.Filter.eq('GCM', GCM))
-    // IC only has one image, but this way just have the image
-    .first();
-    
-  // difference relative to current conditions
-  var diffGCM = futGCM
-    .select(diffBands)
-    .subtract(cur1.select(diffBands))
-    .regexpRename('$', '_' + GCM);
-  
-  // combing min, max etc. deltas with delta for one specific GCM
-  // var diffRed2 = diffRed1.addBands(diffGCM);
+
+  // for now only including Q5s b/ reduced cover, etc. need to calculated more carefully
+  // and correspond to low, median, high SEI values
+  var diffRed = futRed.map(function(image) {
+    return ee.Image(image).select('Q5s')
+      // subtract current conditions
+      .subtract(cur1.select('Q5s'))
+      .copyProperties(ee.Image(image));
+  });
   
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
-  var c3Red = futRed.map(function(x) {
-    return SEI.sei2C3(ee.Image(x).select('Q5s'))
+  var futC3Red = futRed.map(function(x) {
+    return SEI.seiToC3(ee.Image(x).select('Q5s'));
   });
    
   // c9 transition for each GCM 
@@ -183,10 +177,14 @@ var main = exports.main = function(args) {
       return ee.Image(x).rename('c9'); // not sure wy rename in map above doesn't work
     });
   
-  
-  var c9Red = SEI.calcTransitions(cur1.select('Q5sc3'), c3Red);
-  
-  
+  // re-calculating c9 for the reduced layers
+  var c9Red = futC3Red.map(function(x) {
+      var out = SEI.calcTransitions(cur1.select('Q5sc3'), ee.Image(x))
+        .copyProperties(ee.Image(x));
+      return ee.Image(out).rename('c3')
+        
+  })
+
   // contributions by each Q compontent to changes --------------------------------------
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
   // and then dividing by the sum changes in Q that are in the same direction, then taking 
@@ -282,9 +280,9 @@ var main = exports.main = function(args) {
     'climDeltaRed': climDeltaRed,
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
-    'diffPropRed': diffPropRed1,
+    // 'diffPropRed': diffPropRed1,
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
-    'diffRed2': diffRed2,
+    'diffRed': diffRed,
     'c9Red': c9Red,
     'qPropMean': qPropMean, // climate attribution (proportion)
     'qPropIc': qPropIc,
@@ -295,4 +293,4 @@ var main = exports.main = function(args) {
   return out;
 };
 
-// print(ee.Image(main({root: 'fire1_eind1_c4grass1_co20_2311_'}).get('c9Red')))
+print(ee.Image(main({root: 'fire1_eind1_c4grass1_co20_2311_'})))
