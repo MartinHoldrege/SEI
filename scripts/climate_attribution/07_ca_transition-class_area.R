@@ -80,6 +80,15 @@ area2 <- area1 %>%
          driver = factor(driver, levels = c('sagebrush', 'pfg', 'afg', 'none'))) %>% 
   select(-area_m2, -ecoregionNum, -driverNum)
 
+tmp <- area2 %>% 
+  filter(GCM %in% c('low', 'high', 'median')) %>% 
+  #select(area_km2, GCM) %>% 
+  pivot_wider(values_from = "area_km2",
+              names_from = "GCM") 
+
+
+tmp %>% 
+  filter(median > low & median > high)
 runs <- unique(area2$run) # for looping
 stopifnot(target_run %in% runs)
 

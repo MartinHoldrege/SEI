@@ -172,37 +172,6 @@ dev.off()
 
 # * biome-wide figures ----------------------------------------------------
 
-# ** pub qual --------------------------------------------------------------
-
-# g <- area_med %>% 
-#   filter(RCP == rcp, years == yr) %>% 
-#   mutate(run_name = run2name(run),
-#          driver_name = driver2factor(driver)) %>% 
-#   ggplot(aes(x = run_name, fill = driver_name)) +
-#   facet_wrap(~c9_name, nrow = 2) +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-#         legend.position = 'bottom') +
-#   scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
-#                     name = "Primary driver of change")  +
-#   labs(x = "Model assumptions",
-#        subtitle = fig_letters['b']) +
-#   geom_bar(aes(y = area_km2_med), stat = 'identity',
-#            position = position_dodge()) +
-#   geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi),
-#                 width = 0.3,
-#                 position=position_dodge(0.9)) +
-#   labs(y = lab_areakm0) +
-#   guides(fill = guide_legend(nrow = 2))
-# g
-# 
-# list2save <- list('fig' = g,
-#                   RCP = rcp,
-#                   years = yr,
-#                   version = version)
-# 
-# # saving so that can be combined with a map in a downstream script
-# saveRDS(list2save, "figures/area/c9_driver_barplot_by-run.RDS")
-
 
 # ** pub qual c12 ---------------------------------------------------------
 
@@ -240,7 +209,7 @@ saveRDS(g, paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".
 pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v1.pdf"),
     width = 10, height = 10)
 
-g <- area_med %>% 
+g <- area_med_gw %>% 
   filter(RCP == rcp, years == yr) %>% 
   ggplot(aes(x = driver, fill = c9_name)) +
   facet_grid(run~c9_name) +
