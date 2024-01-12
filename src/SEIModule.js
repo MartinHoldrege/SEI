@@ -461,6 +461,7 @@ var image2Ic = function(image, propertyName) {
   return ee.ImageCollection.fromImages(imageList);
 }
 exports.image2Ic = image2Ic; 
+
 /*
 // testing image2Ic function
 
