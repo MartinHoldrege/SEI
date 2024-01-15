@@ -183,7 +183,7 @@ var main = exports.main = function(args) {
   var c9Red = futC3Red.map(function(x) {
       // recalculating cur C3 here, because some slight rounding
       // issue seems to be causing change in class and and delta SEI not to match up in a few (<5%) of cases
-      var curC3 = seiToC3(cur1.select('Q5s'))
+      var curC3 = SEI.seiToC3(cur1.select('Q5s'))
         .rename('c3') 
       var out = SEI.calcTransitions(curC3, ee.Image(x))
         .copyProperties(ee.Image(x));
