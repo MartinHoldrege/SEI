@@ -25,7 +25,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = false;
+var testRun = true;
 var versionFull = 'vsw4-3-4'
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -33,7 +33,7 @@ var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4gra
                           [4, 4, 4, 4]);
                           
 if(testRun) {
-  var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+  //var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
 }
 
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
@@ -42,7 +42,7 @@ var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-21
 
 var resolution = 90;
 if (testRun) {
-  var resolutionCompute = 1000; // resolution area is computed at. 
+  var resolutionCompute = 10000; // resolution area is computed at. 
 } else {
   var resolutionCompute = resolution
 }
@@ -316,17 +316,18 @@ for (var i = 0; i < roots.length; i++) {
       });
       
   var combFcGood = combFcGood.merge(areaFcGood);
-
+  print(d.get('root'), d.get('RCP'), d.get('epoch'))
 } // end loop
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240111';
+var s = versionFull + '_20240114';
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {
   var descript = 'test-' + descript;
 } 
+
 
 Export.table.toDrive({
   collection: combFc,
