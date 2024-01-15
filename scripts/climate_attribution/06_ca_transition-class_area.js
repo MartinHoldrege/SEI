@@ -25,7 +25,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = true;
+var testRun = false;
 var versionFull = 'vsw4-3-4'
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -316,7 +316,8 @@ for (var i = 0; i < roots.length; i++) {
       });
       
   var combFcGood = combFcGood.merge(areaFcGood);
-  print(d.get('root'), d.get('RCP'), d.get('epoch'))
+  //print(d.get('root'), d.get('RCP'), d.get('epoch'))
+  // print(areaFc1.flatten())
 } // end loop
 
 // save output ------------------------------------------------------------------------------------
