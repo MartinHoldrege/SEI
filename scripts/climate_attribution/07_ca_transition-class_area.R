@@ -11,9 +11,9 @@
 
 # params ------------------------------------------------------------------
 
-download <- FALSE # try and download the newest version of the file?
+download <- TRUE # try and download the newest version of the file?
 version <- 'vsw4-3-4'
-resolution <- 90
+resolution <- 90 # 1000 #
 
 yr <- '2070-2100'
 rcp <- 'RCP45'
@@ -80,17 +80,27 @@ area2 <- area1 %>%
          driver = factor(driver, levels = c('sagebrush', 'pfg', 'afg', 'none'))) %>% 
   select(-area_m2, -ecoregionNum, -driverNum)
 
-tmp <- area2 %>% 
-  filter(GCM %in% c('low', 'high', 'median')) %>% 
-  #select(area_km2, GCM) %>% 
-  pivot_wider(values_from = "area_km2",
-              names_from = "GCM") 
 
-
-tmp %>% 
-  filter(median > low & median > high)
 runs <- unique(area2$run) # for looping
 stopifnot(target_run %in% runs)
+
+tmp <- area2 %>% 
+  filter((sei_dir == 'decreasing' & c9 %in% c(4, 7, 8))|
+          (sei_dir == 'increasing' & c9 %in% c(2, 3, 6))) %>% 
+  filter(area_km2 > 0) %>% 
+  arrange(desc(area_km2))
+
+if(nrow(tmp) > 0) {
+  # issue that seems to be caused rounding or projection alignment
+  # issues in GEE, here adjusting the 'direction' based 
+  warning('some pixels show SEI decreasing but have an improvement in class')
+  area2 %>% 
+    mutate(sei_dir = case_when(
+      sei_dir == 'decreasing' & c9 %in% c(4, 7, 8) ~ 'increasing',
+      sei_dir == 'increasing' & c9 %in% c(2, 7, 8) ~ 'increasing',
+    ))
+}
+   
 
 # making sure final dataset has all 'combinations' so that, for example, no GCMs are missing
 # for areas that are 0. 
@@ -112,7 +122,25 @@ area3 <- expand_grid(
          c12 = as.numeric(c12_name),
          rcp_years = paste0(RCP, ' (', years, ')')) 
 
+# testing ~~~~
+tmp <- area3 %>% 
+  filter(GCM %in% c('low', 'high', 'median')) %>% 
+  #select(area_km2, GCM) %>% 
+  pivot_wider(values_from = "area_km2",
+              names_from = "GCM") 
+tmp %>% 
+  filter(median > low & median > high)
+
+       in habitat class')
+}
+
+# area3 %>% 
+#   filter(driver == 'none') %>% 
+#   arrange(run, ecoregion, rcp_years, driver, c12_name) %>% 
+#   View()
+# end testing ~~~~
 # total area per ecoregion or biome-wide (for calculating % of total area)
+
 
 # total area by ecoregion
 tot_area_eco <- area3 %>% 
@@ -188,12 +216,12 @@ tmp <- area3 %>%
   summarize(area_km2 = sum(area_km2)) %>% 
   mutate(area_km2 = round(area_km2))
 
-# area3 %>% 
-#   filter(GCM %in% c('CESM1-CAM5', 'median', 'low')) %>% 
-#   mutate(c3_name = c9_to_c3(c9)) %>% 
-#   group_by(GCM, c3_name) %>%
-#   summarise(area_km2 = sum(area_km2)) %>%
-#   arrange(c3_name)
+area3 %>%
+  filter(GCM %in% c('CESM1-CAM5', 'median', 'low')) %>%
+  mutate(c3_name = c9_to_c3(c9)) %>%
+  group_by(GCM, c3_name) %>%
+  summarise(area_km2 = sum(area_km2)) %>%
+  arrange(c3_name)
 
 stopifnot(length(unique(tmp$area_km2)) == 3) # should only be 3 unique areas (1 for core, grow other)
 
