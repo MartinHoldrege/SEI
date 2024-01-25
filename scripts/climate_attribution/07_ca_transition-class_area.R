@@ -131,9 +131,6 @@ tmp <- area3 %>%
 tmp %>% 
   filter(median > low & median > high)
 
-       in habitat class')
-}
-
 # area3 %>% 
 #   filter(driver == 'none') %>% 
 #   arrange(run, ecoregion, rcp_years, driver, c12_name) %>% 
