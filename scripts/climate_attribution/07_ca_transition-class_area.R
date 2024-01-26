@@ -11,11 +11,15 @@
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # try and download the newest version of the file?
+download <- FALSE # try and download the newest version of the file?
 version <- 'vsw4-3-4'
 resolution <- 90 # 1000 #
 
-yr <- '2070-2100'
+yr <- '2071-2100'
+
+# same as yr but keep original date range (i.e. not 2031 or 2071)
+# for file saving consistency
+yr_save <- str_replace(yr, '1-', '0-')
 rcp <- 'RCP45'
 target_run <- 'fire1_eind1_c4grass1_co20_2311' # main 'run' used for some pub qual figs
 
@@ -90,17 +94,27 @@ tmp <- area2 %>%
   filter(area_km2 > 0) %>% 
   arrange(desc(area_km2))
 
+nrow(area2)
 if(nrow(tmp) > 0) {
   # issue that seems to be caused rounding or projection alignment
   # issues in GEE, here adjusting the 'direction' based 
   warning('some pixels show SEI decreasing but have an improvement in class')
-  area2 %>% 
-    mutate(sei_dir = case_when(
+  area2 <- area2 %>% 
+    mutate(tmp = case_when(
       sei_dir == 'decreasing' & c9 %in% c(4, 7, 8) ~ 'increasing',
-      sei_dir == 'increasing' & c9 %in% c(2, 7, 8) ~ 'increasing',
-    ))
+      sei_dir == 'increasing' & c9 %in% c(2, 7, 8) ~ 'decreasing',
+      TRUE ~ sei_dir),
+      sei_dir = factor(tmp, levels(sei_dir))
+      ) %>% 
+    select(-tmp) %>% 
+  # the previous step created sum duplicated row groupings, so now
+  # summing them together (e.g. now there could be to sei decreasing rows for a given
+  # set of all other grouping variables)
+    group_by(GCM, RCP, run, years, c9, sei_dir, ecoregion, driver) %>% 
+    summarise(area_km2 = sum(area_km2))
+  
 }
-   
+nrow(area2)  
 
 # making sure final dataset has all 'combinations' so that, for example, no GCMs are missing
 # for areas that are 0. 
@@ -117,10 +131,11 @@ area3 <- expand_grid(
   left_join(area2, by = join_by(GCM, RCP, ecoregion, run, years, c9, driver,
                                 sei_dir)) %>% 
   mutate(area_km2 = ifelse(is.na(area_km2), 0, area_km2),
+         years = epoch2factor(years),
          c9_name = factor(c9Names[c9], levels = c9Names),
          c12_name = create_c12_factor(c9 = c9, sei_dir = sei_dir),
          c12 = as.numeric(c12_name),
-         rcp_years = paste0(RCP, ' (', years, ')')) 
+         rcp_years = paste0(RCP, ' (', years, ')'))
 
 # testing ~~~~
 tmp <- area3 %>% 
@@ -266,7 +281,7 @@ area_med_gw <- area_gcm_eco %>%
             .groups = 'drop_last') 
 
 # group by c12
-area_med_dir <- area3 %>% 
+area_med_dir_gw <- area3 %>% 
   filter(!GCM %in% names_red) %>% 
   group_by(RCP, run, years, c12_name, c12, GCM, driver) %>% 
   summarize(area_km2 = sum(area_km2), # total area for the grouping across drivers
@@ -277,6 +292,25 @@ area_med_dir <- area3 %>%
   summarise(across(c(area_km2, area_perc),
                    .fns = list(med = median, lo = low, hi = high)),
             .groups = 'drop') 
+
+# this code has been updated and works--input data needs to have values
+# for the drivers (this hasn't been corrected yet)
+area_med_dir <- area3 %>% 
+  filter(GCM %in% names_red) %>% 
+  #filter(GCM == 'low') %>% 
+  group_by(RCP, run, years, c12_name, GCM, driver, rcp_years) %>% 
+  # summing over ecoregions, and sei dir for 
+  summarize(area_km2 = sum(area_km2),
+            .groups = 'drop') %>% 
+  correct_lohi() %>% 
+  group_by(RCP, run, years, c12_name, GCM) %>% 
+  # total area so can get % of total area
+  mutate(area_tot = sum(area_km2),
+         area_perc = area_km2/area_tot*100) %>% 
+  pivot_wider(id_cols = c(run, RCP, years, rcp_years, c12_name, driver),
+              values_from = c("area_km2", "area_perc"),
+              names_from = 'GCM')
+  
 
 # don't need to display a c9 category that doesn't exist anywhere
 c9_to_keep <- area_med_gw %>% 

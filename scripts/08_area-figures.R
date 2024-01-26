@@ -3,7 +3,6 @@
 # Author: Martin Holdrege
 
 # dependencies ------------------------------------------------------------
-
 source("scripts/climate_attribution/07_ca_transition-class_area.R")
 
 
@@ -92,7 +91,7 @@ g <- area_med_c9 %>%
                    stat = 'identity',
                    position = position_dodge(),
                    pattern_fill = 'darkgrey',
-                   pattern_spacing = 0.05,
+                   pattern_spacing = 0.04,
                    color = 'white',
                    pattern_key_scale_factor = 0.5 # relative density in the legend
   ) +
@@ -173,35 +172,63 @@ dev.off()
 # * biome-wide figures ----------------------------------------------------
 
 
-# ** pub qual c12 ---------------------------------------------------------
+# ** c12 ---------------------------------------------------------
 
-# 12 panel map
-g <- area_med_dir %>% 
+base_c12 <- function() {
+  list(
+    facet_wrap(~c12_name, nrow = 3),
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.position = 'bottom'),
+    scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
+                        name = "Primary driver of change"),
+    geom_bar(aes(y = area_perc_med), stat = 'identity',
+               position = position_dodge()),
+    geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
+                    width = 0.3,
+                    position=position_dodge(0.9)),
+    labs(y = lab_areaperc0) 
+  )
+}
+
+# 12 panel map, showing all model assumptions (for appendix)
+g <- area_med_dir_gw %>% 
   filter(RCP == rcp, years == yr) %>% 
   mutate(run_name = run2name(run),
          driver_name = driver2factor(driver)) %>% 
   ggplot(aes(x = run_name, fill = driver_name)) +
-  facet_wrap(~c12_name, nrow = 3) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = 'bottom') +
-  scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
-                    name = "Primary driver of change")  +
-  labs(x = "Model assumptions",
-       subtitle = fig_letters['b']) +
-  geom_bar(aes(y = area_perc_med), stat = 'identity',
-           position = position_dodge()) +
-  geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
-                width = 0.3,
-                position=position_dodge(0.9)) +
-  labs(y = lab_areaperc0) +
+  labs(x = "Model assumptions"
+       #subtitle = fig_letters['b']
+       ) +
+  base_c12() +
   guides(fill = guide_legend(nrow = 2))
-
-jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".jpg"),     
+g
+jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, ".jpg"),     
      units = 'in', height = 7, width = 7, res = 600)
 g
 dev.off()
 
-saveRDS(g, paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr, ".RDS"))
+
+# 12 panel version, only showing default assumptions, for main manuscript
+
+shorten_c12 <- function(x) {
+  tmp <- function(x) {
+    str_replace(x, "becomes ", "becomes\n") %>% 
+      str_replace('ing', 'e')
+    }
+  fct_relabel(x, .fun = tmp)
+}
+g <- area_med_dir_gw %>% 
+  filter(RCP == rcp, years == yr, run == target_run) %>% 
+  mutate(driver_name = driver2factor(driver),
+         c12_name = shorten_c12(c12_name)) %>% 
+  ggplot(aes(x = driver_name, fill = driver_name)) +
+  labs(x = "Primary driver of change",
+       subtitle = fig_letters['b']
+  ) +
+  base_c12() +
+  theme(legend.position = 'none')
+g
+saveRDS(g, paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, ".RDS"))
 
 
 # ** regular ---------------------------------------------------------------

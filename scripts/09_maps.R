@@ -266,6 +266,7 @@ r <- r_c9 %>%
 
 names(r) <- names(r) %>% 
   str_replace('_', " ") %>% 
+  update_yr() %>% 
   paste(fig_letters[1:4], .)
 names(r)
 tmp <- plot_map2(st_as_stars(r, as_attributes = FALSE)) +
@@ -443,6 +444,7 @@ map2(all_g, names(all_g), function(g, run) {
 s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>% 
   # for some reason code breaks when not using spatsample
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
+  #spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
 
@@ -463,18 +465,19 @@ dbox2 <- dbox +
        #tag = fig_letters[2]
        ) +
   theme(plot.tag = element_text(face = 'plain'),
-        text = element_text(size = 8))
+        text = element_text(size = 8),
+        strip.text.x.top = element_text(size = 5))
 comb <- wrap_elements(full = rgb2) + 
   wrap_elements(full = dbox2) + 
-  # plot_layout(ncol = 2, widths = c(2, 2)) +
+  plot_layout(ncol = 2, widths = c(2, 1.1)) +
   plot_annotation(tag_levels = list(fig_letters[1:2])) &
-  theme(plot.tag.position = c(0.04, 0.97),
+  theme(plot.tag.position = c(0.06, 0.97),
         plot.tag = element_text(face = 'plain'))
-#comb
+# comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
                   root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
-     width = 9, height = 5, units = 'in',
+     width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
 dev.off()
@@ -642,8 +645,10 @@ cols_numGcm <- c("11" = '#0571b0',
                  "24" = '#008837', 
                  "30" = unname(c9Palette[9]))
 
-perc1 <- paste0('\n(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
-perc2 <- paste0('\n(', round(7/13*100, digits = -1), '-', round(12/13*100, digits = -1), '% of GCMs agree)')
+# perc1 <- paste0('\n(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
+perc1 <- '\n(robust agreement)'
+# perc2 <- paste0('\n(', round(7/13*100, digits = -1), '-', round(12/13*100, digits = -1), '% of GCMs agree)')
+perc2 <- '\n(non-robust agreement)'
 names_numGcm <- c("11" = paste('Stable CSA', perc1),
                  "12" = paste('Stable CSA', perc2),
                  "13" = paste('Loss of CSA', perc2), 

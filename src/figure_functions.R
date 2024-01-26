@@ -37,6 +37,7 @@ states <- sf::st_as_sf(spData::us_states) %>%
 #' @return character vector
 rcp_label <- function(rcp, years, add_letters = FALSE,
                       include_parenth = TRUE) {
+  years <- as.character(epoch2factor(years)) # convert 2070 to 2071 etc. so labels are correct
   if (include_parenth) {
     x1 <- ifelse(rcp == "Current", "(Historical)", paste0("(",rcp,", ",years, ")"))
   } else {
@@ -67,7 +68,7 @@ rename_bands <- function(x) {
   m <- str_split_fixed(names(x), pattern = "_", n = 2)
   RCP <- as.vector(m[, 1])
   new_name <- rcp_label(rcp = as.vector(m[, 1]),
-                        years = as.vector(m[, 2]),
+                        years = as.charactor(epoch2factor(as.vector(m[, 2]))),
                         add_letters = TRUE,
                         include_parenth = FALSE)
   names(x) <- new_name

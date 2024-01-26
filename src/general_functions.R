@@ -90,7 +90,16 @@ drive_download_from_df <- function(df, folder_path = "./", overwrite = TRUE) {
 # functions that create factors out of character vectors etc. 
 
 epoch2factor <- function(x) {
-  factor(x, levels = c('2030-2060', '2070-2100'))
+  factor(x, levels = c('2030-2060', '2070-2100'),
+         labels = c('2031-2060', '2071-2100'))
+}
+
+# doesn't create a factor, but just to update the correct
+# epoch label for use in figures
+update_yr <- function(x) {
+  x %>% 
+    str_replace('2030', '2031') %>% 
+    str_replace('2070', '2071')
 }
 
 RCP2factor <- function(x) {
@@ -99,7 +108,7 @@ RCP2factor <- function(x) {
 
 
 c3_named_factor <- function(x) {
-  labels <- c("Core", "Grow", "Other")
+  labels <- c("CSA", "GOA", "ORA")
   
   stopifnot(x %in% 1:3)
   out <- factor(x, levels = 1:3,
@@ -158,6 +167,7 @@ create_c12_factor <- function(c9, sei_dir) {
   create_c12_name <- function(c9, sei_dir) {
     stopifnot(c9 %in% 1:9,
               sei_dir %in% c('increasing', 'decreasing'))
+    
     ifelse(c9 %in% c(1, 5, 9),
            paste0(c9Names[c9], "\n", "(SEI ", as.character(sei_dir), ")"),
            c9Names[c9])
@@ -175,9 +185,9 @@ create_c12_factor <- function(c9, sei_dir) {
 c9_to_c3 <- function(x) {
   stopifnot(x %in% 1:9)
   factor(x, levels = 1:9,
-         labels = c('Core', 'Core', 'Core',
-                    'Grow', 'Grow', 'Grow',
-                    'Other', 'Other', 'Other'))
+         labels = c('CSA', 'CSA', 'CSA',
+                    'GOA', 'GOA', 'GOA',
+                    'ORA', 'ORA', 'ORA'))
 }
 # q curve functions -------------------------------------------------------
 
@@ -447,4 +457,50 @@ high <- function(x) {
   
   sort(x, decreasing = TRUE)[2]
   
+}
+
+#' create two version of low/high pixelwise area estimates
+#'
+#' @param df that contains low, high,median pixelwise area estimates
+#'
+#' @return dataframes with lo, lo_sei, hi, hi_sei values for the GCM column,
+#' where the '...sei' ones are the areas associated with lo and hi sei pixelwise
+#' values (i.e. the low, and high inputs), and lo, and hi, are just the lower 
+#' and higher of those two estimates (b/ lo_sei can be > than hi_sei)
+correct_lohi <- function(df) {
+  stopifnot(
+    is.data.frame(df),
+    c('area_km2', 'GCM') %in% names(df),
+    df$GCM %in% c("low", "median", "high")
+  )
+  
+  df2 <- df %>% 
+    mutate(GCM = red2short(.data$GCM))
+  
+  df_lohi_sei <- df2 %>% 
+    filter(GCM %in% c("lo", 'hi')) %>% 
+    mutate(GCM = c('lo' = 'lo_sei', 'hi' = 'hi_sei')[GCM])
+  
+  # if the 'low' value (i.e. area associated with low sei at each pixel) is
+  # greater th
+  switch <- df2 %>% 
+    filter(GCM %in% c('lo', 'hi')) %>% 
+    pivot_wider(values_from = 'area_km2', names_from = 'GCM') %>% 
+    mutate(switch_hilo = lo > hi) %>% 
+    pivot_longer(cols = c('hi', 'lo'),
+                 names_to = 'GCM') %>% 
+    select(-value)
+  
+  df_swap_lohi <- df2 %>% 
+    left_join(switch) %>% 
+    mutate(switch_hilo = ifelse(is.na(switch_hilo), FALSE, switch_hilo),
+           GCM = case_when(
+             GCM == 'lo' & switch_hilo  ~ 'hi',
+             GCM == 'hi' & switch_hilo  ~ 'lo',
+             TRUE ~ GCM
+           )) %>% 
+    select(-switch_hilo)
+
+  out <- bind_rows(df_swap_lohi, df_lohi_sei)
+  out
 }

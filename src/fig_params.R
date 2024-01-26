@@ -4,19 +4,31 @@
 
 
 # Names of the 9 transition categories
+# c9Names <-  c(
+#   'Stable core',
+#   'Core becomes grow',
+#   'Core becomes other',
+#   'Grow becomes core',
+#   'Stable grow',
+#   'Grow becomes other',
+#   'Other becomes core',
+#   'Other becomes grow',
+#   'Stable other'
+# )
+
 c9Names <-  c(
-  'Stable core',
-  'Core becomes grow',
-  'Core becomes other',
-  'Grow becomes core',
-  'Stable grow',
-  'Grow becomes other',
-  'Other becomes core',
-  'Other becomes grow',
-  'Stable other'
+  'Stable CSA',
+  'CSA becomes GOA',
+  'CSA becomes ORA',
+  'GOA becomes CSA',
+  'Stable GOA',
+  'GOA becomes ORA',
+  'ORA becomes CSA',
+  'ORA becomes GOA',
+  'Stable ORA'
 )
 
-c3Names <- c("Core", "Grow", "Other")
+c3Names <- c("CSA", "GOA", "ORA")
 
 
 # axis labels -------------------------------------------------------------
