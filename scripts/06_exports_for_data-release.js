@@ -40,15 +40,24 @@ for(var i = 0; i<rootList.length; i++) {
     .select('Q5s') // image collection for low, median, high
     .map(function(x) {
       return ee.Image(x).rename('SEI');
-    })
+  })
     
-  var seiImage = SEI.ic2Image(sieIc, 'GCM')
-  print(seiImage)
+  var seiImage = SEI
+    .ic2Image(seiIc, 'GCM')
+    .toFloat(); // 32 bit Float
+  
+  var s = 'SEI_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
+  Export.image.toDrive({
+    image: seiImage,
+    description: s,
+    folder: 'gee',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: SEI.region,
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF',
+    formatOptions: {
+      cloudOptimized: true
+    }
+  });
 }
-
-
-
-// fileFormat: 'GeoTIFF',
-//   formatOptions: {
-//     cloudOptimized: true
-//   }
