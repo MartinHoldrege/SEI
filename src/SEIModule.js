@@ -499,6 +499,7 @@ var ic2Image = function(ic, propertyName) {
     .regexpRename('^[[:alnum:]]+_', ''); // removing the prefix added by to Bands
 }
 
+exports.ic2Image = ic2Image;
 /*
 // testing image2Ic and ic2Image functions
 
