@@ -477,14 +477,33 @@ var image2Ic = function(image, propertyName) {
 }
 exports.image2Ic = image2Ic; 
 
+
+
+var ic2Image = function(ic, propertyName) {
+  var icRenamed = ic.map(function(x) {
+    var image = ee.Image(x)
+    var property = ee.String(image.get(propertyName));
+    var oldNames = image.bandNames()
+    var newNames = oldNames.map(function(x) {
+      return ee.String(x).cat(ee.String('_')).cat(property)
+    })
+    return image.rename(newNames)
+  })
+  
+  return icRenamed.toBands()
+    .regexpRename('^[[:alnum:]]+_', ''); // removing the prefix added by to Bands
+}
+
 /*
-// testing image2Ic function
+// testing image2Ic and ic2Image functions
 
 var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
   .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
-print(image2Ic(image, 'reducer'))
-*/
+var ic = image2Ic(image, 'reducer')
+print(ic)
+print(ic2Image(ic, 'reducer'))
 
+*/
 
 /*
  
