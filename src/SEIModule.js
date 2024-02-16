@@ -478,7 +478,12 @@ var image2Ic = function(image, propertyName) {
 exports.image2Ic = image2Ic; 
 
 
-
+/**
+ * convert and image collection to band with value of property appended to band names
+ * @param {ee.image} image collection where each image contains a unique value of propertyName
+ * @param {ee.String} propertyName string is the name of the image property each image has
+ * @return {ee.Image}
+*/
 var ic2Image = function(ic, propertyName) {
   var icRenamed = ic.map(function(x) {
     var image = ee.Image(x)
