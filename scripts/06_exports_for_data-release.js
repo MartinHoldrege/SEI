@@ -66,7 +66,7 @@ for (var j = 0; j<rootList.length; j++) {
   } // end looping over RCPs and time-periods
   
     var s = 'SEI_' + versionFull + '_' + root + 'by-scenario_' + resolution + 'm'; 
-    Export.image.toDrive({
+/*    Export.image.toDrive({
       image: seiImage,
       description: s,
       folder: 'gee',
@@ -77,6 +77,20 @@ for (var j = 0; j<rootList.length; j++) {
       fileFormat: 'GeoTIFF',
       formatOptions: {
         cloudOptimized: true
-      }
+      }*/
+      
+    Export.image.toCloudStorage({
+      image: seiImage,
+      description: s,
+      bucket: 'mholdrege',
+      maxPixels: 1e13, 
+      scale: resolution,
+      region: SEI.region,
+      crs: SEI.crs,
+      fileFormat: 'GeoTIFF',
+      formatOptions: {
+        cloudOptimized: true
+    }
+
     });
 }// end loop over root
