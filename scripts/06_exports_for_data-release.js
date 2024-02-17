@@ -82,7 +82,8 @@ for (var j = 0; j<rootList.length; j++) {
     Export.image.toCloudStorage({
       image: seiImage,
       description: s,
-      bucket: 'mholdrege',
+      fileNamePrefix: 'SEI/',
+      bucket: 'USGS-GEE-DrylandEcohydrology',
       maxPixels: 1e13, 
       scale: resolution,
       region: SEI.region,
