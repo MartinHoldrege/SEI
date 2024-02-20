@@ -21,6 +21,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // User-defined variables -----------------------------------------------------
 
+var exportSei = true; // whether to export the continous SEI layers
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -33,12 +34,16 @@ var rcpList =  ['RCP45', 'RCP45', 'RCP85', 'RCP85'];
 
 var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 
+// current SEI
+
+
+
 // future SEI ----------------------------------------------------
 // loop over simulation assumptions (roots) 
 for (var j = 0; j<rootList.length; j++) {
   var root = rootList[j];
   // loop over RCPs/time-periods (for contionuous SEI)
-  var seiImage = ee.Image([]);
+  // var seiImage = ee.Image([]);
   for(var i = 0; i<rcpList.length; i++) {
     
     
@@ -55,34 +60,19 @@ for (var j = 0; j<rootList.length; j++) {
     var seiIc = ee.ImageCollection(d.get('futRed'))
       .select('Q5s') // image collection for low, median, high
       .map(function(x) {
-        return ee.Image(x).rename('SEI_' + rcp_yr);
+        return ee.Image(x).rename('SEI_');
     });
       
-    var tmp = SEI
-      .ic2Image(seiIc, 'GCM')
+    var seiImage = SEI.ic2Image(seiIc, 'GCM')
       .toFloat(); // 32 bit Float
-    var seiImage = seiImage.addBands(tmp);
-
-  } // end looping over RCPs and time-periods
-  
-    var s = 'SEI_' + versionFull + '_' + root + 'by-scenario_' + resolution + 'm'; 
-/*    Export.image.toDrive({
-      image: seiImage,
-      description: s,
-      folder: 'gee',
-      maxPixels: 1e13, 
-      scale: resolution,
-      region: SEI.region,
-      crs: SEI.crs,
-      fileFormat: 'GeoTIFF',
-      formatOptions: {
-        cloudOptimized: true
-      }*/
       
+    var s = 'SEI_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
+    
+    if (exportSei) {
     Export.image.toCloudStorage({
       image: seiImage,
       description: s,
-      fileNamePrefix: 'SEI/',
+      fileNamePrefix: 'SEI/' + s,
       bucket: 'usgs-gee-drylandecohydrology',
       maxPixels: 1e13, 
       scale: resolution,
@@ -92,6 +82,10 @@ for (var j = 0; j<rootList.length; j++) {
       formatOptions: {
         cloudOptimized: true
     }
-
     });
+    }
+
+  } // end looping over RCPs and time-periods
+  
+
 }// end loop over root
