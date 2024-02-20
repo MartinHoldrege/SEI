@@ -20,8 +20,10 @@ var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // User-defined variables -----------------------------------------------------
-
-var exportSei = true; // whether to export the continous SEI layers
+ 
+// which layers to export
+var exportSei = false; // whether to export the continous SEI layers (future)
+var exportSeiCur = true; // current SEI
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -34,9 +36,30 @@ var rcpList =  ['RCP45', 'RCP45', 'RCP85', 'RCP85'];
 
 var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 
-// current SEI
+// current SEI ---------------------------------------------------
+var d = lyrMod.main({root: 'fire1_eind1_c4grass1_co20_2311_'});
+print(d.get('cur'))
+var seiCur = ee.Image(d.get('cur'))
+  .select('Q5s_control')
+  .rename('SEI');
 
-
+if (exportSeiCur) {
+  s = 'SEI_v11_' + SEI.curYearStart + '_' + SEI.curYearEnd  + '_' + resolution + 'm';
+  Export.image.toCloudStorage({
+    image: seiCur,
+    description: s,
+    fileNamePrefix: 'SEI/' + s,
+    bucket: 'usgs-gee-drylandecohydrology',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: SEI.region,
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF',
+    formatOptions: {
+      cloudOptimized: false
+    }
+  });
+}
 
 // future SEI ----------------------------------------------------
 // loop over simulation assumptions (roots) 
@@ -80,7 +103,7 @@ for (var j = 0; j<rootList.length; j++) {
       crs: SEI.crs,
       fileFormat: 'GeoTIFF',
       formatOptions: {
-        cloudOptimized: true
+        cloudOptimized: false
     }
     });
     }
