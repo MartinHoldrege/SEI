@@ -83,7 +83,7 @@ for (var j = 0; j<rootList.length; j++) {
       image: seiImage,
       description: s,
       fileNamePrefix: 'SEI/',
-      bucket: 'USGS-GEE-DrylandEcohydrology',
+      bucket: 'usgs-gee-drylandecohydrology',
       maxPixels: 1e13, 
       scale: resolution,
       region: SEI.region,
