@@ -283,6 +283,7 @@ var main = exports.main = function(args) {
     'RCP': RCP,
     'epoch': epoch,
     'climCur': climCur,
+    'cur': cur0,
     'climDeltaRed': climDeltaRed,
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
