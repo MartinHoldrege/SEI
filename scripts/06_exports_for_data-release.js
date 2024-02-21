@@ -2,10 +2,12 @@
   Purpose: 
   output layers for data release
   Layers outputted include:
-    1) Projected SEI for each of 4 modeling assumptions, 2 RCPs, 2 time-periods, and
-    low, median, high estimates across GCMs. All bands belonging to one modelling assumpition
-    are put together in single (12 layer) tiff. for 4 tiffs in total
-    2) Current SEI (2017-2020) for reference
+    1) Current SEI (2017-2020) and Q1-Q3 for reference
+    2) Projected SEI for each of 4 modeling assumptions, 2 RCPs, 2 time-periods, and
+    low, median, high estimates across GCMs. each image contains 3 bands (low, median high)
+    3) c9--9 class change layers (for all time periods/RCPs), low, median and high (only default model assumptions)
+    4) future Q1-Q3 (sagebrush, perennials and annuals), for all time periods and RCPs, median across GCMs
+    (Q that corresponds to the median SEI). only for the 'default' modeling assumptions
     
  Script Started: Feb. 16, 2024
  
@@ -24,7 +26,8 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
 var exportSeiCur = false; // current SEI
-var exportC9 = true
+var exportC9 = false;
+var exportQ = true; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -124,6 +127,8 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     
     var d = lyrMod.main({root: root, RCP: rcp, epoch: epoch});
     
+    // c9 ------------------------------------------------------------------
+    
     var c9 = SEI.ic2Image(ee.ImageCollection(d.get('c9Red')), 'GCM')
       .select(['c9_low', 'c9_median', 'c9_high'])
       // renaming because the 'low' c9 value actually corresponds with the 'high' SEI value
@@ -148,4 +153,48 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     });
     }
     
+    // future Qs ----------------------------------------------------------
+    // Here calculating the median future Q1, Q2, and Q3. 
+    
+    // median SEI
+    var seiMed = ee.ImageCollection(d.get('futRed'))
+      .select('Q5s')
+      .filter(ee.Filter.eq('GCM', 'median'));
+     
+    var seiMed = SEI.ic2Image(seiMed, 'GCM');
+    
+    // function that masks image if SEI is not equal to the median SEI
+    var maskMedian = SEI.maskSeiRedFactory(seiMed, 'median', ['Q1', 'Q2', 'Q3']);
+    
+    var futIc = ee.ImageCollection(d.get('futIc'))
+      .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
+      .map(function(x) {
+        return ee.Image(x).regexpRename('raw$', '');
+      });
+    
+    var qMed = futIc
+      .map(maskMedian)
+      .median();
+     
+    var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
+    if (exportQ) {
+    Export.image.toCloudStorage({
+      image: qMed,
+      description: s,
+      fileNamePrefix: 'SEI/' + s,
+      bucket: 'usgs-gee-drylandecohydrology',
+      maxPixels: 1e13, 
+      scale: resolution,
+      region: SEI.region,
+      crs: SEI.crs,
+      fileFormat: 'GeoTIFF',
+      formatOptions: {
+        cloudOptimized: false
+      }
+    });
+    }
+      
+    // 
   }
+  
+// Map.addLayer(qMed.select('Q1').gt(-1).subtract(seiMed).gt(-1).eq(0), {min: -1, max: 1, palette: ['black', 'white', 'black']}, 'where masks are different?')
