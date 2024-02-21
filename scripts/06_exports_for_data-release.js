@@ -23,7 +23,8 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
  
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
-var exportSeiCur = true; // current SEI
+var exportSeiCur = false; // current SEI
+var exportC9 = true
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -38,13 +39,14 @@ var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 
 // current SEI ---------------------------------------------------
 var d = lyrMod.main({root: 'fire1_eind1_c4grass1_co20_2311_'});
-print(d.get('cur'))
+
 var seiCur = ee.Image(d.get('cur'))
-  .select('Q5s_control')
-  .rename('SEI');
+  .select(['Q5s_control', 'Q1.*', 'Q2.*', 'Q3.*'])
+  .regexpRename('raw_control', '')
+  .regexpRename('Q5s_control', 'SEI');
 
 if (exportSeiCur) {
-  s = 'SEI_v11_' + SEI.curYearStart + '_' + SEI.curYearEnd  + '_' + resolution + 'm';
+  s = 'SEI-Q_v11_' + SEI.curYearStart + '_' + SEI.curYearEnd  + '_' + resolution + 'm';
   Export.image.toCloudStorage({
     image: seiCur,
     description: s,
@@ -110,5 +112,40 @@ for (var j = 0; j<rootList.length; j++) {
 
   } // end looping over RCPs and time-periods
   
-
 }// end loop over root
+
+var root = 'fire1_eind1_c4grass1_co20_2311_';
+  for(var i = 0; i<rcpList.length; i++) {
+    
+    
+    var rcp = rcpList[i];
+    var epoch = epochList[i];
+    var rcp_yr = rcp + '_' + epoch;
+    
+    var d = lyrMod.main({root: root, RCP: rcp, epoch: epoch});
+    
+    var c9 = SEI.ic2Image(ee.ImageCollection(d.get('c9Red')), 'GCM')
+      .select(['c9_low', 'c9_median', 'c9_high'])
+      // renaming because the 'low' c9 value actually corresponds with the 'high' SEI value
+      .rename(['c9_high', 'c9_median', 'c9_low']);
+    
+    var s = 'c9_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
+    
+    if (exportC9) {
+    Export.image.toCloudStorage({
+      image: c9,
+      description: s,
+      fileNamePrefix: 'SEI/' + s,
+      bucket: 'usgs-gee-drylandecohydrology',
+      maxPixels: 1e13, 
+      scale: resolution,
+      region: SEI.region,
+      crs: SEI.crs,
+      fileFormat: 'GeoTIFF',
+      formatOptions: {
+        cloudOptimized: false
+      }
+    });
+    }
+    
+  }
