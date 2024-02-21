@@ -511,6 +511,28 @@ print(ic2Image(ic, 'reducer'))
 
 */
 
+// this function factory is for two (or more) banded images (x) that contain band(s) with data and q5s band
+// if the Q5s band is (approximately) equal to the redImage band (reduced image)
+// then that pixel is not masked, otherwise it is, 
+// this is then applied to an IC, and median taken, so that you get the
+// driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
+// this function helps for example, calculate the Q1 values associated with the median (across GCMs)
+// SEI
+exports.maskSeiRedFactory = function(redImage, reducerName, bandNames) {
+  var f = function(x) {
+    var image = ee.Image(x);
+    var mask = image.select('Q5s')
+      .subtract(redImage.select('Q5s_' + reducerName))
+      .abs()
+      // if the SEI is very closed to the estimated reduced value, 
+      // then assume that is the correct GCM
+      .lt(0.0001) 
+      .rename(reducerName);
+    return image.select(bandNames).updateMask(mask);
+  };
+  return f;
+};
+
 /*
  
  Datasets 
