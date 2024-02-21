@@ -48,6 +48,26 @@ if (testRun) {
 }
 // functions ---------------------------------------------------------
 
+// this function factory is for two banded images (x) that contain a driver and q5s bands
+// if the Q5s band is (approximately) equal to the redImage band (reduced image)
+// then that pixel is not masked, otherwise it is, 
+// this is then applied to an IC, and median taken, so that you get the
+// driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
+var maskDriverFactory = function(redImage, reducerName) {
+  var f = function(x) {
+    var image = ee.Image(x);
+    var mask = image.select('Q5s')
+      .subtract(redImage.select('Q5s'))
+      .abs()
+      // if the SEI is very closed to the estimated reduced value, 
+      // then assume that is the correct GCM
+      .lt(0.001) 
+      .rename(reducerName);
+    return image.select('driver').updateMask(mask);
+  };
+  return f;
+};
+
 // determine whether sagebrush, perennials, or annuals has the largest scaled
 // proportional change
 var detDomDriver = function(x) {
@@ -137,8 +157,7 @@ for (var i = 0; i < roots.length; i++) {
       .select('Q5s')
       .filter(ee.Filter.eq('GCM', reducerName))
       .mean()
-    // creates a function only keeps the value from the GCM that corresponds to the median (or low or high) SEI
-    var f = SEI.maskSeiRedFactory(image, reducerName, 'driver'); 
+    var f = maskSeiRedFactory(image, reducerName, 'driver');
     return driver1.map(f)
       .reduce(ee.Reducer.median())
       .rename('driver')
