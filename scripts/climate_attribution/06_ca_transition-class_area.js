@@ -25,39 +25,28 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-
+var testRun = false;
+var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
-// var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+                          
+if(testRun) {
+  //var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+}
+
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
 
 var resolution = 90;
-
+if (testRun) {
+  var resolutionCompute = 10000; // resolution area is computed at. 
+} else {
+  var resolutionCompute = resolution
+}
 // functions ---------------------------------------------------------
-
-// this function factory is for two banded images (x) that contain a driver and q5s bands
-// if the Q5s band is (approximately) equal to the redImage band (reduced image)
-// then that pixel is not masked, otherwise it is, 
-// this is then applied to an IC, and median taken, so that you get the
-// driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
-var maskDriverFactory = function(redImage, reducerName) {
-  var f = function(x) {
-    var image = ee.Image(x);
-    var mask = image.select('Q5s')
-      .subtract(redImage.select('Q5s_' + reducerName))
-      .abs()
-      // if the SEI is very closed to the estimated reduced value, 
-      // then assume that is the correct GCM
-      .lt(0.0001) 
-      .rename(reducerName);
-    return image.select('driver').updateMask(mask);
-  };
-  return f;
-};
 
 // determine whether sagebrush, perennials, or annuals has the largest scaled
 // proportional change
@@ -119,7 +108,8 @@ for (var i = 0; i < roots.length; i++) {
     root: root,
     RCP: RCP,
     epoch: epoch,
-    resolution: resolution
+    resolution: resolution,
+    versionFull: versionFull
   }); // returns a dictionary
   print(i);
   
@@ -137,14 +127,17 @@ for (var i = 0; i < roots.length; i++) {
     .select('Q5s')
     .combine(driver0);
   
-  var diffRed = ee.Image(d.get('diffRed2'))
-  // print(diffRed)
-  
+  var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
 
   // reduce the driver across GCMs, pixelwise
   // relies on objects in the environment of the loop
   var driverReducer = function(reducerName) {
-    var f = maskDriverFactory(diffRed, reducerName);
+    // getting the change in SEI
+    var image = diffRed
+      .select('Q5s')
+      .filter(ee.Filter.eq('GCM', reducerName))
+      .mean()
+    var f = maskSeiRedFactory(image, reducerName, 'driver');
     return driver1.map(f)
       .reduce(ee.Reducer.median())
       .rename('driver')
@@ -171,6 +164,22 @@ for (var i = 0; i < roots.length; i++) {
     
   var bandsRed = ee.List(['low', 'median', 'high']);
   
+
+
+  // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
+  var ecoC9 = ee.ImageCollection(d.get('c9Ic')) // c9 by GCM
+    .merge(ee.ImageCollection(d.get('c9Red')))  // c9 for low, median, high SEI
+    .map(function(x) {
+      var c9 = ee.Image(x);
+      var out = eco
+        .multiply(10)
+        .add(c9)
+        .multiply(10)
+        .rename('ecoC9')
+        .copyProperties(c9);
+      return out;
+  });
+  
   // creating image collection where the reduced values (low, median, and high) estimates
   // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
   // and summaries will be made for all. 
@@ -181,9 +190,11 @@ for (var i = 0; i < roots.length; i++) {
   var diffIcb = ee.ImageCollection(d.get('diffIc'))
     .select('Q5s')
     // merging in pixel wise
-    .merge(ee.ImageCollection(d.get('diffRed')).select('Q5s'));
+    .merge(diffRed.select('Q5s'));
 
   var dirQ5s = diffIcb.map(detDir);
+   
+
    
   // making the 3rd digit  which PFT most dominant driver of change
   // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
@@ -253,7 +264,7 @@ for (var i = 0; i < roots.length; i++) {
   var areaFc1 = index.map(function(x) {
     var image = ee.Image(x);
     // returning feature for each unique value of index, giving the area
-    var areas1 = fnsRr.areaByGroup(image, 'index', SEI.region, resolution)
+    var areas1 = fnsRr.areaByGroup(image, 'index', SEI.region, resolutionCompute)
     // adding additional proprties to the feature
       .map(function(x) {
         var out = ee.Feature(x)
@@ -274,7 +285,7 @@ for (var i = 0; i < roots.length; i++) {
     // calculate area for unique values of the spatial index ----------------
   
   var numGcmGood = ee.Image(d.get('numGcmGood'));
-  var areaFcGood = fnsRr.areaByGroup(numGcmGood, 'numGcmGood', SEI.region, resolution)
+  var areaFcGood = fnsRr.areaByGroup(numGcmGood, 'numGcmGood', SEI.region, resolutionCompute)
     // adding additional proprties to the feature
       .map(function(x) {
         var out = ee.Feature(x)
@@ -285,22 +296,28 @@ for (var i = 0; i < roots.length; i++) {
       });
       
   var combFcGood = combFcGood.merge(areaFcGood);
-
+  //print(d.get('root'), d.get('RCP'), d.get('epoch'))
+  // print(areaFc1.flatten())
 } // end loop
 
 // save output ------------------------------------------------------------------------------------
 
-var s = d.get('versionFull').getInfo() + '_20240111';
+var s = versionFull + '_20240114';
 
-/*
+var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
+if(testRun) {
+  var descript = 'test-' + descript;
+} 
+
+
 Export.table.toDrive({
   collection: combFc,
-  description: 'area-by-ecoregionC9Driver_' + resolution + 'm_' + s,
+  description: descript,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
 
-
+/*
 Export.table.toDrive({
   collection: combFcGood,
   description: 'area-by-numGcmGood_' + resolution + 'm_' + s,

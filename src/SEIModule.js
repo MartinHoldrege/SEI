@@ -477,14 +477,61 @@ var image2Ic = function(image, propertyName) {
 }
 exports.image2Ic = image2Ic; 
 
+
+/**
+ * convert and image collection to band with value of property appended to band names
+ * @param {ee.image} image collection where each image contains a unique value of propertyName
+ * @param {ee.String} propertyName string is the name of the image property each image has
+ * @return {ee.Image}
+*/
+var ic2Image = function(ic, propertyName) {
+  var icRenamed = ic.map(function(x) {
+    var image = ee.Image(x)
+    var property = ee.String(image.get(propertyName));
+    var oldNames = image.bandNames()
+    var newNames = oldNames.map(function(x) {
+      return ee.String(x).cat(ee.String('_')).cat(property)
+    })
+    return image.rename(newNames)
+  })
+  
+  return icRenamed.toBands()
+    .regexpRename('^[[:alnum:]]+_', ''); // removing the prefix added by to Bands
+}
+
+exports.ic2Image = ic2Image;
 /*
-// testing image2Ic function
+// testing image2Ic and ic2Image functions
 
 var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
   .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
-print(image2Ic(image, 'reducer'))
+var ic = image2Ic(image, 'reducer')
+print(ic)
+print(ic2Image(ic, 'reducer'))
+
 */
 
+// this function factory is for two (or more) banded images (x) that contain band(s) with data and q5s band
+// if the Q5s band is (approximately) equal to the redImage band (reduced image)
+// then that pixel is not masked, otherwise it is, 
+// this is then applied to an IC, and median taken, so that you get the
+// driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
+// this function helps for example, calculate the Q1 values associated with the median (across GCMs)
+// SEI
+exports.maskSeiRedFactory = function(redImage, reducerName, bandNames) {
+  var f = function(x) {
+    var image = ee.Image(x);
+    var mask = image.select('Q5s')
+      .subtract(redImage.select('Q5s_' + reducerName))
+      .abs()
+      // if the SEI is very closed to the estimated reduced value, 
+      // then assume that is the correct GCM
+      .lt(0.0001) 
+      .rename(reducerName);
+    return image.select(bandNames).updateMask(mask);
+  };
+  return f;
+};
 
 /*
  
@@ -560,7 +607,11 @@ exports.H2019 = ee.Image('users/DavidTheobald8/HM/HM_US_v3_dd_2019_90_60ssagebru
 
 
 // For setting the projection (albers conical equal area)
-exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
+//exports.crs = ee.ImageCollection('USGS/NLCD_RELEASES/2019_REL/NLCD').first().projection().wkt().getInfo();
+
+// this defines the same CRS, but the beginning of the string is cleaner, and better for the data release. 
+exports.crs = "PROJCS[\"Projection = Albers Conical Equal Area\", \n  GEOGCS[\"WGS 84\", \n    DATUM[\"WGS_1984\", \n      SPHEROID[\"WGS 84\", 6378137.0, 298.257223563, AUTHORITY[\"EPSG\",\"7030\"]], \n      AUTHORITY[\"EPSG\",\"6326\"]], \n    PRIMEM[\"Greenwich\", 0.0], \n    UNIT[\"degree\", 0.017453292519943295], \n    AXIS[\"Longitude\", EAST], \n    AXIS[\"Latitude\", NORTH], \n    AUTHORITY[\"EPSG\",\"4326\"]], \n  PROJECTION[\"Albers_Conic_Equal_Area\"], \n  PARAMETER[\"central_meridian\", -96.0], \n  PARAMETER[\"latitude_of_origin\", 23.0], \n  PARAMETER[\"standard_parallel_1\", 29.5], \n  PARAMETER[\"false_easting\", 0.0], \n  PARAMETER[\"false_northing\", 0.0], \n  PARAMETER[\"standard_parallel_2\", 45.5], \n  UNIT[\"m\", 1.0], \n  AXIS[\"x\", EAST], \n  AXIS[\"y\", NORTH]]"
+
 
 // SEI raster from Theobald for current time period
 var curYearEnd= 2020; // change to 2021 when have v30 asset. 

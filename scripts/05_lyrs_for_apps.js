@@ -181,7 +181,11 @@ var main = exports.main = function(args) {
   
   // re-calculating c9 for the reduced layers
   var c9Red = futC3Red.map(function(x) {
-      var out = SEI.calcTransitions(cur1.select('Q5sc3').rename('c3'), ee.Image(x))
+      // recalculating cur C3 here, because some slight rounding
+      // issue seems to be causing change in class and and delta SEI not to match up in a few (<5%) of cases
+      var curC3 = SEI.seiToC3(cur1.select('Q5s'))
+        .rename('c3') 
+      var out = SEI.calcTransitions(curC3, ee.Image(x))
         .copyProperties(ee.Image(x));
       
       return ee.Image(out).regexpRename('c3', 'c9')
@@ -279,6 +283,7 @@ var main = exports.main = function(args) {
     'RCP': RCP,
     'epoch': epoch,
     'climCur': climCur,
+    'cur': cur0,
     'climDeltaRed': climDeltaRed,
     'p': p,
     'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
