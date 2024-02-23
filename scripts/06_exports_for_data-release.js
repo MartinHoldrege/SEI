@@ -26,8 +26,8 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
 var exportSeiCur = false; // current SEI
-var exportC9 = false;
-var exportQ = true; // future Q1-Q3
+var exportC9 = true;
+var exportQ = false; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -130,9 +130,7 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     // c9 ------------------------------------------------------------------
     
     var c9 = SEI.ic2Image(ee.ImageCollection(d.get('c9Red')), 'GCM')
-      .select(['c9_low', 'c9_median', 'c9_high'])
-      // renaming because the 'low' c9 value actually corresponds with the 'high' SEI value
-      .rename(['c9_high', 'c9_median', 'c9_low']);
+      .select(['c9_low', 'c9_median', 'c9_high']);
     
     var s = 'c9_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
     
