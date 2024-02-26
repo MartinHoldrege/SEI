@@ -120,12 +120,24 @@ driver2factor <- function(x) {
   factor(x, levels = c('sagebrush', 'pfg', 'afg', 'none'),
          labels = c('Sagebrush', 'Perennials', 'Annuals', 'None'))
 }
-run2name <- function(x) {
+run2name <- function(x, for_filename = FALSE) {
   out <- case_when(str_detect(x, 'fire0.*c4grass1_co20') ~ 'No fire',
                    str_detect(x, 'fire1.*c4grass1_co20') ~ 'Default',
                    str_detect(x, 'fire1.*c4grass0_co20') ~ 'No C4 grass exp.',
                    str_detect(x, 'fire1.*c4grass1_co21') ~ 'Include CO2')
-  factor(out, levels = c('Default', 'No fire', 'No C4 grass exp.', 'Include CO2'))
+  
+  levels <- c('Default', 'No fire', 'No C4 grass exp.', 'Include CO2')
+
+  out <- if (for_filename) {
+    # condensed descriptive names for output file names (ie for data publication)
+    factor(out, levels = levels,
+           labels = c('Default', 'NoFire', 'NoC4GrassExp', 'CO2Fertilization'))
+  } else {
+    # naming for figures
+    factor(out, levels = levels)
+  }
+  
+  out
 }
 
 #' set factor levels of all layers of raster
@@ -502,5 +514,28 @@ correct_lohi <- function(df) {
     select(-switch_hilo)
 
   out <- bind_rows(df_swap_lohi, df_lohi_sei)
+  out
+}
+
+#' vrt() but with same band names as the original files
+#'
+#' @param paths vector providing paths to tif files, where each tif is a tile
+#'
+#' @return
+#' vrt
+vrt_bandnames <- function(paths) {
+  band_names <- purrr::map(paths, function(x) {
+    names(terra::rast(x))
+  })
+  
+  if(length(band_names) > 1) {
+    first <- band_names[[1]]
+    is_equal <- purrr::map_lgl(band_names[2:length(band_names)], function(x) {
+      isTRUE(all.equal(first, x))
+    })
+    stopifnot(is_equal)
+  }
+  out <- terra::vrt(paths)
+  names(out) <- band_names[[1]]
   out
 }
