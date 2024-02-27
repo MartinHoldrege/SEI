@@ -521,12 +521,12 @@ print(ic2Image(ic, 'reducer'))
 exports.maskSeiRedFactory = function(redImage, reducerName, bandNames) {
   var f = function(x) {
     var image = ee.Image(x);
-    var mask = image.select('Q5s')
-      .subtract(redImage.select('Q5s_' + reducerName))
+    var mask = image.select('Q5s') // sei corresponding to a given GCM
+      .subtract(redImage.select('Q5s_' + reducerName)) // across GCM summary of SEI (e.g. median)
       .abs()
       // if the SEI is very closed to the estimated reduced value, 
       // then assume that is the correct GCM
-      .lt(0.0001) 
+      .lt(0.0001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
       .rename(reducerName);
     return image.select(bandNames).updateMask(mask);
   };
