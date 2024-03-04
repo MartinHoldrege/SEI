@@ -520,7 +520,9 @@ print(ic2Image(ic, 'reducer'))
 // SEI
 exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBands) {
   
-  
+  if (renameBands === undefined || renameBands === null){
+    var renameBands = false;
+  }
   var f = function(x) {
     var image = ee.Image(x);
     var mask = image.select('Q5s') // sei corresponding to a given GCM
@@ -531,14 +533,12 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBan
       .lt(0.0001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
       .rename(reducerName);
       
-    if (renameBands === undefined){
-      var renameBands = false;
-    }
+
     var out = image.select(bandNames).updateMask(mask);
         
     // add reducer name to bandNames
+    //if (renameBands) {
     if (renameBands) {
-    //if (true) {
       var out = out.regexpRename('$', '_' + reducerName);
     }
     return out;
