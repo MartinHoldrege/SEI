@@ -26,8 +26,8 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
 var exportSeiCur = false; // current SEI
-var exportC9 = true;
-var exportQ = false; // future Q1-Q3
+var exportC9 = false;
+var exportQ = true; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -156,41 +156,70 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     
     // median SEI
     var seiMed = ee.ImageCollection(d.get('futRed'))
-      .select('Q5s')
-      .filter(ee.Filter.eq('GCM', 'median'));
+      .select('Q5s');
      
     var seiMed = SEI.ic2Image(seiMed, 'GCM');
     
     // function that masks image if SEI is not equal to the median SEI
-    var maskMedian = SEI.maskSeiRedFactory(seiMed, 'median', ['Q1', 'Q2', 'Q3']);
-    
-    var futIc = ee.ImageCollection(d.get('futIc'))
-      .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
-      .map(function(x) {
-        return ee.Image(x).regexpRename('raw$', '');
-      });
-    
-    var qMed = futIc
-      .map(maskMedian)
-      .median();
-     
-    var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
-    if (exportQ) {
-    Export.image.toCloudStorage({
-      image: qMed,
-      description: s,
-      fileNamePrefix: 'SEI/' + s,
-      bucket: 'usgs-gee-drylandecohydrology',
-      maxPixels: 1e13, 
-      scale: resolution,
-      region: SEI.region,
-      crs: SEI.crs,
-      fileFormat: 'GeoTIFF',
-      formatOptions: {
-        cloudOptimized: false
-      }
+  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', ['Q1', 'Q2', 'Q3'], true);
+  
+  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', ['Q1', 'Q2', 'Q3'], true);
+  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', ['Q1', 'Q2', 'Q3'], true);
+  
+  var futIc = ee.ImageCollection(d.get('futIc'))
+    .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
+    .map(function(x) {
+      return ee.Image(x).regexpRename('raw$', '');
     });
+  
+  var qMed = futIc
+    .map(maskMedian)
+    .mean();
+  
+  var qLow = futIc
+    .map(maskLow)
+    .mean();
+    
+  var qHigh = futIc
+    .map(maskHigh)
+    .mean();
+    
+  var qComb = qMed
+    .addBands(qLow)
+    .addBands(qHigh);
+
+    var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
+  if (exportQ) {
+  
+    Export.image.toDrive({
+    image: qComb,
+    description: s,
+    folder: 'SEI',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: SEI.region,
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF'
+  });
+  
+  
+  /*
+  Export.image.toCloudStorage({
+    image: qComb,
+    description: s,
+    fileNamePrefix: 'SEI/' + s,
+    bucket: 'usgs-gee-drylandecohydrology',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: SEI.region,
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF',
+    formatOptions: {
+      cloudOptimized: false
     }
+  });
+  */
+  }
       
     // 
   }
