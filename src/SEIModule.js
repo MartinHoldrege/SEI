@@ -534,7 +534,7 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, rename) {
     if (rename === undefined || rename === null){
       var rename = false;
     }
-        var out = image.select(bandNames).updateMask(mask);
+    var out = image.select(bandNames).updateMask(mask);
         
     // add reducer name to bandNames
     if (rename) {
