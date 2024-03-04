@@ -540,7 +540,7 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, rename) {
     if (rename) {
       var out = out.regexpRename('$', '_' + reducerName);
     }
-    return 
+    return out;
   };
   return f;
 };
