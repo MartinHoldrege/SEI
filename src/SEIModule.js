@@ -518,7 +518,7 @@ print(ic2Image(ic, 'reducer'))
 // driver that corresponds to e.g. the GCM with the low, median, or high SEI for the given pixel
 // this function helps for example, calculate the Q1 values associated with the median (across GCMs)
 // SEI
-exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, rename) {
+exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBands) {
   
   
   var f = function(x) {
@@ -531,13 +531,13 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, rename) {
       .lt(0.0001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
       .rename(reducerName);
       
-    if (rename === undefined || rename === null){
-      var rename = false;
+    if (renameBands === undefined || renameBands === null){
+      var renameBands = false;
     }
     var out = image.select(bandNames).updateMask(mask);
         
     // add reducer name to bandNames
-    if (rename) {
+    if (renameBands) {
       var out = out.regexpRename('$', '_' + reducerName);
     }
     return out;
