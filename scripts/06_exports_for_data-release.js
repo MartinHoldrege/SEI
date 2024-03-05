@@ -25,9 +25,9 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
  
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
-var exportSeiCur = false; // current SEI
+var exportSeiCur = true; // current SEI
 var exportC9 = false;
-var exportQ = true; // future Q1-Q3
+var exportQ = false; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -44,13 +44,26 @@ var epochList = ['2030-2060', '2070-2100', '2030-2060', '2070-2100'];
 var d = lyrMod.main({root: 'fire1_eind1_c4grass1_co20_2311_'});
 
 var seiCur = ee.Image(d.get('cur'))
-  .select(['Q5s_control', 'Q1.*', 'Q2.*', 'Q3.*'])
+  .select(['Q5s_control', 'Q1.*', 'Q2.*', 'Q3.*', 'Q4.*', 'Q5raw.*'])
   .regexpRename('raw_control', '')
   .regexpRename('Q5s_control', 'SEI');
 
 if (exportSeiCur) {
   s = 'SEI-Q_v11_' + SEI.curYearStart + '_' + SEI.curYearEnd  + '_' + resolution + 'm';
-  Export.image.toCloudStorage({
+  Export.image.toDrive({
+    image: seiCur,
+    description: s,
+    folder: 'SEI',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: SEI.region,
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF',
+    formatOptions: {
+      cloudOptimized: false
+    }
+  });
+/*  Export.image.toCloudStorage({
     image: seiCur,
     description: s,
     fileNamePrefix: 'SEI/' + s,
@@ -63,7 +76,7 @@ if (exportSeiCur) {
     formatOptions: {
       cloudOptimized: false
     }
-  });
+  });*/
 }
 
 // future SEI ----------------------------------------------------
@@ -112,6 +125,75 @@ for (var j = 0; j<rootList.length; j++) {
     }
     });
     }
+    
+        // future Qs ----------------------------------------------------------
+    // Here calculating the median future Q1, Q2, and Q3. 
+    
+    // median SEI
+    var seiMed = ee.ImageCollection(d.get('futRed'))
+      .select('Q5s');
+     
+    var seiMed = SEI.ic2Image(seiMed, 'GCM');
+    
+    // function that masks image if SEI is not equal to the median SEI
+    var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', ['Q1', 'Q2', 'Q3'], true);
+    
+    var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', ['Q1', 'Q2', 'Q3'], true);
+    var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', ['Q1', 'Q2', 'Q3'], true);
+    
+    var futIc = ee.ImageCollection(d.get('futIc'))
+      .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
+      .map(function(x) {
+        return ee.Image(x).regexpRename('raw$', '');
+      });
+    
+    var qMed = futIc
+      .map(maskMedian)
+      .mean();
+    
+    var qLow = futIc
+      .map(maskLow)
+      .mean();
+      
+    var qHigh = futIc
+      .map(maskHigh)
+      .mean();
+      
+    var qComb = qMed
+      .addBands(qLow)
+      .addBands(qHigh);
+  
+      var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
+    if (exportQ) {
+    
+      Export.image.toDrive({
+      image: qComb,
+      description: s,
+      folder: 'SEI',
+      maxPixels: 1e13, 
+      scale: resolution,
+      region: SEI.region,
+      crs: SEI.crs,
+      fileFormat: 'GeoTIFF'
+    });
+  
+    /*
+    Export.image.toCloudStorage({
+      image: qComb,
+      description: s,
+      fileNamePrefix: 'SEI/' + s,
+      bucket: 'usgs-gee-drylandecohydrology',
+      maxPixels: 1e13, 
+      scale: resolution,
+      region: SEI.region,
+      crs: SEI.crs,
+      fileFormat: 'GeoTIFF',
+      formatOptions: {
+        cloudOptimized: false
+      }
+    });
+    */
+    }
 
   } // end looping over RCPs and time-periods
   
@@ -151,77 +233,9 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     });
     }
     
-    // future Qs ----------------------------------------------------------
-    // Here calculating the median future Q1, Q2, and Q3. 
-    
-    // median SEI
-    var seiMed = ee.ImageCollection(d.get('futRed'))
-      .select('Q5s');
-     
-    var seiMed = SEI.ic2Image(seiMed, 'GCM');
-    
-    // function that masks image if SEI is not equal to the median SEI
-  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', ['Q1', 'Q2', 'Q3'], true);
-  
-  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', ['Q1', 'Q2', 'Q3'], true);
-  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', ['Q1', 'Q2', 'Q3'], true);
-  
-  var futIc = ee.ImageCollection(d.get('futIc'))
-    .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
-    .map(function(x) {
-      return ee.Image(x).regexpRename('raw$', '');
-    });
-  
-  var qMed = futIc
-    .map(maskMedian)
-    .mean();
-  
-  var qLow = futIc
-    .map(maskLow)
-    .mean();
-    
-  var qHigh = futIc
-    .map(maskHigh)
-    .mean();
-    
-  var qComb = qMed
-    .addBands(qLow)
-    .addBands(qHigh);
 
-    var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
-  if (exportQ) {
-  
-    Export.image.toDrive({
-    image: qComb,
-    description: s,
-    folder: 'SEI',
-    maxPixels: 1e13, 
-    scale: resolution,
-    region: SEI.region,
-    crs: SEI.crs,
-    fileFormat: 'GeoTIFF'
-  });
-  
-  
-  /*
-  Export.image.toCloudStorage({
-    image: qComb,
-    description: s,
-    fileNamePrefix: 'SEI/' + s,
-    bucket: 'usgs-gee-drylandecohydrology',
-    maxPixels: 1e13, 
-    scale: resolution,
-    region: SEI.region,
-    crs: SEI.crs,
-    fileFormat: 'GeoTIFF',
-    formatOptions: {
-      cloudOptimized: false
-    }
-  });
-  */
-  }
       
     // 
   }
   
-// Map.addLayer(qMed.select('Q1').gt(-1).subtract(seiMed).gt(-1).eq(0), {min: -1, max: 1, palette: ['black', 'white', 'black']}, 'where masks are different?')
+//Map.addLayer(qComb.select('Q1_median'), {min:0, max: 1, palette: ['blue', 'red']}, 'Q')
