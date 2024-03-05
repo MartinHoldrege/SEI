@@ -41,7 +41,7 @@ run_scenario <- function(x) {
   scenario <- str_extract(x, 'RCP\\d{2}_\\d{4}\\-\\d{4}') %>% 
     update_yr()
   
-  paste(name, '_', scenario, '.tif')
+  paste0(name, '_', scenario, '.tif')
 }
 # read in data ------------------------------------------------------------
 
@@ -101,7 +101,7 @@ p_q <- map(q_regex, function(x) {
   list.files(file.path(path, 'tiles'), x, full.names = TRUE)
 })
 
-q_l1 <- map(p_q, vrt_bandnames)
+q_l1 <- map(p_q[2], vrt_bandnames)
 
 
 # preparing rasters -------------------------------------------------------
@@ -114,28 +114,28 @@ c9cols <- data.frame(cell_value = 0:9,
 
 # update the colors of layers of all the rasters
 c9_l2 <- map(c9_l1, function(x) {
-  for(lyr in 1:nlyr(x)) {
-    coltab(x, layer = lyr) <- c9cols
-  }
+  # setting the color table didn't work 
+  # error received upon writing: 'SetColorTable() not supported for multi-sample TIFF files. (GDAL error 6)'
+  # for(lyr in 1:nlyr(x)) {
+  #   coltab(x, layer = lyr) <- c9cols
+  # }
   RGB(x) <- NULL
+  x <- subst(x, from = 0, to = NA) # so output files have NAs instead of 0s
   x
 })
 
 
 # * Q -----------------------------------------------------------------------
-
-q_l2 <- map(q_l1, function(x) {
-  names(x) <- paste0(names(x), '_median') # this is the the Q corresponding to
-  # median SEI
-  x
-})
+q_l2 <- q_l1
+# r <- spatSample(q_l2[[1]][[1]], size = 1e5, as.raster = TRUE)
+# plot(r)
 
 # writing rasters ---------------------------------------------------------
 
 
 # * current ---------------------------------------------------------------
 
-writeRaster(vrt_cur, file.path(path, 'data_publication2',
+writeRaster(vrt_cur, file.path(path, 'temp_not_COG',,
                                paste0('SEI-Q_v11_', 
                                       str_replace(years_cur, '_', '-'), 
                                       '.tif')),
@@ -148,7 +148,7 @@ writeRaster(vrt_cur, file.path(path, 'data_publication2',
 out_names <- paste0('SEI_', run_scenario(names(sei_fut_l)))
 
 map2(sei_fut_l, out_names, function(x, name) {
-  writeRaster(x, file.path(path, 'data_publication2', name),
+  writeRaster(x, file.path(path, 'temp_not_COG',, name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
               overwrite = TRUE)
 })
@@ -161,7 +161,8 @@ out_names <- paste0('c9_', run_scenario(names(c9_l2)))
 map2(c9_l2, out_names, function(x, name) {
   writeRaster(x, file.path(path, 'data_publication2', name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
-              overwrite = TRUE)
+              overwrite = TRUE,
+              datatype = 'INT1U')
 })
 
 
@@ -170,8 +171,58 @@ map2(c9_l2, out_names, function(x, name) {
 out_names <- paste0('Q_', run_scenario(names(q_l2)))
 
 map2(q_l2, out_names, function(x, name) {
-  writeRaster(x, file.path(path, 'data_publication2', name),
+  writeRaster(x, file.path(path, 'temp_not_COG', name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
               overwrite = TRUE)
 })
 
+# Continue troubleshooting--COG not working, but regular tif does ??
+writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test.tif'),
+            overwrite = TRUE)
+writeRaster(q_l2[[1]][[1]], 'data_processed/test_1band.tif',
+            overwrite = TRUE)
+writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test_COG.tif'),
+            filetype = "COG",
+            overwrite = TRUE)
+writeRaster(q_l2[[1]][[1]], file.path(path, 'data_publication2', 'test_COG_1band.tif'),
+            filetype = "COG",
+            overwrite = TRUE)
+writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test_COG-deflate.tif'),
+            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
+            overwrite = TRUE)
+
+r3 <- rast(file.path(path, 'data_publication2', 'test.tif'))
+
+writeRaster(r3, file.path(path, 'data_publication2', 'test_COG_from-tif.tif'),
+            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
+            overwrite = TRUE)
+r3b <- rast(file.path(path, 'data_publication2', 'test_COG_from-tif.tif'))
+compareGeom(r3, r3b)
+r3
+r3b
+r3
+r3c <- rast('data_processed/test_1band.tif')
+plot(r3c)
+writeRaster(r3c, 'data_processed/test_1band_COG_from-tif.tif',
+            filetype = "COG", overwrite = TRUE)
+r3d <- rast('data_processed/test_1band_COG_from-tif.tif')
+plot(r3d)
+r4 <- rast(file.path(path, 'data_publication2', 'test_COG.tif'))
+plot(r4[[1]])
+r5 <-  rast(file.path(path, 'data_publication2', 'test_COG_1band.tif'))
+plot(r5)
+set.seed(1)
+x3 <- spatSample(r3[[1]], size = 1e5)
+set.seed(1)
+x5 <- spatSample(r5, size = 1e5)
+
+# more testing
+r <- rast(nrows=5, ncols=5, vals=1:25)
+
+# create a temporary filename for the example
+f <- file.path(tempdir(), "test.tif")
+
+writeRaster(r, f, overwrite=TRUE, filetype = 'COG')
+ra <- rast(f)
+plot(ra)
+plot(rast('C:/Users/mholdrege/Downloads/test_1band_COG.tif')) # COG created by Daniel (it reads fine for him)
