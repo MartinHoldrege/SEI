@@ -8,7 +8,7 @@
 # data
 *.csv
 *.RDS
-
+*.xlsx
 # word
 *.docx
 

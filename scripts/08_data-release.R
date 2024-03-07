@@ -91,7 +91,7 @@ c9_l1 <- map(p_c9, rast)
 # Qs ----------------------------------------------------------------------
 
 q_regex <- df_scen %>% 
-  filter(run == default) %>% 
+  #filter(run == default) %>% 
   mutate(regex = paste0('Q_', v, "_", run, '_', rcp,  '_', year)) %>% 
   pull(regex)
 
@@ -101,7 +101,7 @@ p_q <- map(q_regex, function(x) {
   list.files(file.path(path, 'tiles'), x, full.names = TRUE)
 })
 
-q_l1 <- map(p_q[2], vrt_bandnames)
+q_l1 <- map(p_q, vrt_bandnames)
 
 
 # preparing rasters -------------------------------------------------------
@@ -109,18 +109,19 @@ q_l1 <- map(p_q[2], vrt_bandnames)
 # *c9 ---------------------------------------------------------------------
 # define colors so that if raster is viewed the categories will show up 
 # with the same colors as used in the manuscript. 
-c9cols <- data.frame(cell_value = 0:9, 
-                     colors = c('transparent', c9Palette))
+c9cols <- data.frame(cell_value = 1:9, 
+                     colors = c9Palette)
 
 # update the colors of layers of all the rasters
 c9_l2 <- map(c9_l1, function(x) {
   # setting the color table didn't work 
   # error received upon writing: 'SetColorTable() not supported for multi-sample TIFF files. (GDAL error 6)'
+  RGB(x) <- NULL
+  x <- subst(x, from = 0, to = NA) # so output files have NAs instead of 0s
   # for(lyr in 1:nlyr(x)) {
   #   coltab(x, layer = lyr) <- c9cols
   # }
-  RGB(x) <- NULL
-  x <- subst(x, from = 0, to = NA) # so output files have NAs instead of 0s
+
   x
 })
 
@@ -135,7 +136,7 @@ q_l2 <- q_l1
 
 # * current ---------------------------------------------------------------
 
-writeRaster(vrt_cur, file.path(path, 'temp_not_COG',,
+writeRaster(vrt_cur, file.path(path, 'data_publication2',
                                paste0('SEI-Q_v11_', 
                                       str_replace(years_cur, '_', '-'), 
                                       '.tif')),
@@ -148,7 +149,7 @@ writeRaster(vrt_cur, file.path(path, 'temp_not_COG',,
 out_names <- paste0('SEI_', run_scenario(names(sei_fut_l)))
 
 map2(sei_fut_l, out_names, function(x, name) {
-  writeRaster(x, file.path(path, 'temp_not_COG',, name),
+  writeRaster(x, file.path(path, 'data_publication2', name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
               overwrite = TRUE)
 })
@@ -170,59 +171,37 @@ map2(c9_l2, out_names, function(x, name) {
 
 out_names <- paste0('Q_', run_scenario(names(q_l2)))
 
+dir.create(file.path(path, 'temp_not_cog'))
+# because of error problems, writing first to regular tif
+# then reading that in and saving as a COG
 map2(q_l2, out_names, function(x, name) {
-  writeRaster(x, file.path(path, 'temp_not_COG', name),
+  writeRaster(x, file.path(path, 'temp_not_cog', name),
+              overwrite = TRUE)
+})
+
+rm(list = ls()[ls() != 'path']) # in case errors were caused by memory issues
+
+q_files <- list.files(file.path(path, 'temp_not_cog'),
+                      '.tif$')
+names(q_files) <- q_files
+
+map(q_files[16], function(name) {
+  r <- rast(file.path(path, 'temp_not_cog', name))
+  writeRaster(r, file.path(path, 'data_publication2', name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
               overwrite = TRUE)
 })
 
-# Continue troubleshooting--COG not working, but regular tif does ??
-writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test.tif'),
-            overwrite = TRUE)
-writeRaster(q_l2[[1]][[1]], 'data_processed/test_1band.tif',
-            overwrite = TRUE)
-writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test_COG.tif'),
-            filetype = "COG",
-            overwrite = TRUE)
-writeRaster(q_l2[[1]][[1]], file.path(path, 'data_publication2', 'test_COG_1band.tif'),
-            filetype = "COG",
-            overwrite = TRUE)
-writeRaster(q_l2[[1]], file.path(path, 'data_publication2', 'test_COG-deflate.tif'),
-            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
-            overwrite = TRUE)
 
-r3 <- rast(file.path(path, 'data_publication2', 'test.tif'))
+# rename files ------------------------------------------------------------
 
-writeRaster(r3, file.path(path, 'data_publication2', 'test_COG_from-tif.tif'),
-            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
-            overwrite = TRUE)
-r3b <- rast(file.path(path, 'data_publication2', 'test_COG_from-tif.tif'))
-compareGeom(r3, r3b)
-r3
-r3b
-r3
-r3c <- rast('data_processed/test_1band.tif')
-plot(r3c)
-writeRaster(r3c, 'data_processed/test_1band_COG_from-tif.tif',
-            filetype = "COG", overwrite = TRUE)
-r3d <- rast('data_processed/test_1band_COG_from-tif.tif')
-plot(r3d)
-r4 <- rast(file.path(path, 'data_publication2', 'test_COG.tif'))
-plot(r4[[1]])
-r5 <-  rast(file.path(path, 'data_publication2', 'test_COG_1band.tif'))
-plot(r5)
-set.seed(1)
-x3 <- spatSample(r3[[1]], size = 1e5)
-set.seed(1)
-x5 <- spatSample(r5, size = 1e5)
+# renaming, b/ got request for shorter names for data pub
 
-# more testing
-r <- rast(nrows=5, ncols=5, vals=1:25)
+old_names <- list.files(file.path(path, 'data_publication2'),
+                        '.tif', full.names = TRUE)
+new_names <- basename(old_names) %>% 
+  str_replace('Fertilization', 'Fert') %>% 
+  str_replace('C4GrassExp', 'C4Exp')
 
-# create a temporary filename for the example
-f <- file.path(tempdir(), "test.tif")
-
-writeRaster(r, f, overwrite=TRUE, filetype = 'COG')
-ra <- rast(f)
-plot(ra)
-plot(rast('C:/Users/mholdrege/Downloads/test_1band_COG.tif')) # COG created by Daniel (it reads fine for him)
+file.rename(from = old_names,
+            to = file.path(path, 'data_publication2', new_names))
