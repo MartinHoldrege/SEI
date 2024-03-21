@@ -17,16 +17,16 @@ var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
 var root_fire0 = 'fire0_eind1_c4grass1_co20_';
 var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
 var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
-
+var user = 'users/MartinHoldrege/'
 var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85']; // for normal runs
 var rcpList = ['RCP45']; // for testing
 var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100']; // for normal runs
 var epochList = ['2070-2100']
 // dependencies ---------------------------------------------
 
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
-var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
+var SEI = require(user + "SEI:src/SEIModule.js");
+var lyrMod = require(user + "SEI:scripts/05_lyrs_for_apps.js");
+var fnsRr = require(user + "users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 
 // empty objects to add to while looping
 var areaComb = ee.FeatureCollection([]);
