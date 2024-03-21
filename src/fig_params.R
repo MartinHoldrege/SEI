@@ -90,3 +90,13 @@ cols_region <- c("great_plains" = "#DB9E27",
                  "intermountain" = "#0E9A72",
                  "great_basin" = "#0E72AD")
 
+# colors for figure 2 in the REM manuscript
+cols_numGcm <- c("11" = '#0571b0', 
+                 "12" = '#92c5de',
+                 "13" = '#f4a582', 
+                 "14" = '#b2182b', 
+                 "21" = '#762a83', 
+                 "22" = '#c2a5cf', 
+                 "23" = '#a6dba0', 
+                 "24" = '#008837', 
+                 "30" = unname(c9Palette[9]))
