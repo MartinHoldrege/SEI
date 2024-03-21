@@ -10,7 +10,7 @@ Data started: November 21, 2023
 
 // params ---------------------------------------------------
 
-var resolutionOut = 500; // resolution of output maps
+var resolutionOut = 90; // 500; // resolution of output maps (normally 500 m)
 var resolutionOutC9 = 180; // resolution of output for c9 maps (needs higher resolution b/ pyramid artifacts)
 var resolutionArea = 90; // resolution for area calculations
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
@@ -18,9 +18,10 @@ var root_fire0 = 'fire0_eind1_c4grass1_co20_';
 var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
 var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 
-var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85'];
-// var rcpList = ['RCP45']; // for testing
-var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100'];
+var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85']; // for normal runs
+var rcpList = ['RCP45']; // for testing
+var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100']; // for normal runs
+var epochList = ['2070-2100']
 // dependencies ---------------------------------------------
 
 var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
