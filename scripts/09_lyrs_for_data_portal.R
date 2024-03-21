@@ -93,16 +93,24 @@ names(r_numGcm2) <- "Level of agreement among GCMs for projected change in SEI c
 
 
 # write files -------------------------------------------------------------
-
+f1 <- paste0(names(c9b[1]), '.tif')
 writeRaster(c9b, 
-            file.path(path_save,paste0(v, '_', c9_file_name)),
-            filetype = "COG",
+            file.path(path_save,f1),
             overwrite = TRUE,
             datatype = 'INT1U')
 
 file_name <- stringr::str_replace(names(r_numGcm1), '_RCP', '_Default_RCP')
+f2 <- paste0(names(r_numGcm2[1]), '.tif')
 writeRaster(r_numGcm2, 
-            file.path(path_save,paste0(v, '_', file_name, '.tif')),
-            filetype = "COG",
+            file.path(path_save,f2),
             overwrite = TRUE,
             datatype = 'INT1U')
+
+# testing -----------------------------------------------------------------
+
+if(FALSE) {
+  r1 <- rast(file.path(path_save,f1))
+  plot(r1)
+  r2 <- rast(file.path(path_save,f2))
+  plot(r2)
+}
