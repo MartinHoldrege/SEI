@@ -26,7 +26,7 @@ var epochList = ['2070-2100']
 
 var SEI = require(user + "SEI:src/SEIModule.js");
 var lyrMod = require(user + "SEI:scripts/05_lyrs_for_apps.js");
-var fnsRr = require(user + "users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
+var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 
 // empty objects to add to while looping
 var areaComb = ee.FeatureCollection([]);
