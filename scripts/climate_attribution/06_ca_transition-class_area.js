@@ -18,14 +18,14 @@ Started: Nov 20, 2023
 // dependencies ---------------------------------------------------------
 
 // Load module with functions 
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
+var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
 var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 // this is where the data wrangling occurs
 // contains one main function
-var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
+var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = false;
+var testRun = true; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -137,7 +137,7 @@ for (var i = 0; i < roots.length; i++) {
       .select('Q5s')
       .filter(ee.Filter.eq('GCM', reducerName))
       .mean()
-    var f = maskSeiRedFactory(image, reducerName, 'driver');
+    var f = SEI.maskSeiRedFactory(image, reducerName, 'driver');
     return driver1.map(f)
       .reduce(ee.Reducer.median())
       .rename('driver')
@@ -222,7 +222,7 @@ for (var i = 0; i < roots.length; i++) {
     .map(function(x) {
       var image = ee.Image(x);
       var out = image.select('ecoC9')
-        //.add(image.select('driver')) // temporary fix, is excluding driver here
+        .add(image.select('driver')) // temporary fix, is excluding driver here
         .multiply(10)
         .add(image.select('dirQ5s'))
         .updateMask(SEI.mask)
@@ -302,7 +302,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240114';
+var s = versionFull + '_20240322';
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {
