@@ -174,7 +174,7 @@ var main = exports.main = function(args) {
   // issue seems to be causing change in class and and delta SEI not to match up in a few (<5%) of cases
   // also make sure that the same current c3 layers are being used for c9Ic and c9Red calcuation
   var curC3 = SEI.seiToC3(cur1.select('Q5s'))
-    .rename('c3') ;
+    .rename('c3');
     
   var c9Ic = futIc.map(function(x) {
     var out = SEI.calcTransitions(curC3, ee.Image(x).select('Q5sc3'))
