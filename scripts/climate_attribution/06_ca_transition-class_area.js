@@ -38,7 +38,7 @@ var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-21
 
 var resolution = 90;
 if (testRun) {
-  // var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
+  var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
   var resolutionCompute = 10000; // resolution area is computed at. 
 } else {
   var resolutionCompute = resolution
@@ -164,6 +164,9 @@ for (var i = 0; i < roots.length; i++) {
 
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
   var ecoC9 = ee.ImageCollection(d.get('c9Ic')) // c9 by GCM
+    // a problem in the output is that the total area of core, grow, other differs
+    // between the reduced and gcm-wise layers, suggesting these layers are different
+    // in a way they shouldn't be. 
     .merge(ee.ImageCollection(d.get('c9Red')))  // c9 for low, median, high SEI
     .map(function(x) {
       var c9 = ee.Image(x);
@@ -198,6 +201,12 @@ for (var i = 0; i < roots.length; i++) {
   var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
   
   // for now treating GCM level and reducer level indices differently (because problem with driver layer)
+  var tmp1 = ecoC9comb
+    .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+    .select('driver')
+    .first()
+  print(ee.Image(tmp1))
+  Map.addLayer(tmp1, {min: 0, max: 4, palette: ['white', 'black']}, 'gcm wise driver')
   var indexGcm = ecoC9comb
     .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
     .map(function(x) {
@@ -213,12 +222,20 @@ for (var i = 0; i < roots.length; i++) {
       return out;
     });
   
+  var tmp = ecoC9comb
+    .filter(ee.Filter.inList("GCM", bandsRed))
+    .select('driver')
+    .first()
+    
+  print(tmp)
+  
+  Map.addLayer(tmp, {min: 0, max: 4, palette: ['white', 'black']}, 'reduced w driver')
   var indexRed = ecoC9comb
     .filter(ee.Filter.inList("GCM", bandsRed))
     .map(function(x) {
       var image = ee.Image(x);
       var out = image.select('ecoC9')
-        .add(image.select('driver')) // temporary fix, is excluding driver here
+        .add(image.select('driver').unmask()) // temporary fix, is excluding driver here
         .multiply(10)
         .add(image.select('dirQ5s'))
         .updateMask(SEI.mask)
