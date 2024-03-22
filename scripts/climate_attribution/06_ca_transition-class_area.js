@@ -25,7 +25,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = true; // lower resolution, for testing
+var testRun = false; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -200,19 +200,12 @@ for (var i = 0; i < roots.length; i++) {
   // which direction the change was)
   var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
   
-  // for now treating GCM level and reducer level indices differently (because problem with driver layer)
-  var tmp1 = ecoC9comb
-    .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
-    .select('driver')
-    .first()
-  print(ee.Image(tmp1))
-  Map.addLayer(tmp1, {min: 0, max: 4, palette: ['white', 'black']}, 'gcm wise driver')
-  var indexGcm = ecoC9comb
-    .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+    var index = ecoC9comb
+    //.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
     .map(function(x) {
       var image = ee.Image(x);
       var out = image.select('ecoC9')
-        .add(image.select('driver'))
+        .add(image.select('driver').unmask()) // for the reduced images in collection for some reason are masked, so making all the same
         .multiply(10)
         .add(image.select('dirQ5s'))
         .updateMask(SEI.mask)
@@ -221,51 +214,6 @@ for (var i = 0; i < roots.length; i++) {
         .copyProperties(ee.Image(x));
       return out;
     });
-  
-  var tmp = ecoC9comb
-    .filter(ee.Filter.inList("GCM", bandsRed))
-    .select('driver')
-    .first()
-    
-  print(tmp)
-  
-  Map.addLayer(tmp, {min: 0, max: 4, palette: ['white', 'black']}, 'reduced w driver')
-  var indexRed = ecoC9comb
-    .filter(ee.Filter.inList("GCM", bandsRed))
-    .map(function(x) {
-      var image = ee.Image(x);
-      var out = image.select('ecoC9')
-        .add(image.select('driver').unmask()) // temporary fix, is excluding driver here
-        .multiply(10)
-        .add(image.select('dirQ5s'))
-        .updateMask(SEI.mask)
-        .rename('index')
-        .toInt()
-        .copyProperties(ee.Image(x));
-      return out;
-    });
-  
-  var index = indexGcm.merge(indexRed);
-  // print('index', index)
-  
-  
-    // testing ~~~~~~~~
-    /*
-    var tmp = index.toBands()
-    print('tmp', tmp)
-    
-    // var maskGcm = tmp.select('1_1_0_index').gt(0).unmask()
-    // var maskMin = tmp.select('2_2_0_index').gt(0).unmask()
-    // Map.addLayer(maskMin.neq(maskGcm), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (gcm index vs cellwise min)", false)
-    var driverMask = driverLow.gt(-100);
-    var maskC9 = c9Reda.select('median').gt(-100).unmask()
-    var maskdriver = driverMask.unmask();
-    Map.addLayer(maskC9.neq(maskdriver), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (c9 vs driver)", false)
-    Map.addLayer(maskdriver, {min: 0, max: 1, palette: ['grey', 'blue']}, "driver mask", false)
-    print('driverLow', driverLow)
-    Map.addLayer(driverMask.unmask().lt(SEI.mask.unmask()), {min: 0, max: 1, palette: ['white', 'black']}, "mask difference")
-  */
-  // end testing ~~~~~~~
   
   // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
   // Map.addLayer(SEI.mask, {palette: 'grey'}, 'mask')
