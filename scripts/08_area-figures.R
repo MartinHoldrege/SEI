@@ -191,7 +191,7 @@ base_c12 <- function() {
 }
 
 # 12 panel map, showing all model assumptions (for appendix)
-g <- area_med_dir_gw %>% 
+g <- area_med_dir %>% 
   filter(RCP == rcp, years == yr) %>% 
   mutate(run_name = run2name(run),
          driver_name = driver2factor(driver)) %>% 
@@ -202,7 +202,7 @@ g <- area_med_dir_gw %>%
   base_c12() +
   guides(fill = guide_legend(nrow = 2))
 g
-jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, ".jpg"),     
+jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, "_v2.jpg"),     
      units = 'in', height = 7, width = 7, res = 600)
 g
 dev.off()
@@ -217,7 +217,7 @@ shorten_c12 <- function(x) {
     }
   fct_relabel(x, .fun = tmp)
 }
-g <- area_med_dir_gw %>% 
+g <- area_med_dir %>% 
   filter(RCP == rcp, years == yr, run == target_run) %>% 
   mutate(driver_name = driver2factor(driver),
          c12_name = shorten_c12(c12_name)) %>% 

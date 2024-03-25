@@ -8,21 +8,6 @@
 
 # Started: November 20, 2023
 
-
-# params ------------------------------------------------------------------
-
-download <- FALSE # try and download the newest version of the file?
-version <- 'vsw4-3-4'
-resolution <- 90 # 1000 #
-
-yr <- '2071-2100'
-
-# same as yr but keep original date range (i.e. not 2031 or 2071)
-# for file saving consistency
-yr_save <- str_replace(yr, '1-', '0-')
-rcp <- 'RCP45'
-target_run <- 'fire1_eind1_c4grass1_co20_2311' # main 'run' used for some pub qual figs
-
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
@@ -32,16 +17,38 @@ source("src/fig_params.R")
 source('../grazing_effects/src/fig_params.R') # for axis labels
 source("src/figure_functions.R")
 theme_set(theme_custom1())
+
+# params ------------------------------------------------------------------
+
+download <- FALSE # try and download the newest version of the file?
+version <- 'vsw4-3-4'
+
+test_run <- FALSE
+
+resolution <- if(test_run) 10000 else 90
+
+yr <- '2071-2100'
+
+# same as yr but keep original date range (i.e. not 2031 or 2071)
+# for file saving consistency
+yr_save <- str_replace(yr, '1-', '0-')
+rcp <- 'RCP45'
+target_run <- 'fire1_eind1_c4grass1_co20_2311' # main 'run' used for some pub qual figs
+
 # read in data ------------------------------------------------------------
 
 # file created in 05_ca_transition-class_area.js
-file_regex <- paste0("^area-by-ecoregionC9Driver_",
-                     resolution , "m_",
-                     version,
-                     "_\\d+.csv")
+
+file_regex <- if(test_run) {
+  paste0("^test-area-by-ecoregionC9Driver_", '\\d+' , "m_", version, "_\\d+.csv")
+} else {
+  paste0("^area-by-ecoregionC9Driver_", resolution , "m_", version, "_\\d+.csv")
+}
+
 
 if(download) {
-  drive_ls_filtered(path = "SEI", file_regex = file_regex) %>% 
+  drive_ls_filtered(path = "SEI", file_regex = file_regex,
+                    email = 'martinholdrege@gmail.com') %>% 
     drive_download_from_df('data_processed/area')
 }
 
@@ -176,6 +183,7 @@ tot_area <- sum(tot_area_eco$tot_area)
 names_red <- c('low', 'median', 'high') 
 lookup_red <- c('low' = 'lo', 'median' = 'med', 'high' = 'hi')
 
+
 # * c9 area ---------------------------------------------------------------
 
 
@@ -229,11 +237,12 @@ tmp <- area3 %>%
   mutate(area_km2 = round(area_km2))
 
 area3 %>%
-  filter(GCM %in% c('CESM1-CAM5', 'median', 'low')) %>%
+  #filter(GCM %in% c('CESM1-CAM5', 'high', 'median', 'low')) %>%
   mutate(c3_name = c9_to_c3(c9)) %>%
   group_by(GCM, c3_name) %>%
   summarise(area_km2 = sum(area_km2)) %>%
-  arrange(c3_name)
+  arrange(c3_name) %>% 
+  print(n = 40)
 
 stopifnot(length(unique(tmp$area_km2)) == 3) # should only be 3 unique areas (1 for core, grow other)
 
