@@ -557,7 +557,8 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBan
 var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/'; // path to where most assets live
 exports.path = path;
 
-var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
+var biome = ee.FeatureCollection("users/DavidTheobald8/WAFWA/US_Sagebrush_Biome_2019");
+//var biome = ee.FeatureCollection(path + "US_Sagebrush_Biome_2019"); // defines the study region
 
 exports.biome = biome;
 exports.region = biome.geometry();
