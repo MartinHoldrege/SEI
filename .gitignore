@@ -9,8 +9,10 @@
 *.csv
 *.RDS
 *.xlsx
+*.xml
 # word
 *.docx
+
 
 # knitted docs
 *.html

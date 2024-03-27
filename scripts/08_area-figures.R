@@ -183,9 +183,6 @@ base_c12 <- function() {
                         name = "Primary driver of change"),
     geom_bar(aes(y = area_perc_med), stat = 'identity',
                position = position_dodge()),
-    geom_errorbar(aes(ymin = area_perc_lo, ymax = area_perc_hi),
-                    width = 0.3,
-                    position=position_dodge(0.9)),
     labs(y = lab_areaperc0) 
   )
 }
