@@ -186,9 +186,6 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
-  // reducing proportion change
-  // var diffPropRed1 = diffPropIc.reduce(reducers); // not correct when calculated this way
-  
   // reducing to get min, max, median across GCMs for the differences
 
   // for now only including Q5s b/ reduced cover, etc. need to calculated more carefully
@@ -330,8 +327,7 @@ var main = exports.main = function(args) {
     'cur': cur0,
     'climDeltaRed': climDeltaRed,
     'p': p,
-    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by GCM
-    // 'diffPropRed': diffPropRed1,
+    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
