@@ -121,24 +121,64 @@ var main = exports.main = function(args) {
   // each image in collection from a different GCM
   var futIc = ee.ImageCollection(futList);
   
+  // future reduced -----------------------------------------------------------------
   // future SEI (reduced), so that all other downstream metrics (c9 etc can
   // be re-calculated, and correctly correspond to to the low, median, high SEI)
-  var futRed0 = futIc
-    .select(diffBands)
+  // calculating the Q values that correspond to the medain SEI (pixelwise)
+  var seiMed = futIc
+    .select('Q5s')
     .reduce(reducers);
+   
+   
+  var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
+  // function that masks image if SEI is not equal to the median SEI
+  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
+  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
+  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames, true);
+  
+  var futIcTmp = futIc
+    .select(diffBands);
+  
+  var qMed = futIcTmp
+    .map(maskMedian)
+    .mean();
+  
+  var qLow = futIcTmp
+    .map(maskLow)
+    .mean();
     
-  var futRed = SEI.image2Ic(futRed0); // converting to image collection 
+  var qHigh = futIcTmp
+    .map(maskHigh)
+    .mean();
+    
+  var qComb = qMedTmp
+    .addBands(qLow)
+    .addBands(qHigh); 
+    
+  var qFutRed = SEI.image2Ic(qComb, 'GLM');
+  
+  
+  var futRed = SEI.image2Ic(seiMed, 'GLM')
+    .combine(qFutRed);
     
   // differences relative to current conditions for relavent bands
-  var diffIc = futIc.map(function(image) {
+  var diffIc = futIc.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands)
       // subtract current conditions
       .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
   });
   
+  var diffRed = futRed.map(function(image) { // for each GCM
+    return ee.Image(image).select(diffBands2)
+      // subtract current conditions
+      .subtract(cur1.select(diffBands2))
+      .copyProperties(ee.Image(image));
+    });
+  
+  
   // difference converted to a proportion change
-  var diffPropIc = diffIc.map(function(image) {
+  var diffPropRed = diffRed.map(function(image) {
     return ee.Image(image)
       .select(diffBands)
       // subtract current conditions
@@ -201,7 +241,7 @@ var main = exports.main = function(args) {
   
   var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
 
-  var qPropIc = diffIc.map(function(x) {
+  var qPropRed = diffRed.map(function(x) {
     
     // direction of SEI change (1 pos, 0 neg or no change)
     var Q5s = ee.Image(x).select('Q5s');
@@ -243,10 +283,11 @@ var main = exports.main = function(args) {
   });
   
   
-  // for now choosing mean because otherwise the 3 contributions
-  // won't sum to 1
-  var qPropMean = qPropIc.reduce('mean')
-    .regexpRename('_mean', '');
+  // The proportion that each q component contributed to the change in sei, for the 
+  // median SEI (pixelwise)
+  var qPropMed = qPropRed
+    .filter(ee.Filter.eq('GCM', 'median'))
+    .first(); // just extracting the image
     
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
@@ -289,15 +330,15 @@ var main = exports.main = function(args) {
     'cur': cur0,
     'climDeltaRed': climDeltaRed,
     'p': p,
-    'diffPropIc': diffPropIc, // proportion change, for relavent bands, by GCM
+    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by GCM
     // 'diffPropRed': diffPropRed1,
     'futIc': futIc, // image collection future sei etc by GCM
-    'futRed': futRed, // future SEI by reduction (IC)
+    'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
     'diffRed': diffRed,
     'c9Red': c9Red,
-    'qPropMean': qPropMean, // climate attribution (proportion)
-    'qPropIc': qPropIc,
+    'qPropMed': qPropMed, // climate attribution (proportion)
+    'qPropRed': qPropRed,
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
   });
