@@ -127,20 +127,9 @@ for (var j = 0; j<rootList.length; j++) {
     }
     
         // future Qs ----------------------------------------------------------
-    // Here calculating the median future Q1, Q2, and Q3. 
-    
-    // median SEI
-    var seiMed = ee.ImageCollection(d.get('futRed'))
-      .select('Q5s');
-     
-         // keep this
-
-    // function that masks image if SEI is not equal to the median SEI
-    var bandNames = ['Q1raw', 'Q2raw', 'Q3raw']
-    var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
-    var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
-    var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames, true);
-    
+    // Here exporting the median future Q1, Q2, and Q3 (these are the Q 
+    // values that correspond to median etc. future SEI)
+ 
     var futRedQ = ee.ImageCollection(d.get('futRed'))
       .select(['Q1raw', 'Q2raw', 'Q3raw'])
       .map(function(x) {
@@ -148,10 +137,8 @@ for (var j = 0; j<rootList.length; j++) {
      });
 
 
-
     var qComb = SEI.ic2Image(futRedQ, 'GCM')
       
-    print(qComb)
     var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
     if (exportQ) {
     
