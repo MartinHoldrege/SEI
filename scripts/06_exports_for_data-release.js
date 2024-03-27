@@ -25,7 +25,7 @@ var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
  
 // which layers to export
 var exportSei = false; // whether to export the continous SEI layers (future)
-var exportSeiCur = true; // current SEI
+var exportSeiCur = false; // current SEI
 var exportC9 = false;
 var exportQ = false; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
@@ -133,37 +133,26 @@ for (var j = 0; j<rootList.length; j++) {
     var seiMed = ee.ImageCollection(d.get('futRed'))
       .select('Q5s');
      
-    var seiMed = SEI.ic2Image(seiMed, 'GCM');
-    
+         // keep this
+
     // function that masks image if SEI is not equal to the median SEI
-    var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', ['Q1', 'Q2', 'Q3'], true);
+    var bandNames = ['Q1raw', 'Q2raw', 'Q3raw']
+    var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
+    var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
+    var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames, true);
     
-    var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', ['Q1', 'Q2', 'Q3'], true);
-    var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', ['Q1', 'Q2', 'Q3'], true);
-    
-    var futIc = ee.ImageCollection(d.get('futIc'))
-      .select(['Q5s', 'Q1raw', 'Q2raw', 'Q3raw'])
+    var futRedQ = ee.ImageCollection(d.get('futRed'))
+      .select(['Q1raw', 'Q2raw', 'Q3raw'])
       .map(function(x) {
         return ee.Image(x).regexpRename('raw$', '');
-      });
-    
-    var qMed = futIc
-      .map(maskMedian)
-      .mean();
-    
-    var qLow = futIc
-      .map(maskLow)
-      .mean();
+     });
+
+
+
+    var qComb = SEI.ic2Image(futRedQ, 'GCM')
       
-    var qHigh = futIc
-      .map(maskHigh)
-      .mean();
-      
-    var qComb = qMed
-      .addBands(qLow)
-      .addBands(qHigh);
-  
-      var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
+    print(qComb)
+    var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
     if (exportQ) {
     
       Export.image.toDrive({
