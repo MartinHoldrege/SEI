@@ -634,16 +634,6 @@ to <- c(replacement + 10, replacement+20, 30,
         )
 
 r_numGcm2 <- subst(r_numGcm1, from = from, to = to)
-# unique(as.numeric(values(r_numGcm2)))
-cols_numGcm <- c("11" = '#0571b0', 
-                 "12" = '#92c5de',
-                 "13" = '#f4a582', 
-                 "14" = '#b2182b', 
-                 "21" = '#762a83', 
-                 "22" = '#c2a5cf', 
-                 "23" = '#a6dba0', 
-                 "24" = '#008837', 
-                 "30" = unname(c9Palette[9]))
 
 # perc1 <- paste0('\n(', round(12/13*100, digits = -1), '-', '100% of GCMs agree)')
 perc1 <- '\n(robust agreement)'
@@ -710,7 +700,7 @@ comb <- g + bar + guide_area() + plot_layout(design=design, guides = "collect")
 name_numGcm <- file_regex6 %>% 
   str_replace('.tif', '') %>% 
   str_replace(paste0('_numGcmGood_', resolution), '')
-jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '.jpg'), 
+jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '_v2.jpg'), 
      width = 7, height = 5.4, units = 'in',
      res = 800)
 comb
