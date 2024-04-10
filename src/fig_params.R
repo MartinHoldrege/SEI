@@ -120,3 +120,15 @@ cols_numGcm <- c("11" = "#142b65",
                  "23" = '#c2a5cf',
                  "24" = '#762a83',
                  "30" = unname(c9Palette[9]))
+# colors loosely based on  colorbrewer 9-class paired (v4 colors)
+cols_numGcm <- c("11" = "#142b65",
+                 "12" = '#92c5de',
+                 "13" = "#fdbf6f",
+                 "14" = "#ff7f00",
+                 "21" = '#33a02c',
+                 "22" = '#b2df8a',
+                 "23" = '#c2a5cf',
+                 "24" = '#762a83',
+                 "30" = unname(c9Palette[9]))
+
+
