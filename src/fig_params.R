@@ -100,7 +100,7 @@ cols_region <- c("great_plains" = "#DB9E27",
 #                  "23" = '#a6dba0',
 #                  "24" = '#008837',
 #                  "30" = unname(c9Palette[9]))
-# # colors for figure 2 in the REM manuscript (onew version of colors)
+# # # colors for figure 2 in the REM manuscript (onew version of colors)
 # cols_numGcm <- c("11" = '#0571b0',
 #                  "12" = '#92c5de',
 #                  "13" = "#fed976",
@@ -110,25 +110,16 @@ cols_region <- c("great_plains" = "#DB9E27",
 #                  "23" = '#c2a5cf',
 #                  "24" = '#762a83',
 #                  "30" = unname(c9Palette[9]))
-
-cols_numGcm <- c("11" = "#142b65",
-                 "12" = '#92c5de',
-                 "13" = "#fdae61",
-                 "14" = "#fc4e2a",
-                 "21" = '#1a9850',
-                 "22" = '#a6dba0',
-                 "23" = '#c2a5cf',
-                 "24" = '#762a83',
-                 "30" = unname(c9Palette[9]))
-# colors loosely based on  colorbrewer 9-class paired (v4 colors)
-cols_numGcm <- c("11" = "#142b65",
-                 "12" = '#92c5de',
-                 "13" = "#fdbf6f",
-                 "14" = "#ff7f00",
+# colors strictly from 12-class Paired (colorbrewer)
+cols_numGcm <- c("11" = "#1f78b4",
+                 "12" = '#a6cee3',
+                 "13" = "#fb9a99",
+                 "14" = "#e31a1c",
                  "21" = '#33a02c',
                  "22" = '#b2df8a',
-                 "23" = '#c2a5cf',
-                 "24" = '#762a83',
+                 "23" = '#cab2d6',
+                 "24" = '#6a3d9a',
                  "30" = unname(c9Palette[9]))
+
 
 
