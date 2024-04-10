@@ -110,16 +110,18 @@ cols_region <- c("great_plains" = "#DB9E27",
 #                  "23" = '#c2a5cf',
 #                  "24" = '#762a83',
 #                  "30" = unname(c9Palette[9]))
-# colors strictly from 12-class Paired (colorbrewer)
-cols_numGcm <- c("11" = "#1f78b4",
-                 "12" = '#a6cee3',
-                 "13" = "#fb9a99",
-                 "14" = "#e31a1c",
-                 "21" = '#33a02c',
-                 "22" = '#b2df8a',
-                 "23" = '#cab2d6',
-                 "24" = '#6a3d9a',
+# 'v6' colors (from 11-clas RdYlBl)
+cols_numGcm <- c("11" = '#313695',
+                 "12" = '#4575b4',
+                 "13" = '#d73027',
+                 "14" = '#a50026',
+                 "21" = '#74add1',
+                 "22" = '#abd9e9',
+                 "23" = '#fdae61',
+                 "24" = '#f46d43',
                  "30" = unname(c9Palette[9]))
 
 
+
+"#eee1ba"
 

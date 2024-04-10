@@ -700,7 +700,7 @@ comb <- g + bar + guide_area() + plot_layout(design=design, guides = "collect")
 name_numGcm <- file_regex6 %>% 
   str_replace('.tif', '') %>% 
   str_replace(paste0('_numGcmGood_', resolution), '')
-jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '_v5.jpg'), 
+jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '_v6.jpg'), 
      width = 7, height = 5.4, units = 'in',
      res = 800)
 comb
