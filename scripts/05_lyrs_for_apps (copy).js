@@ -87,6 +87,7 @@ var main = exports.main = function(args) {
   
   // bands of interest and their descriptions
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+  var diffBands2
   
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
@@ -170,9 +171,9 @@ var main = exports.main = function(args) {
   });
   
   var diffRed = futRed.map(function(image) { // for each GCM
-    return ee.Image(image).select(diffBands2)
+    return ee.Image(image).select(diffBands)
       // subtract current conditions
-      .subtract(cur1.select(diffBands2))
+      .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
     });
   
