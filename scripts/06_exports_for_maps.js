@@ -19,9 +19,9 @@ var root_co21 = 'fire1_eind1_c4grass1_co21_2311_';
 var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 
 var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85']; // for normal runs
-var rcpList = ['RCP45']; // for testing
+// var rcpList = ['RCP45']; // for testing
 var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100']; // for normal runs
-var epochList = ['2070-2100']
+// var epochList = ['2070-2100']
 // dependencies ---------------------------------------------
 
 // note--can't pass a variable to require (so must manually change the user as needed)
@@ -44,7 +44,7 @@ for(var i = 0; i<rcpList.length; i++) {
   var rcp = rcpList[i];
   var epoch = epochList[i];
   var rcp_yr = rcp + '_' + epoch;
-  
+  print(rcp_yr)
   // read in data --------------------------------------------
   // other than those specified, using the default args
   var d_fire1 = lyrMod.main({root: root_fire1, RCP: rcp, epoch: epoch}); 
@@ -106,7 +106,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // proportion change layers -------------------------------------
   // (proportion change from current to future conditions)
   
-  var diffProp = ee.Image(d_fire1.get('diffPropRed'))
+  var diffProp = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffPropRed')), 'GCM')
     .select('Q\\draw_median', 'Q5s_median')
     .regexpRename('$', '_' + rcp_yr)
   
@@ -115,11 +115,12 @@ for(var i = 0; i<rcpList.length; i++) {
   
   // qProp layer (for RGB maps) -----------------------------------
   
-  // this should be updated to be based on median SEI (and associated changes in Q etc. )
-  var qPropMeanComb = ee.Image(d_fire1.get('qPropMean'))
+  // this in now based on median SEI (and associated changes in Q etc. )
+  // print(d_fire1.get('qPropMed'))
+  var qPropMeanComb = ee.Image(d_fire1.get('qPropMed'))
     .regexpRename('$', '_' + rcp_yr)
     .addBands(qPropMeanComb);
-  
+ 
   // climate confidence layers -----------------------------------
   // for areas that are currently core the the number of GCMs that agree that will be core in the futre
   // for areas that are currently grow, the number of GCMS that agree that will be Core or Grow in the future
@@ -231,7 +232,7 @@ Export.image.toDrive({
 // q prop (for RGB maps)
 Export.image.toDrive({
   image: qPropMeanComb,
-  description: outString('qPropMean', root_fire1),
+  description: outString('qPropMed', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
