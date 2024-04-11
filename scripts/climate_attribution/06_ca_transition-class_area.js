@@ -25,23 +25,20 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = true; // lower resolution, for testing
+var testRun = false; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
                           'fire1_eind1_c4grass0_co20_2311_','fire1_eind1_c4grass1_co21_2311_'],
                           [4, 4, 4, 4]);
                           
-if(testRun) {
-  //var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
-}
-
 var RCPList =  SEI.repeatelem(['RCP45', 'RCP45', 'RCP85', 'RCP85'], 4);
 
 var epochList = SEI.repeatelem(['2030-2060', '2070-2100', '2030-2060',  '2070-2100'], 4);
 
 var resolution = 90;
 if (testRun) {
+  var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
   var resolutionCompute = 10000; // resolution area is computed at. 
 } else {
   var resolutionCompute = resolution
@@ -128,25 +125,24 @@ for (var i = 0; i < roots.length; i++) {
     .combine(driver0);
   
   var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
+    .select('Q5s');
+    
+  var diffRedImage = SEI.ic2Image(diffRed, 'GCM') // Q5s_low, Q5s_median, Q5s_high bands
 
   // reduce the driver across GCMs, pixelwise
   // relies on objects in the environment of the loop
   var driverReducer = function(reducerName) {
-    // getting the change in SEI
-    var image = diffRed
-      .select('Q5s')
-      .filter(ee.Filter.eq('GCM', reducerName))
-      .mean()
-    var f = SEI.maskSeiRedFactory(image, reducerName, 'driver');
+    // creating function that compares the change in SEI with the 
+    var f = SEI.maskSeiRedFactory(diffRedImage, reducerName, 'driver');
     return driver1.map(f)
-      .reduce(ee.Reducer.median())
+      .reduce(ee.Reducer.mode())
       .rename('driver')
       .set('GCM', reducerName);
   };
   
-  // note--there is an error occuring in this, step
+
   var driverLow = driverReducer('low') 
-    
+
   var driverMedian = driverReducer('median')
     
   var driverHigh = driverReducer('high');
@@ -168,6 +164,9 @@ for (var i = 0; i < roots.length; i++) {
 
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
   var ecoC9 = ee.ImageCollection(d.get('c9Ic')) // c9 by GCM
+    // a problem in the output is that the total area of core, grow, other differs
+    // between the reduced and gcm-wise layers, suggesting these layers are different
+    // in a way they shouldn't be. 
     .merge(ee.ImageCollection(d.get('c9Red')))  // c9 for low, median, high SEI
     .map(function(x) {
       var c9 = ee.Image(x);
@@ -201,13 +200,12 @@ for (var i = 0; i < roots.length; i++) {
   // which direction the change was)
   var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
   
-  // for now treating GCM level and reducer level indices differently (because problem with driver layer)
-  var indexGcm = ecoC9comb
-    .filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+    var index = ecoC9comb
+    //.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
     .map(function(x) {
       var image = ee.Image(x);
       var out = image.select('ecoC9')
-        .add(image.select('driver'))
+        .add(image.select('driver').unmask()) // for the reduced images in collection for some reason are masked, so making all the same
         .multiply(10)
         .add(image.select('dirQ5s'))
         .updateMask(SEI.mask)
@@ -216,43 +214,6 @@ for (var i = 0; i < roots.length; i++) {
         .copyProperties(ee.Image(x));
       return out;
     });
-  
-  var indexRed = ecoC9comb
-    .filter(ee.Filter.inList("GCM", bandsRed))
-    .map(function(x) {
-      var image = ee.Image(x);
-      var out = image.select('ecoC9')
-        .add(image.select('driver')) // temporary fix, is excluding driver here
-        .multiply(10)
-        .add(image.select('dirQ5s'))
-        .updateMask(SEI.mask)
-        .rename('index')
-        .toInt()
-        .copyProperties(ee.Image(x));
-      return out;
-    });
-  
-  var index = indexGcm.merge(indexRed);
-  // print('index', index)
-  
-  
-    // testing ~~~~~~~~
-    /*
-    var tmp = index.toBands()
-    print('tmp', tmp)
-    
-    // var maskGcm = tmp.select('1_1_0_index').gt(0).unmask()
-    // var maskMin = tmp.select('2_2_0_index').gt(0).unmask()
-    // Map.addLayer(maskMin.neq(maskGcm), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (gcm index vs cellwise min)", false)
-    var driverMask = driverLow.gt(-100);
-    var maskC9 = c9Reda.select('median').gt(-100).unmask()
-    var maskdriver = driverMask.unmask();
-    Map.addLayer(maskC9.neq(maskdriver), {min: 0, max: 1, palette: ['white', 'black']}, "mask diff (c9 vs driver)", false)
-    Map.addLayer(maskdriver, {min: 0, max: 1, palette: ['grey', 'blue']}, "driver mask", false)
-    print('driverLow', driverLow)
-    Map.addLayer(driverMask.unmask().lt(SEI.mask.unmask()), {min: 0, max: 1, palette: ['white', 'black']}, "mask difference")
-  */
-  // end testing ~~~~~~~
   
   // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
   // Map.addLayer(SEI.mask, {palette: 'grey'}, 'mask')

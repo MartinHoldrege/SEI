@@ -182,7 +182,7 @@ var main = exports.main = function(args) {
     return ee.Image(image)
       .select(diffBands)
       // subtract current conditions
-      .multiply(cur1.select(diffBands))
+      .divide(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
   });
   
