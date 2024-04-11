@@ -182,21 +182,11 @@ var main = exports.main = function(args) {
     return ee.Image(image)
       .select(diffBands)
       // subtract current conditions
-      .multiply(cur1.select(diffBands))
+      .divide(cur1.select(diffBands)) // this was previously incorrect (multiply)
       .copyProperties(ee.Image(image));
   });
   
-  // reducing to get min, max, median across GCMs for the differences
 
-  // for now only including Q5s b/ reduced cover, etc. need to calculated more carefully
-  // and correspond to low, median, high SEI values
-  var diffRed = futRed.map(function(image) {
-    return ee.Image(image).select('Q5s')
-      // subtract current conditions
-      .subtract(cur1.select('Q5s'))
-      .copyProperties(ee.Image(image));
-  });
-  
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
