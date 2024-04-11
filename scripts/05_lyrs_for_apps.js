@@ -151,14 +151,14 @@ var main = exports.main = function(args) {
     .map(maskHigh)
     .mean();
     
-  var qComb = qMedTmp
+  var qComb = qMed
     .addBands(qLow)
     .addBands(qHigh); 
     
-  var qFutRed = SEI.image2Ic(qComb, 'GLM');
+  var qFutRed = SEI.image2Ic(qComb, 'GCM');
   
   
-  var futRed = SEI.image2Ic(seiMed, 'GLM')
+  var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
     
   // differences relative to current conditions for relavent bands
@@ -170,9 +170,9 @@ var main = exports.main = function(args) {
   });
   
   var diffRed = futRed.map(function(image) { // for each GCM
-    return ee.Image(image).select(diffBands2)
+    return ee.Image(image).select(diffBands)
       // subtract current conditions
-      .subtract(cur1.select(diffBands2))
+      .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
     });
   
@@ -182,21 +182,11 @@ var main = exports.main = function(args) {
     return ee.Image(image)
       .select(diffBands)
       // subtract current conditions
-      .multiply(cur1.select(diffBands))
+      .divide(cur1.select(diffBands)) // this was previously incorrect (multiply)
       .copyProperties(ee.Image(image));
   });
   
-  // reducing to get min, max, median across GCMs for the differences
 
-  // for now only including Q5s b/ reduced cover, etc. need to calculated more carefully
-  // and correspond to low, median, high SEI values
-  var diffRed = futRed.map(function(image) {
-    return ee.Image(image).select('Q5s')
-      // subtract current conditions
-      .subtract(cur1.select('Q5s'))
-      .copyProperties(ee.Image(image));
-  });
-  
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
@@ -346,6 +336,5 @@ var main = exports.main = function(args) {
 // for testing
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-print(d)
-print(ee.ImageCollection(d.get('c9Red')))
+print(d.get('qPropMed'))
 */

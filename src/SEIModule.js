@@ -485,7 +485,7 @@ exports.image2Ic = image2Ic;
  * @return {ee.Image}
 */
 var ic2Image = function(ic, propertyName) {
-  var icRenamed = ic.map(function(x) {
+  var icRenamed = ee.ImageCollection(ic).map(function(x) {
     var image = ee.Image(x)
     var property = ee.String(image.get(propertyName));
     var oldNames = image.bandNames()
