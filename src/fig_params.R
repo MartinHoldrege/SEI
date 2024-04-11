@@ -100,7 +100,7 @@ cols_region <- c("great_plains" = "#DB9E27",
 #                  "23" = '#a6dba0',
 #                  "24" = '#008837',
 #                  "30" = unname(c9Palette[9]))
-# # # colors for figure 2 in the REM manuscript (onew version of colors)
+# # colors for figure 2 in the REM manuscript (onew version of colors)
 # cols_numGcm <- c("11" = '#0571b0',
 #                  "12" = '#92c5de',
 #                  "13" = "#fed976",
@@ -110,18 +110,16 @@ cols_region <- c("great_plains" = "#DB9E27",
 #                  "23" = '#c2a5cf',
 #                  "24" = '#762a83',
 #                  "30" = unname(c9Palette[9]))
-# 'v6' colors (from 11-clas RdYlBl)
+# 'v7' colors 
 cols_numGcm <- c("11" = '#313695',
                  "12" = '#4575b4',
                  "13" = '#d73027',
                  "14" = '#a50026',
-                 "21" = '#74add1',
-                 "22" = '#abd9e9',
+                 "21" = '#525252',
+                 "22" = '#969696',
                  "23" = '#fdae61',
                  "24" = '#f46d43',
                  "30" = unname(c9Palette[9]))
 
 
-
-"#eee1ba"
 
