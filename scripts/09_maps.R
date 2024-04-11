@@ -15,7 +15,7 @@ version <- 'vsw4-3-4'
 root_c9 <- 'fire1_eind1_c4grass1_co20_2311'
 years_c9 <- '2070-2100'
 rcp_c9 <- 'RCP45'
-
+email <- 'martinholdrege@gmail.com'
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
@@ -126,10 +126,10 @@ r_c9diff_all <- list(
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
 
 file_regex4 <- file_regex %>% 
-  str_replace('9ClassTransition', 'qPropMean') 
+  str_replace('9ClassTransition', 'qPropMed') 
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex4) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex4, email = email) %>% 
     drive_download_from_df('data_processed/ca_lyrs')
 }
 
@@ -143,7 +143,7 @@ file_regex5 <- file_regex %>%
   str_replace('9ClassTransition', 'diffProp') 
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex5) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex5, email = email) %>% 
     drive_download_from_df('data_processed/ca_lyrs')
 }
 
@@ -476,7 +476,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
