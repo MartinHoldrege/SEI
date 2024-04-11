@@ -155,10 +155,10 @@ var main = exports.main = function(args) {
     .addBands(qLow)
     .addBands(qHigh); 
     
-  var qFutRed = SEI.image2Ic(qComb, 'GLM');
+  var qFutRed = SEI.image2Ic(qComb, 'GCM');
   
   
-  var futRed = SEI.image2Ic(seiMed, 'GLM')
+  var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
     
   // differences relative to current conditions for relavent bands
@@ -336,6 +336,5 @@ var main = exports.main = function(args) {
 // for testing
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-print(d)
-print(ee.ImageCollection(d.get('c9Red')))
+print(d.get('qPropMed'))
 */
