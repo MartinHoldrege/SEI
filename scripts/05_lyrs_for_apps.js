@@ -151,7 +151,7 @@ var main = exports.main = function(args) {
     .map(maskHigh)
     .mean();
     
-  var qComb = qMedTmp
+  var qComb = qMed
     .addBands(qLow)
     .addBands(qHigh); 
     
