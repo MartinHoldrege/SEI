@@ -170,9 +170,9 @@ var main = exports.main = function(args) {
   });
   
   var diffRed = futRed.map(function(image) { // for each GCM
-    return ee.Image(image).select(diffBands2)
+    return ee.Image(image).select(diffBands)
       // subtract current conditions
-      .subtract(cur1.select(diffBands2))
+      .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
     });
   
