@@ -317,6 +317,7 @@ var main = exports.main = function(args) {
     'cur': cur0,
     'climDeltaRed': climDeltaRed,
     'p': p,
+    'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division)
     'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
