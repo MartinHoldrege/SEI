@@ -336,5 +336,7 @@ var main = exports.main = function(args) {
 // for testing
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-print(d.get('qPropMed'))
+var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first()
+Map.addLayer(img.select('Q5s'), {min: -0.25, max: 0.25, palette: ['red', 'grey', 'blue']}, 'SEI % change')
+//print(d.get('qPropMed'))
 */
