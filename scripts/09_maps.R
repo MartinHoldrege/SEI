@@ -379,9 +379,9 @@ bar <- ggplot(area_c9diff2, aes(run_name, area_km2, fill = diffClass)) +
            position = position_dodge()) +
   scale_fill_manual(values = cols_diff) +
   labs(x = "Model assumptions",
-       y = lab_areakm0,
+       y = lab_areaha0,
        subtitle = fig_letters['d'])+
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = km2millionha) +
   theme(legend.position = 'none',
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
@@ -410,6 +410,7 @@ dev.off()
 
 
 all_f <- map(r_c9diff_all, prepare_r_diff)
+
 all_rename <- map(all_f, rename_bands)
 all_s <- map(all_rename, st_as_stars, as_attributes = FALSE)
 
@@ -445,9 +446,10 @@ s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>%
   # for some reason code breaks when not using spatsample
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
   #spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
+  # subst(from = c(-Inf, Inf), to = NA) %>% 
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
-
+  
 rgb <- plot_map2(s_rgb#,
                  #panel_tag = fig_letters[1]
                  )+
@@ -570,7 +572,7 @@ g <- r_diffprop2[[str_subset(lyrs, 'RCP45_2070-2100')]] %>%
   theme(legend.position = 'right')
 
 jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '.jpg'), 
+                  rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
@@ -605,7 +607,7 @@ for(Q in Qs) {
     theme(legend.position = 'right')
   
   jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
-                    version, "_", root_c9, '.jpg'),
+                    version, "_", root_c9, '_v2.jpg'),
        width = 6, height = 6, units = 'in',
        res = 600)
     print(g)
@@ -681,8 +683,8 @@ bar <- area_numGcm2 %>%
   ggplot(aes(category, area_km2, fill = category)) +
   geom_bar(stat = 'identity') +
   scale_fill_manual(values = cols_numGcm) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(y = lab_areakm0,
+  scale_y_continuous(labels = km2millionha) +
+  labs(y = lab_areaha0,
        x = NULL,
        subtitle = fig_letters['b']) +
   theme(legend.position = 'none',
@@ -753,8 +755,8 @@ g <- area_numGcm2 %>%
   scale_fill_manual(values = cols_numGcm,
                     labels = names_numGcm,
                     name = 'Confidence in \nprojected habitat class') +
-  scale_y_continuous(labels = scales::comma) +
-  labs(y = lab_areakm0,
+  scale_y_continuous(labels = km2millionha) +
+  labs(y = lab_areaha0,
        x = NULL) +
   theme(legend.position = 'right',
         axis.text.x = element_blank(),

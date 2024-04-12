@@ -56,6 +56,23 @@ rcp_label <- function(rcp, years, add_letters = FALSE,
   x2
 }
 
+#' convert km2 to millions of ha for figures
+#'
+#' @param x area in km2
+#'
+#' @return character verctor
+#' @export
+#'
+#' @examples
+#' pass to to the labels argument of e.g. scale_y_continuous
+km2millionha <- function(x) {
+  ha_millions <- x*100/10^6 # first convert to ha then convert to millions of ha
+  
+  out <- paste0(ha_millions, '×', 10, '⁶')
+  ifelse(x == 0, '0', out)
+}
+
+
 #' rename bands of a raster
 #'
 #' @param x raster, with band names like RCP45_2070-2100
@@ -68,13 +85,12 @@ rename_bands <- function(x) {
   m <- str_split_fixed(names(x), pattern = "_", n = 2)
   RCP <- as.vector(m[, 1])
   new_name <- rcp_label(rcp = as.vector(m[, 1]),
-                        years = as.charactor(epoch2factor(as.vector(m[, 2]))),
+                        years = as.character(epoch2factor(as.vector(m[, 2]))),
                         add_letters = TRUE,
                         include_parenth = FALSE)
   names(x) <- new_name
   x
 }
-
 
 # ggplot themes -----------------------------------------------------------
 

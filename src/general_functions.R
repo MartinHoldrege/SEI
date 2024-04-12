@@ -90,8 +90,8 @@ drive_download_from_df <- function(df, folder_path = "./", overwrite = TRUE) {
 # functions that create factors out of character vectors etc. 
 
 epoch2factor <- function(x) {
-  factor(x, levels = c('2030-2060', '2070-2100'),
-         labels = c('2031-2060', '2071-2100'))
+  x2 <- update_yr(x) 
+  factor(x2, levels = c('2031-2060', '2071-2100'))
 }
 
 # doesn't create a factor, but just to update the correct

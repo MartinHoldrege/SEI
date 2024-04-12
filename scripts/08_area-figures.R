@@ -4,7 +4,7 @@
 
 # dependencies ------------------------------------------------------------
 source("scripts/climate_attribution/07_ca_transition-class_area.R")
-
+source('src/figure_functions.R')
 
 # fig params --------------------------------------------------------------
 
@@ -12,6 +12,7 @@ cap1 <- paste0('Details:', rcp, ' (', yr, '), ', resolution, 'm, ', version)
 cap2 <- paste0(cap1, '\n Bars are median, and range is 2nd lowest to 2nd highest across GCMs')
 
 # c9 area -----------------------------------------------------------------
+
 
 base_c9_area <- function(include_bar_pattern = TRUE) {
   out <- list(
@@ -34,7 +35,8 @@ base_c9_area <- function(include_bar_pattern = TRUE) {
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
           legend.title = element_blank(),
           legend.position = 'bottom'),
-    scale_y_continuous(labels = scales::comma) 
+    scale_y_continuous(labels = km2millionha),
+    labs(y = lab_areaha0)
   )
   if(!include_bar_pattern) {
     out$bar_pattern <- NULL
@@ -64,8 +66,7 @@ g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
   guides(pattern = guide_legend(ncol = 1,
                                 override.aes = list(fill = "white", color = 'black',
                                                     size = 0.1))) + 
-  labs(y = lab_areakm0,
-       x = NULL,
+  labs(x = NULL,
        subtitle = fig_letters['b'])
 
 g
@@ -102,8 +103,7 @@ g <- area_med_c9 %>%
   guides(pattern = guide_legend(ncol = 2,
                                 override.aes = list(fill = "white", color = 'black'))) +
   facet_wrap(~c9_name, scales = 'free_y') +
-  labs(y = lab_areakm0,
-       x = 'Scenario')
+  labs(x = 'Scenario')
 
 filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v2")
 jpeg(paste0("figures/area/", filename, ".jpg"),     
