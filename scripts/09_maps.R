@@ -319,11 +319,11 @@ base_diff <- function() {
   )
 }
 
-labels <- c('Same SEI (+/- 0.01) projected relative to default, and same habitat class',
-            'Better SEI projected relative to default, but same habitat class',
-            'Worse SEI projected relative to default, but same habitat class',
-            'Better SEI & habitat class projected relative to default',
-            'Worse SEI & habitat class projected relative to default')
+labels <- c('Same SEI (+/- 0.01) projected relative to default, and same SEI class',
+            'Better SEI projected relative to default, but same SEI class',
+            'Worse SEI projected relative to default, but same SEI class',
+            'Better SEI & SEI class projected relative to default',
+            'Worse SEI & SEI class projected relative to default')
 
 # preparing raster (converting to factor etc.)
 lyr <- "RCP45_2070-2100"
@@ -801,7 +801,7 @@ g <- area_numGcm2 %>%
   geom_bar(stat = 'identity') +
   scale_fill_manual(values = cols_numGcm,
                     labels = names_numGcm,
-                    name = 'Confidence in \nprojected habitat class') +
+                    name = 'Confidence in \nprojected SEI class') +
   scale_y_continuous(labels = km2millionha) +
   labs(y = lab_areaha0,
        x = NULL) +
@@ -836,3 +836,74 @@ area_numGcm3 <- area_numGcm2 %>%
 
 write_csv(area_numGcm3, paste0('data_processed/summary_stats/area-by-agreement_', version, '.csv'))
 
+
+
+
+# data checks -------------------------------------------------------------
+# this section can be deleted later
+
+
+# re-creating fig 3 -------------------------------------------------------
+# recreat rgb figure from components of fig 4.
+# this is an exercise to validate those to sets of figures
+
+# layers used directly for rgb
+r_qprop2 <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]]
+
+# recreating rgb layers from fig 4
+
+lyrs <- names(r_diffprop1) %>% 
+  str_subset('RCP45_2070-2100')
+
+rdp2 <- r_diffprop1[[lyrs]]
+names(rdp2) <-  names(rdp2) %>% 
+  str_extract('^Q\\d[s]*')
+
+rdp3 <- rdp2
+
+# if change in Q has a different sign than change in SEI, treat as 0 change
+# different_sign <- function(x, SEI = rdp2[['Q5s']]) {
+#   adj <- ifel((x > 0 & SEI < 0) | (x < 0 & SEI > 0), 0, x)
+# }
+# rdp3[['Q1']] <- different_sign(rdp2[['Q1']])
+# rdp3[['Q2']] <- different_sign(rdp2[['Q2']])
+# rdp3[['Q3']] <- different_sign(rdp2[['Q3']])
+rdp3[[1:3]] <- abs(rdp3[[1:3]])
+tot <- rdp3[['Q1']] + rdp3[['Q2']] + rdp3[['Q3']]
+rdp3[[1:3]] <- abs(rdp3[[1:3]]/tot)
+
+x <- values(as.numeric(r_qprop2$`Q1raw_RCP45_2070-2100`))
+y <- values(as.numeric(rdp3$Q1))
+cor(x, y, use = 'complete.obs')
+plot(rdp3[[1:3]])
+plot(r_qprop2$`Q1raw_RCP45_2070-2100`)
+
+rgb <- stars::st_as_stars(rdp3[[1:3]]) %>% 
+  stars::st_rgb(maxColorValue = 1)
+
+plot_map2(rgb) + scale_fill_identity()
+plot(tot == 0)
+plot(rdp2[['Q5s']] == 0)
+plot(rdp2[[1:3]] == 0)
+r <- rast(rgb)
+rdp4 <- c(r, rdp3, r_diffprop1[[lyrs]])
+df0 <- as.data.frame(rdp4) %>% 
+df <- df0 %>%   drop_na()
+df <- df %>% 
+  mutate(color = rgb(red, green, blue, maxColorValue = 255))
+df %>% 
+  filter(color == "#000000")
+  filter(red == 0, green == 0, blue == 0)
+df %>% 
+  mutate(color_tot = red + blue + green) %>% 
+  filter(!color_tot %in% c(167:169))
+df %>% 
+  filter(Q5s == 0)
+plot(r)
+plot(is.na(rdp3$Q1))
+df0 %>% 
+  filter(is.na(Q1) & !is.na(`Q1raw_median_RCP45_2070-2100`)) 
+
+# Problem to fix--SEI is smoothed at a different scale than Qs--so have
+# areas where qs go in opposite direction as SEI--confirm that this is
+# actually just an artifact of smoothing!
