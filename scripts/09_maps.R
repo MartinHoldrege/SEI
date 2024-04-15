@@ -149,6 +149,20 @@ if(download) {
 
 r_diffprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
   rast()
+# * abs diff (q, sei) ----------------------------------------------------
+# absolute change of Qs and SEI from current to future
+
+file_regex5b <- file_regex %>% 
+  str_replace('9ClassTransition', 'diff') 
+
+if(download) {
+  drive_ls_filtered(path = "gee", file_regex = file_regex5b, email = email) %>% 
+    drive_download_from_df('data_processed/ca_lyrs')
+}
+
+r_diff1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
+  rast()
+
 
 # * numGcmGood  ----------------------------------------------------
 
@@ -543,7 +557,7 @@ r_diffprop2 <- r_diffprop1*100 #convert to %
 
 lyrs <- names(r_diffprop2)
 
-b <- c(25, 15, 10, 5, 1)
+b <- c(50, 25, 15, 10, 5)
 breaks <- c(-100, -b, rev(b), 200) 
 colors <- RColorBrewer::brewer.pal(length(breaks) - 1, 'RdBu')
 length(colors)
@@ -563,7 +577,7 @@ fill_diff <- function() {
 g <- r_diffprop2[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
   # for some reason an error is thrown when this sampling step not taken
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-  #st_as_stars(as_attributes = FALSE) %>% 
+
   plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
   facet_wrap(~band,
              labeller = labeller(band = lookup_q)) +
@@ -572,12 +586,11 @@ g <- r_diffprop2[[str_subset(lyrs, 'RCP45_2070-2100')]] %>%
   theme(legend.position = 'right')
 
 jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
+                  rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
 dev.off()  
-
 
 # * 4 panel maps -----------------------------------------------------------
 # 4 panel maps (1 panel per scenario) for change in each of Q1, Q2, Q3 and SEI
@@ -613,6 +626,40 @@ for(Q in Qs) {
     print(g)
   dev.off()
 }
+
+# absolute change maps --------------------------------------------------
+
+b <- c(0.5, 0.3, 0.2, 0.1, 0.05)
+breaks <- c(-1, -b, rev(b), 1) 
+colors <- RColorBrewer::brewer.pal(length(breaks) - 1, 'RdBu')
+labels <- label_creator(breaks)
+labels[1] <- paste0('< ', breaks[2])
+
+fill_diff2 <- function() {
+  scale_fill_manual(name = 'Change',
+                    values = colors,
+                    labels = c(labels, ""), # empty label for NA
+                    na.value = 'transparent',
+                    drop = FALSE) 
+}
+
+g <- r_diff1[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
+  # for some reason an error is thrown when this sampling step not taken
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  #st_as_stars(as_attributes = FALSE) %>% 
+  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
+  facet_wrap(~band,
+             labeller = labeller(band = lookup_q)) +
+  theme(strip.text = element_text(hjust = 0)) +
+  fill_diff2() +
+  theme(legend.position = 'right')
+
+jpeg(paste0(paste('figures/delta_maps/abs-change_Qs-SEI', version, root_c9, 
+                  rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
+     width = 8, height = 8, units = 'in',
+     res = 600)
+g
+dev.off()  
 
 # numGcmGood --------------------------------------------------------------
 # map showing agreement among GCMs
