@@ -257,7 +257,7 @@ var main = exports.main = function(args) {
       .abs()
       // if don't agree on the direction of change than make the proportion change 0 (i.e
       // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
-      .where(agreeDir.eq(0), 0);
+      // .where(agreeDir.eq(0), 0); // for testing purposes removing this line
     
     var sum = absProp.reduce('sum');
     // divide all layers by the total to normalize each value
