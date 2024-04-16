@@ -322,7 +322,6 @@ var main = exports.main = function(args) {
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
-    'diffRed': diffRed,
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
