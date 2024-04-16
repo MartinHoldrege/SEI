@@ -530,7 +530,7 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBan
       .abs()
       // if the SEI is very closed to the estimated reduced value, 
       // then assume that is the correct GCM
-      .lt(0.000001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
+      .lt(0.0000001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
       .rename(reducerName);
       
 
