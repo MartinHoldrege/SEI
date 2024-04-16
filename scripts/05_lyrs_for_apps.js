@@ -141,15 +141,15 @@ var main = exports.main = function(args) {
   
   var qMed = futIcTmp
     .map(maskMedian)
-    .mean();
+    .median();
   
   var qLow = futIcTmp
     .map(maskLow)
-    .mean();
+    .median();
     
   var qHigh = futIcTmp
     .map(maskHigh)
-    .mean();
+    .median();
     
   var qComb = qMed
     .addBands(qLow)
