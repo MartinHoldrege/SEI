@@ -36,6 +36,7 @@ var c9DiffFireComb = ee.Image([]);
 var c9DiffCo2Comb = ee.Image([]);
 var c9DiffGrassComb = ee.Image([]);
 var diffPropComb = ee.Image([]);
+var diffComb = ee.Image([]);
 var qPropMeanComb = ee.Image([]);
 var numGoodC3Comb = ee.Image([]);
 
@@ -112,6 +113,16 @@ for(var i = 0; i<rcpList.length; i++) {
   
   var diffPropComb = diffPropComb
     .addBands(diffProp);
+    
+  // absolute change layers -------------------------------------
+  // (absolute change from current to future conditions)
+  
+  var diff = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffRed')), 'GCM')
+    .select('Q\\draw_median', 'Q5s_median')
+    .regexpRename('$', '_' + rcp_yr)
+  
+  var diffComb = diffComb
+    .addBands(diff);
   
   // qProp layer (for RGB maps) -----------------------------------
   
@@ -228,6 +239,19 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
+
+// absolute changes in Q & SEI
+Export.image.toDrive({
+  image: diffComb,
+  description: outString('diff', root_fire1),
+  folder: 'gee',
+  maxPixels: 1e13, 
+  scale: resolutionOut,
+  region: SEI.region,
+  crs: SEI.crs,
+  fileFormat: 'GeoTIFF'
+});
+
 
 // q prop (for RGB maps)
 Export.image.toDrive({
