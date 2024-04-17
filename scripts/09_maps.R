@@ -126,7 +126,7 @@ r_c9diff_all <- list(
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
 
 file_regex4 <- file_regex %>% 
-  str_replace('9ClassTransition', 'qPropMed') 
+  str_replace('9ClassTransition', 'qPropMedNoAgree') # the version with 'noagree' suffix means that all Q changes were used regardless of whether they were in the same direction as SEI
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex4, email = email) %>% 
@@ -160,7 +160,7 @@ if(download) {
     drive_download_from_df('data_processed/ca_lyrs')
 }
 
-r_diff1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>% 
+r_diff1 <- newest_file_path('data_processed/ca_lyrs', file_regex5b) %>% 
   rast()
 
 
@@ -492,7 +492,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v3NoAgree.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
@@ -629,9 +629,8 @@ for(Q in Qs) {
 
 # absolute change maps --------------------------------------------------
 
-b <- c(0.5, 0.3, 0.2, 0.1, 0.05)
+b <- c(0.2, 0.1, 0.05, 0.02, 0.01)
 breaks <- c(-1, -b, rev(b), 1) 
-colors <- RColorBrewer::brewer.pal(length(breaks) - 1, 'RdBu')
 labels <- label_creator(breaks)
 labels[1] <- paste0('< ', breaks[2])
 
@@ -642,7 +641,7 @@ fill_diff2 <- function() {
                     na.value = 'transparent',
                     drop = FALSE) 
 }
-
+# hist(values(r_diff1[['Q5s_median_RCP45_2030-2060']]), xlim = c(-0.5, 0.5), breaks = 500)
 g <- r_diff1[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
   # for some reason an error is thrown when this sampling step not taken
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
@@ -906,4 +905,9 @@ df0 %>%
 
 # Problem to fix--SEI is smoothed at a different scale than Qs--so have
 # areas where qs go in opposite direction as SEI--confirm that this is
-# actually just an artifact of smoothing!
+# actually just an artifact of smoothing!--when zooming in on ee it looks to be # covering a large area so not just a smoothing issue--
+# perhaps a calculating of median issue? 
+# next step--see if this problem occurs for a single GCM
+
+
+
