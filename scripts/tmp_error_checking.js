@@ -14,19 +14,19 @@ var lyrs = ['Q1raw', 'Q2raw', 'Q3raw', 'Q5s']
 
 for (var i = 0; i<lyrs.length; i++) {
   var lyr = lyrs[i];
-  Map.addLayer(img.select(lyr), vis, 'delta ' + lyr, false);
- // Map.addLayer(diffGcm.select(lyr), vis, 'delta GCM ' + lyr, false);
+  // Map.addLayer(img.select(lyr), vis, 'delta ' + lyr, false);
+  Map.addLayer(diffGcm.select(lyr), vis, 'delta GCM ' + lyr, false);
 }
 
 
 // where directions don't agree (e.g. diff for SEI is positive to negative for the Qs);
 
 // diffGcm
-var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
-//var diffQ = diffGcm.select(qBands)
-var diffQ = img.select(qBands)
-//var Q5s = diffGcm.select('Q5s');
-var Q5s = img.select('Q5s');
+ var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
+var diffQ = diffGcm.select(qBands)
+//var diffQ = img.select(qBands)
+var Q5s = diffGcm.select('Q5s');
+// var Q5s = img.select('Q5s');
     var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
       .rename(qBands);
       
