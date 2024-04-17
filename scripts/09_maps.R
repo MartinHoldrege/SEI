@@ -556,6 +556,7 @@ lookup_q[] <- paste(fig_letters[1:length(lookup_q)], lookup_q) # using [] to pre
 r_diffprop2 <- r_diffprop1*100 #convert to %
 
 lyrs <- names(r_diffprop2)
+lyrs2 <- str_subset(lyrs, 'RCP45_2070-2100')
 
 b <- c(50, 25, 15, 10, 5)
 breaks <- c(-100, -b, rev(b), 200) 
@@ -566,15 +567,15 @@ labels[1] <- paste0('< ', breaks[2])
 
 colors[ceiling(length(breaks)/2)] <- 'grey' # middle color (no significant)
 
-fill_diff <- function() {
-  scale_fill_manual(name = '% Change',
+fill_diff <- function(name = '% Change') {
+  scale_fill_manual(name = name,
                     values = colors,
                     labels = c(labels, ""), # empty label for NA
                     na.value = 'transparent',
                     drop = FALSE) 
 }
 
-g <- r_diffprop2[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
+g <- r_diffprop2[[lyrs2]] %>% 
   # for some reason an error is thrown when this sampling step not taken
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
 
@@ -630,23 +631,23 @@ for(Q in Qs) {
 # absolute change maps --------------------------------------------------
 
 b <- c(0.2, 0.1, 0.05, 0.02, 0.01)
-breaks <- c(-1, -b, rev(b), 1) 
-labels <- label_creator(breaks)
-labels[1] <- paste0('< ', breaks[2])
+breaks2 <- c(-1, -b, rev(b), 1) 
+labels2 <- label_creator(breaks2)
+labels2[1] <- paste0('< ', breaks2[2])
 
-fill_diff2 <- function() {
-  scale_fill_manual(name = 'Change',
+fill_diff2 <- function(name = 'Change') {
+  scale_fill_manual(name = name,
                     values = colors,
-                    labels = c(labels, ""), # empty label for NA
+                    labels = c(labels2, ""), # empty label for NA
                     na.value = 'transparent',
                     drop = FALSE) 
 }
 # hist(values(r_diff1[['Q5s_median_RCP45_2030-2060']]), xlim = c(-0.5, 0.5), breaks = 500)
-g <- r_diff1[[str_subset(lyrs, 'RCP45_2070-2100')]] %>% 
+g <- r_diff1[[lyrs2]] %>% 
   # for some reason an error is thrown when this sampling step not taken
   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   #st_as_stars(as_attributes = FALSE) %>% 
-  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
+  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks2))) +
   facet_wrap(~band,
              labeller = labeller(band = lookup_q)) +
   theme(strip.text = element_text(hjust = 0)) +
@@ -660,6 +661,43 @@ jpeg(paste0(paste('figures/delta_maps/abs-change_Qs-SEI', version, root_c9,
 g
 dev.off()  
 
+
+# * absolute and % change -------------------------------------------------
+# absolute change for SEI and % change for Q components
+
+# q maps
+q_diffprop <- map(lyrs2[1:3], function(lyr) {
+  r <- r_diffprop2[[lyr]] %>% 
+    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) 
+  lyr_sym <- sym(lyr)
+  plot_map2(r, mapping = aes(fill = cut(!!lyr_sym, breaks))) +
+    theme(strip.text = element_text(hjust = 0)) +
+    fill_diff(name = '% Change in Q') +
+    theme(legend.position = 'right') +
+    labs(subtitle = lookup_q[lyr])
+})
+
+# sei map
+
+lyr <- lyrs2[[4]]
+lyr_sym <- sym(lyr)
+sei_diff <- r_diff1[[lyr]] %>% 
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
+  plot_map2(mapping = aes(fill = cut(!!lyr_sym, breaks2))) +
+  theme(strip.text = element_text(hjust = 0)) +
+  fill_diff2(name = 'Change in SEI') +
+  theme(legend.position = 'right') +
+  labs(subtitle = lookup_q[lyr])
+
+g <- wrap_plots(q_diffprop) +  sei_diff +
+  plot_layout(nrow = 2, guides = 'collect') 
+
+jpeg(paste0(paste('figures/delta_maps/perc-abs-change_Qs-SEI', version, root_c9, 
+                  rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
+     width = 8, height = 8, units = 'in',
+     res = 600)
+g
+dev.off()  
 # numGcmGood --------------------------------------------------------------
 # map showing agreement among GCMs
 
