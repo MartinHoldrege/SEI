@@ -452,7 +452,7 @@ var uniqueImageSuffix = function(image) {
   });
   return list.distinct();
 };
-
+exports.uniqueImageSuffix = uniqueImageSuffix;
 /**
  * convert and image to an image collection, each new image comes from bands with 
  * the same suffix, this suffix then become a property
