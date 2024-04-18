@@ -15,9 +15,9 @@ Started: October 4, 2023
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var fig = require("users/mholdrege/SEI:src/fig_params.js");
-var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
+var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
+var fig = require("users/MartinHoldrege/SEI:src/fig_params.js");
+var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
