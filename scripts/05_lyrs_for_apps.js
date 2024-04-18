@@ -21,7 +21,7 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+//var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
 
 // the main function, arguments are the user defined variables, passed as a dictionary
 // the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
@@ -205,7 +205,7 @@ var main = exports.main = function(args) {
       .subtract(cur1.select(diffBands2))
       .copyProperties(ee.Image(image));
     });
-  print(diffRed)
+  //print(diffRed)
   
   // difference converted to a proportion change
   var diffPropRed = diffRed.map(function(image) {
@@ -359,15 +359,16 @@ var main = exports.main = function(args) {
     'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
   });
   
-//  return out;
+  return out;
 };
 
 
 // for testing
 
 /*
-
+print(main)
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
+print(d)
 print(d.get('diffRed'))
 var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median'))
 print(img)
