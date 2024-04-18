@@ -95,15 +95,24 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
-  var GCM = 'CESM1-CAM5'; // specific GCM pulling out as an example
-  
   // future SEI
   var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
   
   // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
-  var fut0 = ee.Image(path + version + '/forecasts/' + assetName)
+  var fut = ee.Image(path + version + '/forecasts/' + assetName)
     .updateMask(SEI.mask);
+    
+  // fixing issue with extra (non corrected lyrs saved in 03_SEIsw_method3)
+  // the Q5s, and Q5sc3 corrected layrs have a _1 ended, because the non corrected
+  // versions were mistakenly also outputted in the asset. here replacing the non-corrected
+  // lyr w/ the corrected lyr
+  var correctedLyrs = fut.select('_1$').bandNames();
   
+  print(fut.select('_1$').bandNames())
+  Map.addLayer(fut0.select('Q5s_control').subtract(fut0.select('Q5s_control_1')), {min: -0.05, max: 0.05, palette: ['red', 'white', 'blue']}, 'values neq')
+  var duplicateBands = fut0.select('.*_1$').bandNames()
+  var fut0 = fut0.select(fut0.bandNames().removeAll(duplicateBands));
+
   // these are the bands created when there was (artificially) no change in stepwat values from current
   // to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
   var cur0 = fut0.select('.*_control');
@@ -120,6 +129,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
         .rename('Q3y');
         
   var cur1 = cur1.addBands(curQ3y);
+  print(cur1.bandNames())
   
   // removing the control bands
   var fut1 = fut0.select(
@@ -127,7 +137,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   );
   
   // each image in collection from a different GCM
-  print(fut1)
+  print(fut0.bandNames())
   print(SEI.image2Ic(fut1,'GCM'))
   
   // testing ~~~~~~~~~~~~~~~~~~~~~
