@@ -266,7 +266,7 @@ for (var j=0; j<RCPList.length; j++) {
         Q3.float().rename('Q3raw_' + GCM),
         Q4.float().rename('Q4raw_' + GCM),
         Q5.float().rename('Q5raw_' + GCM),
-        Q5s.float().rename('Q5s_' + GCM),
+        Q5s.float().rename('Q5s_' + GCM), // this Q5s lyr shouldn't actually be saved [corrected version below saved instead]
         // Q5scdeciles.byte().rename('Q5scdeciles_' + GCM),
         // Q5sc3.byte().rename('Q5sc3_' + GCM)
       ]);
