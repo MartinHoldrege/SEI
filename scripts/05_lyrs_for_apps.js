@@ -20,10 +20,13 @@ var fig = require("users/mholdrege/SEI:src/fig_params.js");
 var clim = require("users/mholdrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
+// for testing
+var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+
 // the main function, arguments are the user defined variables, passed as a dictionary
 // the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
 // returns a large dictionary
-var main = exports.main = function(args) {
+// var main = exports.main = function(args) {
   var root = args.root;
   var RCP =  args.RCP;
   var epoch =  args.epoch;
@@ -87,6 +90,8 @@ var main = exports.main = function(args) {
   
   // bands of interest and their descriptions
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+  var diffBands2 = diffBands;
+  diffBands2.push('Q5y');
   
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
@@ -104,22 +109,58 @@ var main = exports.main = function(args) {
   var cur0 = fut0.select('.*_control');
   var cur1 = cur0.regexpRename('_control', '');
   
+  // calculating Q3y (sensu Dave T), so that can look at the 'direction' of 
+  // change of the unsmoothed (i.e. not SEI2000) sei (don't actually need Q5y here,
+  // because Q4&Q5 remain constant). Doing this because can have Q5s decrease in a location
+  // while the Q1-Q3 increase (because of smoothing from adjacent places). This makes it 
+  // tricky to define the Q that is the 'driver' of change. 
+  var curQ3y = cur1.select('Q1raw')
+        .multiply(cur1.select('Q2raw'))
+        .multiply(cur1.select('Q3raw'))
+        .rename('Q3y');
+        
+  var cur1 = cur1.addBands(curQ3y);
+  
   // removing the control bands
   var fut1 = fut0.select(
     fut0.bandNames().removeAll(cur0.bandNames())
   );
   
-  var futList = ee.List(SEI.GCMList).map(function(GCM) {
-    var GCM = ee.String(GCM)
-    return fut1.select(ee.String('.*').cat(GCM))
-        // removing GCM from bandName
-        .regexpRename(ee.String('_').cat(GCM), '')
-        // setting GCM property
-        .set('GCM', GCM);
-  });
-  
   // each image in collection from a different GCM
-  var futIc = ee.ImageCollection(futList);
+  print(fut1)
+  print(SEI.image2Ic(fut1,'GCM'))
+  
+  // testing ~~~~~~~~~~~~~~~~~~~~~
+/*  var uniqueImageSuffix = function(image) {
+  var list = image.bandNames()
+  .map(function(x) {
+    var suffix1 = ee.String(x)
+      .match('_[[:alpha:]]+$')
+      .get(0);
+      
+    var suffix = ee.String(suffix1)
+      .match('[[:alpha:]]+$')// excluding the underscore
+      .get(0);
+      
+    return ee.String(suffix);
+  });
+  return list.distinct();
+};
+  var b = fut1.bandNames();
+  print(b.get(0))
+  print(ee.String(b.get(0)).match('_[[:alpha:]]+$'))
+  print(fut1.bandNames())
+  print(uniqueImageSuffix(fut1))*/
+  // end testing ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  var futIc = SEI.image2Ic(fut1,'GCM')
+    .map(function(x) {
+      var img = ee.Image(x);
+      var Q3y = img.select('Q1raw')
+        .multiply(img.select('Q2raw'))
+        .multiply(img.select('Q3raw'))
+        .rename('Q3y');
+      return img.addBands(Q3y);
+    });
   
   // future reduced -----------------------------------------------------------------
   // future SEI (reduced), so that all other downstream metrics (c9 etc can
@@ -131,36 +172,40 @@ var main = exports.main = function(args) {
    
    
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
+
+  
   // function that masks image if SEI is not equal to the median SEI
   var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
   var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
   var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames, true);
   
   var futIcTmp = futIc
-    .select(diffBands);
+    .select(diffBands2);
   
   var qMed = futIcTmp
     .map(maskMedian)
-    .median();
-  
+    // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
+    // specific GCM
+    .reduce(ee.Reducer.first());
+
   var qLow = futIcTmp
     .map(maskLow)
-    .median();
+    .reduce(ee.Reducer.first());
     
   var qHigh = futIcTmp
     .map(maskHigh)
-    .median();
-    
+    .reduce(ee.Reducer.first());
+
   var qComb = qMed
     .addBands(qLow)
-    .addBands(qHigh); 
+    .addBands(qHigh)
+    .regexpRename('_first$', '');
     
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
   
-  
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-    
+  print(futIc)  
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands)
@@ -257,7 +302,7 @@ var main = exports.main = function(args) {
       .abs()
       // if don't agree on the direction of change than make the proportion change 0 (i.e
       // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
-      // .where(agreeDir.eq(0), 0); // for testing purposes removing this line
+      .where(agreeDir.eq(0), 0); // for testing purposes removing this line
     
     var sum = absProp.reduce('sum');
     // divide all layers by the total to normalize each value
@@ -329,14 +374,16 @@ var main = exports.main = function(args) {
     'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
   });
   
-  return out;
-};
+//  return out;
+// };
 
 
 // for testing
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first()
-Map.addLayer(img.select('Q5s'), {min: -0.25, max: 0.25, palette: ['red', 'grey', 'blue']}, 'SEI % change')
+print(d.get('diffRed'))
+var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median'))
+print(img)
+//Map.addLayer(img.select('Q5s'), {min: -0.25, max: 0.25, palette: ['red', 'grey', 'blue']}, 'SEI % change')
 //print(d.get('qPropMed'))
 */
