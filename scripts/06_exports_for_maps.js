@@ -256,7 +256,7 @@ Export.image.toDrive({
 // q prop (for RGB maps)
 Export.image.toDrive({
   image: qPropMeanComb,
-  description: outString('qPropMedNoAgree', root_fire1),
+  description: outString('qPropMed', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
