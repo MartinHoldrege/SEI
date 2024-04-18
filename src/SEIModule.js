@@ -441,11 +441,11 @@ var uniqueImageSuffix = function(image) {
   var list = image.bandNames()
   .map(function(x) {
     var suffix1 = ee.String(x)
-      .match('_[[:alpha:]]+$')
+      .match('_[^_]+$')
       .get(0);
       
     var suffix = ee.String(suffix1)
-      .match('[[:alpha:]]+$')// excluding the underscore
+      .match('[^_]+$')// excluding the underscore
       .get(0);
       
     return ee.String(suffix);
