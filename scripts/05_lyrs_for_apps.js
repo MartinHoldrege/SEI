@@ -91,8 +91,8 @@ var main = exports.main = function(args) {
   // bands of interest and their descriptions
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
   var diffBands2 = diffBands;
-  diffBands2.push('Q5y');
-  
+  diffBands2.push('Q3y');
+
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
   // future SEI
@@ -157,11 +157,12 @@ var main = exports.main = function(args) {
     .reduce(reducers);
    
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
-
+  var bandNames2 = bandNames
+  bandNames2.push('Q3y')
   // function that masks image if SEI is not equal to the median SEI
-  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
-  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
-  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames, true);
+  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
+  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
+  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
   
   var futIcTmp = futIc
     .select(diffBands2);
@@ -184,9 +185,9 @@ var main = exports.main = function(args) {
     .addBands(qLow)
     .addBands(qHigh)
     .regexpRename('_first$', '');
-    
+
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
-  
+
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
 
@@ -199,12 +200,12 @@ var main = exports.main = function(args) {
   });
   
   var diffRed = futRed.map(function(image) { // for each GCM
-    return ee.Image(image).select(diffBands)
+    return ee.Image(image).select(diffBands2)
       // subtract current conditions
-      .subtract(cur1.select(diffBands))
+      .subtract(cur1.select(diffBands2))
       .copyProperties(ee.Image(image));
     });
-  
+  print(diffRed)
   
   // difference converted to a proportion change
   var diffPropRed = diffRed.map(function(image) {
@@ -363,7 +364,9 @@ var main = exports.main = function(args) {
 
 
 // for testing
+
 /*
+
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
 print(d.get('diffRed'))
 var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median'))
