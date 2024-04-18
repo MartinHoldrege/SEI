@@ -21,12 +21,12 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
 
 // the main function, arguments are the user defined variables, passed as a dictionary
 // the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
 // returns a large dictionary
-// var main = exports.main = function(args) {
+var main = exports.main = function(args) {
   var root = args.root;
   var RCP =  args.RCP;
   var epoch =  args.epoch;
@@ -131,24 +131,14 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
         .rename('Q3y');
         
   var cur1 = cur1.addBands(curQ3y);
-  print(cur1.bandNames())
-  
+
   // removing the control bands
   var fut1 = fut0.select(
     fut0.bandNames().removeAll(cur0.bandNames())
   );
   
   // each image in collection from a different GCM
-  print(fut0.bandNames());
-  print(SEI.image2Ic(fut1,'GCM'));
-  
-  
-  // testing ~~~~~~~~~~~~~~~~~~~~~
-
-  var b = fut1.bandNames();
-  print(SEI.uniqueImageSuffix(fut1))
-  // end testing ~~~~~~~~~~~~~~~~~~~~~~~~~~
-  var futIc = SEI.image2Ic(fut1,'GCM')
+   var futIc = SEI.image2Ic(fut1,'GCM')
     .map(function(x) {
       var img = ee.Image(x);
       var Q3y = img.select('Q1raw')
@@ -157,7 +147,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
         .rename('Q3y');
       return img.addBands(Q3y);
     });
-  print(futIc)
+
   // future reduced -----------------------------------------------------------------
   // future SEI (reduced), so that all other downstream metrics (c9 etc can
   // be re-calculated, and correctly correspond to to the low, median, high SEI)
@@ -166,10 +156,8 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
     .select('Q5s')
     .reduce(reducers);
    
-   
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
 
-  
   // function that masks image if SEI is not equal to the median SEI
   var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames, true);
   var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames, true);
@@ -201,7 +189,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-  print(futIc)  
+
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands)
@@ -259,8 +247,8 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
       var out = SEI.calcTransitions(curC3, ee.Image(x))
         .copyProperties(ee.Image(x));
       
-      return ee.Image(out).regexpRename('c3', 'c9')
-  })
+      return ee.Image(out).regexpRename('c3', 'c9');
+  });
 
   // contributions by each Q compontent to changes --------------------------------------
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
@@ -271,8 +259,8 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
 
   var qPropRed = diffRed.map(function(x) {
     
-    // direction of SEI change (1 pos, 0 neg or no change)
-    var Q5s = ee.Image(x).select('Q5s');
+    // direction of ~SEI (actually just Q1*Q2*Q3) change (1 pos, 0 neg or no change)
+    var Q5s = ee.Image(x).select('Q3y');
     var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
       .rename(qBands);
       
@@ -371,7 +359,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   });
   
 //  return out;
-// };
+};
 
 
 // for testing
