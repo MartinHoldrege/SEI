@@ -99,19 +99,21 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   var assetName = 'SEI' + versionFull + '_' + resolution + "_" + root +  RCP + '_' + epoch + '_by-GCM';
   
   // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
-  var fut = ee.Image(path + version + '/forecasts/' + assetName)
+  var fut00 = ee.Image(path + version + '/forecasts/' + assetName)
     .updateMask(SEI.mask);
     
   // fixing issue with extra (non corrected lyrs saved in 03_SEIsw_method3)
   // the Q5s, and Q5sc3 corrected layrs have a _1 ended, because the non corrected
   // versions were mistakenly also outputted in the asset. here replacing the non-corrected
   // lyr w/ the corrected lyr
-  var correctedLyrs = fut.select('_1$').bandNames();
+  var correctedLyrs = fut00.select('.*_1$').bandNames();
+  var uncorrectedLyrs = correctedLyrs
+    .map(function(x) {
+      return ee.String(x).replace('_1$', '');
+    });
   
-  print(fut.select('_1$').bandNames())
-  Map.addLayer(fut0.select('Q5s_control').subtract(fut0.select('Q5s_control_1')), {min: -0.05, max: 0.05, palette: ['red', 'white', 'blue']}, 'values neq')
-  var duplicateBands = fut0.select('.*_1$').bandNames()
-  var fut0 = fut0.select(fut0.bandNames().removeAll(duplicateBands));
+  var fut0 = fut00.select(fut00.bandNames().removeAll(uncorrectedLyrs))
+    .regexpRename('_1$', ''); // the corrected lyrs (ending in _1), now having that suffix removed. 
 
   // these are the bands created when there was (artificially) no change in stepwat values from current
   // to future conditions. version 4-3-2 has these bands (earlier one's, and 4-3-20 don't)
@@ -137,30 +139,14 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
   );
   
   // each image in collection from a different GCM
-  print(fut0.bandNames())
-  print(SEI.image2Ic(fut1,'GCM'))
+  print(fut0.bandNames());
+  print(SEI.image2Ic(fut1,'GCM'));
+  
   
   // testing ~~~~~~~~~~~~~~~~~~~~~
-/*  var uniqueImageSuffix = function(image) {
-  var list = image.bandNames()
-  .map(function(x) {
-    var suffix1 = ee.String(x)
-      .match('_[[:alpha:]]+$')
-      .get(0);
-      
-    var suffix = ee.String(suffix1)
-      .match('[[:alpha:]]+$')// excluding the underscore
-      .get(0);
-      
-    return ee.String(suffix);
-  });
-  return list.distinct();
-};
+
   var b = fut1.bandNames();
-  print(b.get(0))
-  print(ee.String(b.get(0)).match('_[[:alpha:]]+$'))
-  print(fut1.bandNames())
-  print(uniqueImageSuffix(fut1))*/
+  print(SEI.uniqueImageSuffix(fut1))
   // end testing ~~~~~~~~~~~~~~~~~~~~~~~~~~
   var futIc = SEI.image2Ic(fut1,'GCM')
     .map(function(x) {
@@ -171,7 +157,7 @@ var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
         .rename('Q3y');
       return img.addBands(Q3y);
     });
-  
+  print(futIc)
   // future reduced -----------------------------------------------------------------
   // future SEI (reduced), so that all other downstream metrics (c9 etc can
   // be re-calculated, and correctly correspond to to the low, median, high SEI)
