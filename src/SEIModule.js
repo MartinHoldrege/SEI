@@ -500,16 +500,16 @@ var ic2Image = function(ic, propertyName) {
 }
 
 exports.ic2Image = ic2Image;
-/*
-// testing image2Ic and ic2Image functions
 
+// testing image2Ic and ic2Image functions
+/*
 var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
-  .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
+  .rename(['lyr1_min', 'lyr2_min', 'lyr1_CESM1-CAM5', 'lyr2_CESM1-CAM5']);
 var ic = image2Ic(image, 'reducer')
 print(ic)
 print(ic2Image(ic, 'reducer'))
-
 */
+
 
 // this function factory is for two (or more) banded images (x) that contain band(s) with data and q5s band
 // if the Q5s band is (approximately) equal to the redImage band (reduced image)
