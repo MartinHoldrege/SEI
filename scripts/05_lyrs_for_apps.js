@@ -265,7 +265,6 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
-
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
@@ -276,13 +275,13 @@ var main = exports.main = function(args) {
   });
    
   // c9 transition for each GCM 
-  // recalculating cur C3 here, because some slight rounding
-  // issue seems to be causing change in class and and delta SEI not to match up in a few (<5%) of cases
-  // also make sure that the same current c3 layers are being used for c9Ic and c9Red calcuation
+  // recalculating cur C3 here, because some potential slight rounding
+  // issue (although when zooming into fine resolution they seem to go away. )
   var curC3 = SEI.seiToC3(cur1.select('Q5s'))
     .rename('c3');
     
   var c9Ic = futIc.map(function(x) {
+    // var futC3 = SEI.seiToC3(ee.Image(x).select('Q5s')); // at fine resolution it shouldn't be necessary to use this
     var out = SEI.calcTransitions(curC3, ee.Image(x).select('Q5sc3'))
       .copyProperties(ee.Image(x));
     return out;
@@ -368,6 +367,7 @@ var main = exports.main = function(args) {
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    // 'curC3': curC3
   });
   
   return out;
@@ -380,15 +380,15 @@ var main = exports.main = function(args) {
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
 // print(d)
 var img = ee.Image(d.get('qPropMed'))
-var img2 = ee.ImageCollection(d.get('qPropIc')).first()
-print(img)
-var vis = {min: 0, max: 0.2, palette: ['grey', 'blue']}
-Map.addLayer(img.select('Q1raw'), vis, 'Q1 % change')
-Map.addLayer(img.select('Q2raw'), vis, 'Q2 % change')
-Map.addLayer(img.select('Q3raw'), vis, 'Q3 % change')
-Map.addLayer(img.reduce('sum').eq(0).selfMask(), {palette: 'black'}, 'no driver')
-var img = ee.ImageCollection(d.get('qPropRe')).filter(ee.Filter.eq('GCM', 'median'))
-print(img)
-
+// var dir = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first().select('Q5s')
+var dir = ee.ImageCollection(d.get('diffIc')).first().select('Q5s')
+// var c9 = ee.ImageCollection(d.get('c9Red')).filter(ee.Filter.eq('GCM', 'median')).first()
+var c9 = ee.ImageCollection(d.get('c9Ic')).first()
+var problem = ee.Image(0)
+  .where(dir.gt(0).and(c9.eq(2).or(c9.eq(3)).or(c9.eq(6))), 1)
+  .where(dir.lt(0).and(c9.eq(4).or(c9.eq(7)).or(c9.eq(8))), 2);
+Map.addLayer(problem.selfMask(), {palette: 'black'}, 'directional issues');
+Map.addLayer(dir, {min: -1, max: 1, palette: 'red,white,blue'}, 'delta Q5s')
+// -Map.addLayer(SEI.cur.select('Q5sc3').neq(ee.Image(d.get('curC3'))).selfMask(), {palette: 'black'}, 'C3s neq')
 //print(d.get('qPropMed'))
 */
