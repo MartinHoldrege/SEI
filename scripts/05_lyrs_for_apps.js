@@ -387,8 +387,8 @@ Map.addLayer(img.select('Q1raw'), vis, 'Q1 % change')
 Map.addLayer(img.select('Q2raw'), vis, 'Q2 % change')
 Map.addLayer(img.select('Q3raw'), vis, 'Q3 % change')
 Map.addLayer(img.reduce('sum').eq(0).selfMask(), {palette: 'black'}, 'no driver')
-/*var img = ee.ImageCollection(d.get('qPropRe')).filter(ee.Filter.eq('GCM', 'median'))
-print(img)*/
+var img = ee.ImageCollection(d.get('qPropRe')).filter(ee.Filter.eq('GCM', 'median'))
+print(img)
 
 //print(d.get('qPropMed'))
 */
