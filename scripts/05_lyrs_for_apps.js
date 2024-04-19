@@ -376,7 +376,7 @@ var main = exports.main = function(args) {
 
 // for testing
 
-
+/*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
 // print(d)
 var img = ee.Image(d.get('qPropMed'))
@@ -391,3 +391,4 @@ Map.addLayer(img.reduce('sum').eq(0).selfMask(), {palette: 'black'}, 'no driver'
 print(img)*/
 
 //print(d.get('qPropMed'))
+*/
