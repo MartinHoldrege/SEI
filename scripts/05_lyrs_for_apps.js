@@ -40,6 +40,7 @@ var correctedProp = function(x) {
       .where(Q5s.lt(0), 1); // decrease
       
     // direction of Q change
+    var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
     var diffQ = ee.Image(x).select(qBands);
     
     var dirQ = empty
@@ -303,8 +304,6 @@ var main = exports.main = function(args) {
   // and then dividing by the sum changes in Q that are in the same direction, then taking 
   // the absolute value. 
   
-  var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
-
   var qPropRed = diffRed.map(correctedProp);
   var qPropIc = diffIc.map(correctedProp);
   
