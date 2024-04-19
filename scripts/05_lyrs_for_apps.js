@@ -27,7 +27,8 @@ var path = SEI.path;
 
 // proportion change, except proportion change considered 0, when change is not in same
 // direction as change in Q3y. Note that input is an image with (proportion) changes for Q1-Q3 as well as Q3y
-var correctedProp = function(x) {
+// cur is the current value (for use in denominator for calculating % change)
+var correctedProp = function(x, cur) {
     
     // direction of ~SEI (actually just Q1*Q2*Q3) change (1 pos, 0 neg or no change)
     var Q5s = ee.Image(x).select('Q3y');
@@ -53,7 +54,7 @@ var correctedProp = function(x) {
     
     // Absolute proportion change in Qs
     // abs prop = abs( (future-current)/current
-    var absProp = diffQ.divide(cur1.select(qBands))
+    var absProp = diffQ.divide(cur.select(qBands))
       .abs()
       // if don't agree on the direction of change than make the proportion change 0 (i.e
       // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
@@ -303,9 +304,11 @@ var main = exports.main = function(args) {
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
   // and then dividing by the sum changes in Q that are in the same direction, then taking 
   // the absolute value. 
-  
-  var qPropRed = diffRed.map(correctedProp);
-  var qPropIc = diffIc.map(correctedProp);
+  correctPropTmp = function(x) {
+    return correctedProp(x, cur1); // creating function that only needs single input (for mapping)
+  };
+  var qPropRed = diffRed.map(correctPropTmp);
+  var qPropIc = diffIc.map(correctPropTmp);
   
   // The proportion that each q component contributed to the change in sei, for the 
   // median SEI (pixelwise)
