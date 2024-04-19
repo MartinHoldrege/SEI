@@ -304,7 +304,7 @@ var main = exports.main = function(args) {
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
   // and then dividing by the sum changes in Q that are in the same direction, then taking 
   // the absolute value. 
-  correctPropTmp = function(x) {
+  var correctPropTmp = function(x) {
     return correctedProp(x, cur1); // creating function that only needs single input (for mapping)
   };
   var qPropRed = diffRed.map(correctPropTmp);
