@@ -23,6 +23,53 @@ var path = SEI.path;
 // for testing
 //var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
 
+// helper functions --------------------------------------------------------
+
+// proportion change, except proportion change considered 0, when change is not in same
+// direction as change in Q3y. Note that input is an image with (proportion) changes for Q1-Q3 as well as Q3y
+var correctedProp = function(x) {
+    
+    // direction of ~SEI (actually just Q1*Q2*Q3) change (1 pos, 0 neg or no change)
+    var Q5s = ee.Image(x).select('Q3y');
+    var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
+      .rename(qBands);
+      
+    var dirQ5s = empty
+      .where(Q5s.gt(0), 3) // increase
+      .where(Q5s.eq(0), 2) // no change
+      .where(Q5s.lt(0), 1); // decrease
+      
+    // direction of Q change
+    var diffQ = ee.Image(x).select(qBands);
+    
+    var dirQ = empty
+      .where(diffQ.gt(0), 3) // increase
+      .where(diffQ.eq(0), 2) // no change
+      .where(diffQ.lt(0), 1); // decrease
+    
+    // is the change change in direction of SEI and the individual Q component the same?
+    var agreeDir = dirQ.eq(dirQ5s);
+    
+    // Absolute proportion change in Qs
+    // abs prop = abs( (future-current)/current
+    var absProp = diffQ.divide(cur1.select(qBands))
+      .abs()
+      // if don't agree on the direction of change than make the proportion change 0 (i.e
+      // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
+      .where(agreeDir.eq(0), 0); // for testing purposes removing this line
+    
+    var sum = absProp.reduce('sum');
+    // divide all layers by the total to normalize each value
+    // (ie. for each q) so they fall between 0 and 1, 1 meaning
+    // all the change was due to that q
+    var absPropNorm = absProp.divide(sum)
+      // replaced values where denominator would be 0, with 0 (otherwise undefined)
+      .where(sum.eq(0), 0);
+    return absPropNorm.copyProperties(ee.Image(x));
+  };
+
+
+
 // the main function, arguments are the user defined variables, passed as a dictionary
 // the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
 // returns a large dictionary
@@ -258,47 +305,8 @@ var main = exports.main = function(args) {
   
   var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
 
-  var qPropRed = diffRed.map(function(x) {
-    
-    // direction of ~SEI (actually just Q1*Q2*Q3) change (1 pos, 0 neg or no change)
-    var Q5s = ee.Image(x).select('Q3y');
-    var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
-      .rename(qBands);
-      
-    var dirQ5s = empty
-      .where(Q5s.gt(0), 3) // increase
-      .where(Q5s.eq(0), 2) // no change
-      .where(Q5s.lt(0), 1); // decrease
-      
-    // direction of Q change
-    var diffQ = ee.Image(x).select(qBands);
-    
-    var dirQ = empty
-      .where(diffQ.gt(0), 3) // increase
-      .where(diffQ.eq(0), 2) // no change
-      .where(diffQ.lt(0), 1); // decrease
-    
-    // is the change change in direction of SEI and the individual Q component the same?
-    var agreeDir = dirQ.eq(dirQ5s);
-    
-    // Absolute proportion change in Qs
-    // abs prop = abs( (future-current)/current
-    var absProp = diffQ.divide(cur1.select(qBands))
-      .abs()
-      // if don't agree on the direction of change than make the proportion change 0 (i.e
-      // so that if Q1 increases but SEI decreases don't blame that decrease on Q1)
-      .where(agreeDir.eq(0), 0); // for testing purposes removing this line
-    
-    var sum = absProp.reduce('sum');
-    // divide all layers by the total to normalize each value
-    // (ie. for each q) so they fall between 0 and 1, 1 meaning
-    // all the change was due to that q
-    var absPropNorm = absProp.divide(sum)
-      // replaced values where denominator would be 0, with 0 (otherwise undefined)
-      .where(sum.eq(0), 0);
-    return absPropNorm.copyProperties(ee.Image(x));
-  });
-  
+  var qPropRed = diffRed.map(correctedProp);
+  var qPropIc = diffIc.map(correctedProp);
   
   // The proportion that each q component contributed to the change in sei, for the 
   // median SEI (pixelwise)
@@ -355,6 +363,7 @@ var main = exports.main = function(args) {
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
+    'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
   });
