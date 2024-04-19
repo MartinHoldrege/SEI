@@ -220,15 +220,15 @@ var main = exports.main = function(args) {
     .map(maskMedian)
     // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
     // specific GCM
-    .reduce(ee.Reducer.first());
+    .reduce(ee.Reducer.firstNonNull());
 
   var qLow = futIcTmp
     .map(maskLow)
-    .reduce(ee.Reducer.first());
+    .reduce(ee.Reducer.firstNonNull());
     
   var qHigh = futIcTmp
     .map(maskHigh)
-    .reduce(ee.Reducer.first());
+    .reduce(ee.Reducer.firstNonNull());
 
   var qComb = qMed
     .addBands(qLow)
@@ -376,13 +376,18 @@ var main = exports.main = function(args) {
 
 // for testing
 
-/*
-print(main)
+
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-print(d)
-print(d.get('diffRed'))
-var img = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median'))
+// print(d)
+var img = ee.Image(d.get('qPropMed'))
+var img2 = ee.ImageCollection(d.get('qPropIc')).first()
 print(img)
-//Map.addLayer(img.select('Q5s'), {min: -0.25, max: 0.25, palette: ['red', 'grey', 'blue']}, 'SEI % change')
+var vis = {min: 0, max: 0.2, palette: ['grey', 'blue']}
+Map.addLayer(img.select('Q1raw'), vis, 'Q1 % change')
+Map.addLayer(img.select('Q2raw'), vis, 'Q2 % change')
+Map.addLayer(img.select('Q3raw'), vis, 'Q3 % change')
+Map.addLayer(img.reduce('sum').eq(0).selfMask(), {palette: 'black'}, 'no driver')
+/*var img = ee.ImageCollection(d.get('qPropRe')).filter(ee.Filter.eq('GCM', 'median'))
+print(img)*/
+
 //print(d.get('qPropMed'))
-*/
