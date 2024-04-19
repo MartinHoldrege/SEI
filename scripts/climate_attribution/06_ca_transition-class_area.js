@@ -25,7 +25,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = true; // lower resolution, for testing
+var testRun = false; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -127,7 +127,7 @@ for (var i = 0; i < roots.length; i++) {
     
   Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
     {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 
-    'low driver');
+    'median driver');
 
   // print(driver2)
   // prepare spatial index -----------------------------------------------
@@ -137,8 +137,6 @@ for (var i = 0; i < roots.length; i++) {
     
   var bandsRed = ee.List(['low', 'median', 'high']);
   
-
-
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
   var ecoC9 = ee.ImageCollection(d.get('c9Ic')) // c9 by GCM
     // a problem in the output is that the total area of core, grow, other differs
@@ -255,11 +253,11 @@ Export.table.toDrive({
   fileFormat: 'CSV'
 });
 
-/*
+
 Export.table.toDrive({
   collection: combFcGood,
   description: 'area-by-numGcmGood_' + resolution + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
-*/
+
