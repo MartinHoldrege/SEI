@@ -113,45 +113,22 @@ for (var i = 0; i < roots.length; i++) {
   // which Q dominant driver of change ---------------------------------
   
   // image collection of 3 banded images where bands are the proportion change 
-  // of Q1-Q3, and each image is for a different GCM
+  // of Q1-Q3, and each image is for a different GCM.
+  // if proportion change isn't in direction of change in q3y then treated as 0 change
   var qIc = ee.ImageCollection(d.get('qPropIc'));
-  // print(qIc)
-  // one image per GCM, each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
-  var driver0 = qIc.map(detDomDriver);
+  var qRed = ee.ImageCollection(d.get('qPropRed')); // same but pixelwise values of low, median, high
   
-  // pixelwise determination of the driver for the GCMs with the 2nd lowest, median, and 2nd highest SEI
-  var driver1  = ee.ImageCollection(d.get('diffIc'))
-    .select('Q5s')
-    .combine(driver0);
+  // print(qIc)
+  // one image per GCM (& reducere), each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
+  var driver2 = qIc.merge(qRed).map(detDomDriver);
   
   var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
     .select('Q5s');
     
-  var diffRedImage = SEI.ic2Image(diffRed, 'GCM') // Q5s_low, Q5s_median, Q5s_high bands
+  Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
+    {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 
+    'low driver');
 
-  // reduce the driver across GCMs, pixelwise
-  // relies on objects in the environment of the loop
-  var driverReducer = function(reducerName) {
-    // creating function that compares the change in SEI with the 
-    var f = SEI.maskSeiRedFactory(diffRedImage, reducerName, 'driver');
-    return driver1.map(f)
-      .reduce(ee.Reducer.mode())
-      .rename('driver')
-      .set('GCM', reducerName);
-  };
-  
-  var driverLow = driverReducer('low') 
-
-  var driverMedian = driverReducer('median')
-    
-  var driverHigh = driverReducer('high');
-  print(driverLow)
-
-
-  // Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
-  var driver2 = driver1
-    .merge(ee.ImageCollection.fromImages([driverLow, driverMedian, driverHigh]));
-  
   // print(driver2)
   // prepare spatial index -----------------------------------------------
   
