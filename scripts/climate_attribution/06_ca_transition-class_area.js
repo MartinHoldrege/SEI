@@ -125,9 +125,9 @@ for (var i = 0; i < roots.length; i++) {
   var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
     .select('Q5s');
     
-  Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
+/*  Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
     {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 
-    'median driver');
+    'median driver');*/
 
   // print(driver2)
   // prepare spatial index -----------------------------------------------
