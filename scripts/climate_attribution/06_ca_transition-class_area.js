@@ -25,7 +25,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = false; // lower resolution, for testing
+var testRun = true; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
@@ -140,12 +140,12 @@ for (var i = 0; i < roots.length; i++) {
       .set('GCM', reducerName);
   };
   
-
   var driverLow = driverReducer('low') 
 
   var driverMedian = driverReducer('median')
     
   var driverHigh = driverReducer('high');
+  print(driverLow)
 
 
   // Map.addLayer(driverLow, {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 'low driver')
@@ -263,7 +263,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240322';
+var s = versionFull + '_20240419';
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {
