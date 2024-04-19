@@ -31,6 +31,7 @@ var correctedProp = function(x) {
     
     // direction of ~SEI (actually just Q1*Q2*Q3) change (1 pos, 0 neg or no change)
     var Q5s = ee.Image(x).select('Q3y');
+    var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
     var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
       .rename(qBands);
       
@@ -40,7 +41,6 @@ var correctedProp = function(x) {
       .where(Q5s.lt(0), 1); // decrease
       
     // direction of Q change
-    var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
     var diffQ = ee.Image(x).select(qBands);
     
     var dirQ = empty
