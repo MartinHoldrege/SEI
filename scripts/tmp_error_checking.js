@@ -14,8 +14,8 @@ var lyrs = ['Q1raw', 'Q2raw', 'Q3raw', 'Q5s']
 
 for (var i = 0; i<lyrs.length; i++) {
   var lyr = lyrs[i];
-  // Map.addLayer(img.select(lyr), vis, 'delta ' + lyr, false);
-  Map.addLayer(diffGcm.select(lyr), vis, 'delta GCM ' + lyr, false);
+  Map.addLayer(img.select(lyr), vis, 'delta ' + lyr, false);
+  // Map.addLayer(diffGcm.select(lyr), vis, 'delta GCM ' + lyr, false);
 }
 
 
@@ -23,10 +23,10 @@ for (var i = 0; i<lyrs.length; i++) {
 
 // diffGcm
  var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
-var diffQ = diffGcm.select(qBands)
-//var diffQ = img.select(qBands)
-var Q5s = diffGcm.select('Q5s');
-// var Q5s = img.select('Q5s');
+// var diffQ = diffGcm.select(qBands)
+var diffQ = img.select(qBands)
+//var Q5s = diffGcm.select('Q5s');
+var Q5s = img.select('Q5s');
     var empty = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0))
       .rename(qBands);
       
@@ -47,4 +47,13 @@ var Q5s = diffGcm.select('Q5s');
     var anyAgreeDir = agreeDir.reduce('sum').eq(0); // do any of the Qs agree on the direction of change of SEI
     
     Map.addLayer(anyAgreeDir.selfMask(), {palette: ['black']}, 'median disagree on dir')   
-//var anyAgre
+
+
+
+var img2 = ee.Image(d.get('qPropMed'))
+// Map.addLayer(img2.select('Q1raw'), vis, 'Q1 % change')
+// Map.addLayer(img2.select('Q2raw'), vis, 'Q2 % change')
+// Map.addLayer(img2.select('Q3raw'), vis, 'Q3 % change')
+Map.addLayer(img2.reduce('sum').eq(0).selfMask(), {palette: 'black'}, 'no driver');
+Map.addLayer(img.select('Q5s').eq(0).selfMask(), {palette: 'black'}, 'No SEI change');
+Map.addLayer(img.select('Q3y').eq(0).selfMask(), {palette: 'black'}, 'No q3y change');
