@@ -105,7 +105,7 @@ g <- area_med_c9 %>%
   facet_wrap(~c9_name, scales = 'free_y') +
   labs(x = 'Scenario')
 
-filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v2")
+filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v3")
 jpeg(paste0("figures/area/", filename, ".jpg"),     
      units = 'in', height = 6, width = 6, res = 600)
 g
@@ -116,7 +116,7 @@ saveRDS(g, paste0("figures/area/", filename, ".RDS"))
 
 # * figures (exploratory) ---------------------------------------------------
 
-pdf(paste0("figures/area/c9_area_barplots_", version, "_v1.pdf"), height = 8, width = 8)
+pdf(paste0("figures/area/c9_area_barplots_", version, "_v2.pdf"), height = 8, width = 8)
 # panels for each ecoregion
 g <- area_med_c9_eco %>% 
   filter(RCP == rcp, years == yr) %>% 
@@ -179,7 +179,7 @@ base_c12 <- function() {
     facet_wrap(~c12_name, nrow = 3),
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
             legend.position = 'bottom'),
-    scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
+    scale_fill_manual(values = c('red', 'green', 'blue', 'black'),
                         name = "Primary driver of change"),
     geom_bar(aes(y = area_perc_med), stat = 'identity',
                position = position_dodge()),
@@ -199,7 +199,7 @@ g <- area_med_dir %>%
   base_c12() +
   guides(fill = guide_legend(nrow = 2))
 g
-jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, "_v2.jpg"),     
+jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, "_v3.jpg"),     
      units = 'in', height = 7, width = 7, res = 600)
 g
 dev.off()
@@ -230,7 +230,7 @@ saveRDS(g, paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_sav
 
 # ** regular ---------------------------------------------------------------
 
-pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v1.pdf"),
+pdf(paste0("figures/climate_attribution/area/area-by-driver_", version, "_v2.pdf"),
     width = 10, height = 10)
 
 g <- area_med_gw %>% 
@@ -260,7 +260,7 @@ g +
 r <- runs[2]
 
 for (r in runs) {
-  tmp_eco <- area_med_eco %>% 
+  tmp_eco <- area_med_eco_gw %>% 
     filter(run == r, RCP == rcp, years == yr)
   
   g <- ggplot(tmp_eco, aes(x = driver, fill = c9_name)) +

@@ -126,7 +126,7 @@ r_c9diff_all <- list(
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
 
 file_regex4 <- file_regex %>% 
-  str_replace('9ClassTransition', 'qPropMedNoAgree') # the version with 'noagree' suffix means that all Q changes were used regardless of whether they were in the same direction as SEI
+  str_replace('9ClassTransition', 'qPropMed') # the version with 'noagree' suffix means that all Q changes were used regardless of whether they were in the same direction as SEI
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex4, email = email) %>% 
@@ -492,7 +492,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v3NoAgree.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v4.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
