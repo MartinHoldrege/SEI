@@ -14,7 +14,7 @@ cap2 <- paste0(cap1, '\n Bars are median, and range is 2nd lowest to 2nd highest
 # c9 area -----------------------------------------------------------------
 
 
-base_c9_area <- function(include_bar_pattern = TRUE) {
+base_c9_area <- function(include_bar_pattern = TRUE, n_breaks = 3) {
   out <- list(
     bar_pattern = geom_bar_pattern(aes(pattern = rcp_years,
                                        pattern_density = rcp_years,
@@ -35,7 +35,7 @@ base_c9_area <- function(include_bar_pattern = TRUE) {
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
           legend.title = element_blank(),
           legend.position = 'bottom'),
-    scale_y_continuous(labels = km2millionha),
+    scale_y_continuous(labels = km2millionha, breaks = scales::breaks_pretty(n = n_breaks)),
     labs(y = lab_areaha0)
   )
   if(!include_bar_pattern) {
@@ -58,7 +58,7 @@ tmp <- area_med_c9 %>%
 
 
 g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
-  base_c9_area() +
+  base_c9_area(n_breaks = 5) +
   geom_errorbar(aes(ymin = area_km2_lo, ymax = area_km2_hi, group = rcp_years),
                 stat = 'identity',
                 width=.3,
@@ -69,18 +69,18 @@ g <- ggplot(tmp, aes(c9_name, y = area_km2_med),fill = c9_name) +
   labs(x = NULL,
        subtitle = fig_letters['b'])
 
-g
 
 box_l <- list('fig' = g,
               run = target_run,
               version = version)
 
 # saving so that can be combined with a map in a downstream script
+# Figure 1b in manuscript
 saveRDS(box_l, paste0("figures/area/c9_area_barplot_by-scenario_",
                       version, "_", target_run, ".RDS"))
 
 # 9 panel figure, shoing area by c9, model run, and RCP/time period
-
+# Figure 6 in manuscript
 g <- area_med_c9 %>% 
   mutate(run_name = run2name(run)) %>% 
   ggplot(aes(rcp_years, y = area_km2_med), fill = c9_name)  +
@@ -103,7 +103,7 @@ g <- area_med_c9 %>%
   guides(pattern = guide_legend(ncol = 2,
                                 override.aes = list(fill = "white", color = 'black'))) +
   facet_wrap(~c9_name, scales = 'free_y') +
-  labs(x = 'Scenario')
+  labs(x = 'Scenario') 
 
 filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v3")
 jpeg(paste0("figures/area/", filename, ".jpg"),     

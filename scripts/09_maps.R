@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # re-download files from drive?
+download <- FALSE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -232,9 +232,9 @@ cols_diff <- c('grey', # same SEI
 
 # c9 maps -----------------------------------------------------------------
 
-#tmp <- spatSample(r_c9, c(500, 500), method = 'regular', as.raster = TRUE)
+# Figure 1 in manuscript
 g1 <- r_c9[["RCP45_2070-2100"]] %>% 
-  spatSample(c(2000, 2000), method = 'regular', as.raster = TRUE) %>% 
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
   # spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
   as.factor() %>% 
   plot_map2(panel_tag = fig_letters[1]) +
@@ -252,13 +252,6 @@ box2 <- box_l$fig +
         legend.text = element_text(size = ),
         legend.key.size = unit(0.12, 'in'),
          legend.background = element_rect(fill = 'transparent')) # +
-#   patchwork::inset_element(
-#   color_matrix(),
-#     0.005, 0.32, 0.45, 0.97, # left, bottom, right, top in npc units
-#     align_to = "panel",
-#     clip = TRUE,
-#     ignore_tag = TRUE
-# )
 
 # box2
 comb <- wrap_elements(full = g1)/wrap_elements(full = box2) + plot_layout(heights = c(1.9, 1), tag_level = 'keep') 
@@ -410,7 +403,7 @@ comb <- g_map + inset_element(bar,
                       align_to = "panel",
                       clip = TRUE,
                       ignore_tag = TRUE)
-
+# Figure 5 in manuscript
 jpeg(paste0('figures/transition_maps/c9-diff_map-bar_', version, 
             "_", rcp_c9, "_", years_c9, '_v2.jpg'), 
      width = 7, height = 8, units = 'in',
@@ -488,7 +481,7 @@ comb <- wrap_elements(full = rgb2) +
   theme(plot.tag.position = c(0.06, 0.97),
         plot.tag = element_text(face = 'plain'))
 # comb
-
+# Figure 3 in manuscript
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
                   root_c9, rcp_c9, years_c9, sep = "_"), '_v4.jpg'), 
      width = 7.5, height = 5, units = 'in',
@@ -543,7 +536,10 @@ jpeg(paste0('figures/climate_attribution/maps/rgb_by-scenario_',
 comb
 dev.off()
 
-# proportion change maps --------------------------------------------------
+# Q/SEI change maps --------------------------------------------------
+
+# * percent change ----------------------------------------------------------
+
 lookup_q <- c("Q1raw_median_RCP45_2070-2100" = "Q1 (Sagebrush)", 
               "Q2raw_median_RCP45_2070-2100" = "Q2 (Perennials)", 
               "Q3raw_median_RCP45_2070-2100" = "Q3 (Annuals)", 
@@ -573,60 +569,8 @@ fill_diff <- function(name = '% Change') {
                     drop = FALSE) 
 }
 
-# g <- r_diffprop2[[lyrs2]] %>% 
-#   # for some reason an error is thrown when this sampling step not taken
-#   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-# 
-#   plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
-#   facet_wrap(~band,
-#              labeller = labeller(band = lookup_q)) +
-#   theme(strip.text = element_text(hjust = 0)) +
-#   fill_diff() +
-#   theme(legend.position = 'right')
-# 
-# jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
-#                   rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
-#      width = 8, height = 8, units = 'in',
-#      res = 600)
-# g
-# dev.off()  
 
-# * 4 panel maps -----------------------------------------------------------
-# 4 panel maps (1 panel per scenario) for change in each of Q1, Q2, Q3 and SEI
-Qs <- str_extract(lyrs, 'Q\\d[a-z]+') %>% 
-  unique() %>% 
-  sort()
-if (FALSE){
-for(Q in Qs) {
-  r <- r_diffprop2[[str_subset(lyrs, Q)]]
-  lyr_names <- names(r) %>% 
-    str_extract('RCP.+') %>% 
-    str_replace("_", " ") %>% 
-    paste(fig_letters[1:length(.)], .)
-  names(r) <- letters[1:nlyr(r)]
-  
-  names(lyr_names) <- letters[1:nlyr(r)]
-  
-  g <- r %>% 
-    # for some reason an error is thrown when this sampling step not taken
-    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-    #st_as_stars(as_attributes = FALSE) %>% 
-    plot_map2(mapping = aes(fill = cut(a, breaks))) +
-    facet_wrap(~band,
-               labeller = labeller(band = lyr_names)) +
-    theme(strip.text = element_text(hjust = 0)) +
-    fill_diff() +
-    theme(legend.position = 'right')
-  
-  jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
-                    version, "_", root_c9, '_v2.jpg'),
-       width = 6, height = 6, units = 'in',
-       res = 600)
-    print(g)
-  dev.off()
-}
-}
-# absolute change maps --------------------------------------------------
+# * absolute change --------------------------------------------------
 
 b <- c(0.2, 0.1, 0.05, 0.02, 0.01)
 breaks2 <- c(-1, -b, rev(b), 1) 
@@ -640,25 +584,6 @@ fill_diff2 <- function(name = 'Change') {
                     na.value = 'transparent',
                     drop = FALSE) 
 }
-# hist(values(r_diff1[['Q5s_median_RCP45_2030-2060']]), xlim = c(-0.5, 0.5), breaks = 500)
-# g <- r_diff1[[lyrs2]] %>% 
-#   # for some reason an error is thrown when this sampling step not taken
-#   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-#   #st_as_stars(as_attributes = FALSE) %>% 
-#   plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks2))) +
-#   facet_wrap(~band,
-#              labeller = labeller(band = lookup_q)) +
-#   theme(strip.text = element_text(hjust = 0)) +
-#   fill_diff2() +
-#   theme(legend.position = 'right')
-# 
-# jpeg(paste0(paste('figures/delta_maps/abs-change_Qs-SEI', version, root_c9, 
-#                   rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
-#      width = 8, height = 8, units = 'in',
-#      res = 600)
-# g
-# dev.off()  
-
 
 # * absolute and % change -------------------------------------------------
 # absolute change for SEI and % change for Q components
@@ -690,12 +615,81 @@ sei_diff <- r_diff1[[lyr]] %>%
 g <- wrap_plots(q_diffprop) +  sei_diff +
   plot_layout(nrow = 2, guides = 'collect') 
 
+# Figure 4 in manuscript
 jpeg(paste0(paste('figures/delta_maps/perc-abs-change_Qs-SEI', version, root_c9, 
                   rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
 dev.off()  
+
+
+# * 4 panel maps ---------------------------------------------------------
+# percent change
+# 4 panel maps (1 panel per scenario) for change in each of Q1, Q2, Q3 
+Qs <- str_extract(lyrs, 'Q\\draw') %>% 
+  unique() %>% 
+  sort()
+
+create_lyr_names <- function(r) {
+  lyr_names <- names(r) %>% 
+    str_extract('RCP.+') %>% 
+    str_replace("_", " ") %>% 
+    paste(fig_letters[1:length(.)], .)
+  lyr_names
+}
+for(Q in Qs) {
+  r <- r_diffprop2[[str_subset(lyrs, Q)]]
+  
+  lyr_names <- create_lyr_names(r)
+  names(r) <- letters[1:nlyr(r)]
+  
+  names(lyr_names) <- letters[1:nlyr(r)]
+  
+  g <- r %>% 
+    # for some reason an error is thrown when this sampling step not taken
+    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+    #st_as_stars(as_attributes = FALSE) %>% 
+    plot_map2(mapping = aes(fill = cut(a, breaks))) +
+    facet_wrap(~band,
+               labeller = labeller(band = lyr_names)) +
+    theme(strip.text = element_text(hjust = 0)) +
+    fill_diff() +
+    theme(legend.position = 'right')
+  
+  jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
+              version, "_", root_c9, '_v2.jpg'),
+       width = 6, height = 6, units = 'in',
+       res = 600)
+  print(g)
+  dev.off()
+}
+
+# absolute change (SEI) 4 panel
+Q <- 'Q5s'
+r <- r_diff1[[str_subset(lyrs, Q)]]
+
+lyr_names <- create_lyr_names(r)
+names(r) <- letters[1:nlyr(r)]
+names(lyr_names) <- letters[1:nlyr(r)]
+
+g <- r %>% 
+  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+  plot_map2(mapping = aes(fill = cut(a, breaks2))) +
+  facet_wrap(~band,
+             labeller = labeller(band = lyr_names)) +
+  theme(strip.text = element_text(hjust = 0)) +
+  fill_diff2() +
+  theme(legend.position = 'right')
+
+jpeg(paste0('figures/delta_maps/abs-change_', Q, "_",
+            version, "_", root_c9, '_v1.jpg'),
+     width = 6, height = 6, units = 'in',
+     res = 600)
+print(g)
+dev.off()
+
+
 # numGcmGood --------------------------------------------------------------
 # map showing agreement among GCMs
 
@@ -732,7 +726,7 @@ names_numGcm <- c("11" = paste('Stable CSA', perc1),
                  "23" = paste('Loss of GOA', perc2), 
                  "24" = paste('Loss of GOA', perc1), 
                  "30" = 'Other rangeland area')
-
+# Figure 2 in manuscript
 g <- r_numGcm2[["numGcmGood_RCP45_2070-2100"]] %>% 
   #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
   as.factor() %>% 

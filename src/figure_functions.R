@@ -60,16 +60,16 @@ rcp_label <- function(rcp, years, add_letters = FALSE,
 #'
 #' @param x area in km2
 #'
-#' @return character verctor
+#' @return character vector
 #' @export
 #'
 #' @examples
 #' pass to to the labels argument of e.g. scale_y_continuous
 km2millionha <- function(x) {
-  ha_millions <- x*100/10^6 # first convert to ha then convert to millions of ha
+  ha <- x*100 # first convert to ha
+  ha_millions <- ha/10^6  #then convert to millions of ha
   
-  out <- paste0(ha_millions, '×', 10, '⁶')
-  ifelse(x == 0, '0', out)
+  format(ha_millions, scientific = FALSE)
 }
 
 
