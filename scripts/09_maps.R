@@ -7,7 +7,7 @@
 
 # params ------------------------------------------------------------------
 
-download <- FALSE # re-download files from drive?
+download <- TRUE # re-download files from drive?
 resolution <- 500 # resolution of the rasters
 version <- 'vsw4-3-4'
 
@@ -47,7 +47,7 @@ file_regex <- paste0(version, '_9ClassTransition_', resolution, '_', root_c9, '.
 file_regex0 <- paste0(version, '_9ClassTransitionMed_', 180, '_', root_c9,'.tif')
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex0) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex0, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -66,7 +66,7 @@ file_regex2 <- file_regex %>%
   str_replace('fire[01]', 'fire01')
 
 if(download) {
- drive_ls_filtered(path = "gee", file_regex = file_regex2) %>% 
+ drive_ls_filtered(path = "gee", file_regex = file_regex2, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -86,7 +86,7 @@ file_regex3 <- file_regex %>%
   str_replace('co2[01]', 'co201')
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex3) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex3, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -107,7 +107,7 @@ file_regex3g <- file_regex %>%
   str_replace('grass1', 'grass01')
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex3g) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex3g, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -170,7 +170,7 @@ file_regex6 <- file_regex %>%
   str_replace('9ClassTransition', 'numGcmGood') 
 
 if(download) {
-  drive_ls_filtered(path = "gee", file_regex = file_regex6) %>% 
+  drive_ls_filtered(path = "gee", file_regex = file_regex6, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -184,7 +184,7 @@ file_regex6a <- paste0("area-by-numGcmGood_\\d+m_", version, "_\\d{8}.csv")
 
 # file created in  06_ca_transition-class_area.js
 if(download) {
-  drive_ls_filtered(path = "SEI", file_regex = file_regex6a) %>% 
+  drive_ls_filtered(path = "SEI", file_regex = file_regex6a, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -196,7 +196,7 @@ area_numGcm1 <- newest_file_path('data_processed/transitions', file_regex6a) %>%
 file_regex7 <- paste0("area-by-c9-diff_\\d+m_", version, "_\\d{8}.csv")
 
 if(download) {
-  drive_ls_filtered(file_regex = file_regex7) %>% 
+  drive_ls_filtered(path = 'SEI', file_regex = file_regex7, email = email) %>% 
     drive_download_from_df('data_processed/transitions')
 }
 
@@ -263,7 +263,7 @@ box2 <- box_l$fig +
 # box2
 comb <- wrap_elements(full = g1)/wrap_elements(full = box2) + plot_layout(heights = c(1.9, 1), tag_level = 'keep') 
 # comb
-jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '.jpg'), 
+jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
      width = 5.5, height = 9, units = 'in',
      res = 600)
 comb
@@ -300,7 +300,7 @@ comb <- tmp + wrap_elements(color_matrix()) + plot_layout(heights = c(1, 1, 0.5)
                                            widths = c(0.7, 1), 
                                            design=design)
 jpeg(paste0(paste('figures/transition_maps/c9_by-scenario', 
-                  version, root_c9, sep = "_"), '.jpg'), 
+                  version, root_c9, sep = "_"), '_v2.jpg'), 
      width = 5, height = 7, units = 'in',
      res = 600)
 comb
@@ -412,7 +412,7 @@ comb <- g_map + inset_element(bar,
                       ignore_tag = TRUE)
 
 jpeg(paste0('figures/transition_maps/c9-diff_map-bar_', version, 
-            "_", rcp_c9, "_", years_c9, '.jpg'), 
+            "_", rcp_c9, "_", years_c9, '_v2.jpg'), 
      width = 7, height = 8, units = 'in',
      res = 800)
 comb
@@ -444,14 +444,12 @@ all_g <- map(all_s, function(s) {
 
 map2(all_g, names(all_g), function(g, run) {
   jpeg(paste0('figures/transition_maps/c9-diff_by-scenario_', version, 
-              "_", run, '.jpg'), 
+              "_", run, '_v2.jpg'), 
        width = 7, height = 8, units = 'in',
        res = 800)
   print(g)
   dev.off()
 })
-
-
 
 # RGB-maps ----------------------------------------------------------------
 
@@ -539,7 +537,7 @@ comb <- tmp + wrap_elements(triangle) +
 #comb
 
 jpeg(paste0('figures/climate_attribution/maps/rgb_by-scenario_', 
-            version, "_", root_c9, '.jpg'), 
+            version, "_", root_c9, '_v2.jpg'), 
      width = 6.5, height = 6, units = 'in',
      res = 600)
 comb
@@ -575,30 +573,30 @@ fill_diff <- function(name = '% Change') {
                     drop = FALSE) 
 }
 
-g <- r_diffprop2[[lyrs2]] %>% 
-  # for some reason an error is thrown when this sampling step not taken
-  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-
-  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
-  facet_wrap(~band,
-             labeller = labeller(band = lookup_q)) +
-  theme(strip.text = element_text(hjust = 0)) +
-  fill_diff() +
-  theme(legend.position = 'right')
-
-jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
-     width = 8, height = 8, units = 'in',
-     res = 600)
-g
-dev.off()  
+# g <- r_diffprop2[[lyrs2]] %>% 
+#   # for some reason an error is thrown when this sampling step not taken
+#   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+# 
+#   plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks))) +
+#   facet_wrap(~band,
+#              labeller = labeller(band = lookup_q)) +
+#   theme(strip.text = element_text(hjust = 0)) +
+#   fill_diff() +
+#   theme(legend.position = 'right')
+# 
+# jpeg(paste0(paste('figures/delta_maps/perc-change_Qs-SEI', version, root_c9, 
+#                   rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
+#      width = 8, height = 8, units = 'in',
+#      res = 600)
+# g
+# dev.off()  
 
 # * 4 panel maps -----------------------------------------------------------
 # 4 panel maps (1 panel per scenario) for change in each of Q1, Q2, Q3 and SEI
 Qs <- str_extract(lyrs, 'Q\\d[a-z]+') %>% 
   unique() %>% 
   sort()
-
+if (FALSE){
 for(Q in Qs) {
   r <- r_diffprop2[[str_subset(lyrs, Q)]]
   lyr_names <- names(r) %>% 
@@ -627,7 +625,7 @@ for(Q in Qs) {
     print(g)
   dev.off()
 }
-
+}
 # absolute change maps --------------------------------------------------
 
 b <- c(0.2, 0.1, 0.05, 0.02, 0.01)
@@ -643,23 +641,23 @@ fill_diff2 <- function(name = 'Change') {
                     drop = FALSE) 
 }
 # hist(values(r_diff1[['Q5s_median_RCP45_2030-2060']]), xlim = c(-0.5, 0.5), breaks = 500)
-g <- r_diff1[[lyrs2]] %>% 
-  # for some reason an error is thrown when this sampling step not taken
-  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-  #st_as_stars(as_attributes = FALSE) %>% 
-  plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks2))) +
-  facet_wrap(~band,
-             labeller = labeller(band = lookup_q)) +
-  theme(strip.text = element_text(hjust = 0)) +
-  fill_diff2() +
-  theme(legend.position = 'right')
-
-jpeg(paste0(paste('figures/delta_maps/abs-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
-     width = 8, height = 8, units = 'in',
-     res = 600)
-g
-dev.off()  
+# g <- r_diff1[[lyrs2]] %>% 
+#   # for some reason an error is thrown when this sampling step not taken
+#   spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
+#   #st_as_stars(as_attributes = FALSE) %>% 
+#   plot_map2(mapping = aes(fill = cut(`Q1raw_median_RCP45_2070-2100`, breaks2))) +
+#   facet_wrap(~band,
+#              labeller = labeller(band = lookup_q)) +
+#   theme(strip.text = element_text(hjust = 0)) +
+#   fill_diff2() +
+#   theme(legend.position = 'right')
+# 
+# jpeg(paste0(paste('figures/delta_maps/abs-change_Qs-SEI', version, root_c9, 
+#                   rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
+#      width = 8, height = 8, units = 'in',
+#      res = 600)
+# g
+# dev.off()  
 
 
 # * absolute and % change -------------------------------------------------
@@ -693,7 +691,7 @@ g <- wrap_plots(q_diffprop) +  sei_diff +
   plot_layout(nrow = 2, guides = 'collect') 
 
 jpeg(paste0(paste('figures/delta_maps/perc-abs-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v1.jpg'), 
+                  rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
@@ -786,7 +784,7 @@ comb <- g + bar + guide_area() + plot_layout(design=design, guides = "collect")
 name_numGcm <- file_regex6 %>% 
   str_replace('.tif', '') %>% 
   str_replace(paste0('_numGcmGood_', resolution), '')
-jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '_v8.jpg'), 
+jpeg(paste0('figures/transition_maps/numGcm_', name_numGcm , '_v9.jpg'), 
      width = 7, height = 5.4, units = 'in',
      res = 1000)
 comb
@@ -820,7 +818,7 @@ g <- r_numGcm4 %>%
         legend.box.margin = margin())
 
 #g
-jpeg(paste0('figures/transition_maps/numGcm_by-scenario_', name_numGcm , '.jpg'), 
+jpeg(paste0('figures/transition_maps/numGcm_by-scenario_', name_numGcm , '_v2.jpg'), 
      width = 7, height = 5.5, units = 'in',
      res = 800)
 g
@@ -848,7 +846,7 @@ g <- area_numGcm2 %>%
         strip.text = element_text(hjust = 0)
         )
 
-jpeg(paste0('figures/area/numGcm_area_barplot_by-scenario_', name_numGcm , '.jpg'), 
+jpeg(paste0('figures/area/numGcm_area_barplot_by-scenario_', name_numGcm , '_v2.jpg'), 
      width = 7, height = 5.5, units = 'in',
      res = 600)
 g
