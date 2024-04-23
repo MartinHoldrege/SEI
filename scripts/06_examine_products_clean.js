@@ -104,7 +104,7 @@ var rgbViz = {
 };
 
 var rgbLab = ' (R = Q1, G= Q2, B = Q3)';
-map.addLayer(ee.Image(d.get('qPropMean')), rgbViz, 'RGB (delta Q attribution)' + rgbLab, false);
+map.addLayer(ee.Image(d.get('qPropMed')), rgbViz, 'RGB (median, type 1)' + rgbLab, false);
 
 
 // Delta (fut-historical) values (min, max, median, etc) ----------------------------------
@@ -113,19 +113,23 @@ map.addLayer(ee.Image(d.get('qPropMean')), rgbViz, 'RGB (delta Q attribution)' +
 var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
 var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
 
+var diffRedImg = SEI.ic2Image(ee.ImageCollection(d.get('diffRed')), 'GCM');
+// type 1 summaries are are values that correspond to the summary of SEI. e.g. the 'median' Q1 would be the Q1 that corresponds to the median SEI
+// while type 2 is the regular median (e.g. actually the median Q1 which need not correspond to the median SEI)
 for (var j = 0; j < diffBands.length; j++) {
   var band = diffBands[j];
   
-  map.addLayer(ee.Image(d.get('diffRed2')).select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, across GCMs)', false);
-  map.addLayer(ee.Image(d.get('diffRed2')).select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, across GCMs)', false);
+  map.addLayer(diffRedImg.select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, pixelwise type 1)', false);
+  map.addLayer(diffRedImg.select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, pixelwise type 1)', false);
   
-  // median is already pre-computed for Q5s
+  // median is already pre-computed for Q5s (these layers aren't perfect--and shouldn't be used for analysis, but are nearly identical
+  // for display)
   if (diffBands == 'Q5s') {
     var medianLyr = ee.Image(d.get('p')).select('p1_diffQ5sMed');
   } else {
-    var medianLyr = ee.Image(d.get('diffRed2')).select(band + '_median');
+    var medianLyr = diffRedImg.select(band + '_median');
   }
-  map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median)', false);
+  map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 1)', false);
   
 }
 // c3 ------------------------------------------------------------------------------
@@ -133,9 +137,10 @@ for (var j = 0; j < diffBands.length; j++) {
 map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v11)', false);
 
 // c9 maps ----------------------------------------------------------------------
+var c9RedImg = SEI.ic2Image(ee.ImageCollection(d.get('c9Red')), 'GCM');
 
-map.addLayer(ee.Image(d.get('c9Red')).select('low'), fig.visc9, '9 class transition (good case across GCMs)', false); 
-map.addLayer(ee.Image(d.get('c9Red')).select('high'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
+map.addLayer(c9RedImg.select('c9_high'), fig.visc9, '9 class transition (good case across GCMs)', false); 
+map.addLayer(c9RedImg.select('c9_low'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
 map.addLayer(ee.Image(d.get('p')).select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
 
 // 'backgroud' layers ---------------------------------------------------------------------------
@@ -151,14 +156,32 @@ var panel = ui.Panel({
 });
  
 // Create legend title
-var panelDescript = ui.Label({
+var firstLine = ui.Label({
   value: 'STEPWAT simulation settings: ' + d.get('root').getInfo() + ' (' + d.get('RCP').getInfo() 
     + ', ' + d.get('epoch').getInfo() + ')' + ' (' + d.get('versionFull').getInfo() + ')',
   style: {
     fontSize: '12px',
-    margin: '0 0 4px 0',
+    margin: '0 0 0 0', // Adjust margin as needed
     padding: '0'
-    }
+  }
+});
+
+var secondLine = ui.Label({
+  value: '(type 1 summaries are values that correspond the low, median, high SEI; type 2 are the ordinary summaries of the values)',
+  style: {
+    fontSize: '12px',
+    margin: '0 0 4px 0', // Adjust margin as needed
+    padding: '0'
+  }
+});
+
+// Create a panel to hold both labels and stack them vertically.
+var panelDescript = ui.Panel({
+  widgets: [firstLine, secondLine],
+  layout: ui.Panel.Layout.flow('vertical'),
+  style: {
+    padding: '0'
+  }
 });
  
 // Add the title to the panel
