@@ -21,7 +21,7 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-//var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
 
 // helper functions --------------------------------------------------------
 
@@ -84,7 +84,7 @@ var redImgFactory = function(q5sIc, Q5sRed) {
     var maskMedian = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_median'), 'median', bandNames, true);
     var maskLow = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_low'), 'low', bandNames, true);
     var maskHigh = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_high'), 'high', bandNames, true);
-    var ic = ic.merge(q5sIc);
+    var ic = ic.combine(q5sIc);
     var med = ic
       .map(maskMedian)
       // grabbing the first value (instead of mean/median so can gaurentee values at a pixel come from
@@ -223,39 +223,39 @@ var main = exports.main = function(args) {
   var seiMed = futIc
     .select('Q5s')
     .reduce(reducers);
-   
+
   var createRedImg = redImgFactory(futIc.select('Q5s'), seiMed);  // image to calculate type 1 summaries (values associated w/ low, median, high SEI)
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
   var bandNames2 = bandNames
   bandNames2.push('Q3y')
-  // function that masks image if SEI is not equal to the median SEI
-  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
-  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
-  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
+  // // function that masks image if SEI is not equal to the median SEI
+  // var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
+  // var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
+  // var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
   
-  var futIcTmp = futIc
-    .select(diffBands2);
+  // var futIcTmp = futIc
+  //   .select(diffBands2);
   
-  var qMed = futIcTmp
-    .map(maskMedian)
-    // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
-    // specific GCM
-    .reduce(ee.Reducer.firstNonNull());
+  // var qMed = futIcTmp
+  //   .map(maskMedian)
+  //   // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
+  //   // specific GCM
+  //   .reduce(ee.Reducer.firstNonNull());
 
-  var qLow = futIcTmp
-    .map(maskLow)
-    .reduce(ee.Reducer.firstNonNull());
+  // var qLow = futIcTmp
+  //   .map(maskLow)
+  //   .reduce(ee.Reducer.firstNonNull());
     
-  var qHigh = futIcTmp
-    .map(maskHigh)
-    .reduce(ee.Reducer.firstNonNull());
+  // var qHigh = futIcTmp
+  //   .map(maskHigh)
+  //   .reduce(ee.Reducer.firstNonNull());
 
-  var qComb = qMed
-    .addBands(qLow)
-    .addBands(qHigh)
-    .regexpRename('_first$', '');
+  // var qComb = qMed
+  //   .addBands(qLow)
+  //   .addBands(qHigh)
+  //   .regexpRename('_first$', '');
     
-//  var qComb = createRedImg(futIc.select(bandNames2));
+  var qComb = createRedImg(futIc.select(bandNames2));
 
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
 
@@ -269,7 +269,7 @@ var main = exports.main = function(args) {
       .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
   });
-  
+
   var diffRed = futRed.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands2)
       // subtract current conditions
@@ -331,7 +331,7 @@ var main = exports.main = function(args) {
   
   // change in climate variables
   var climDelta = climFut.map(function(image) {
-    return ee.Image(image).subtract(climCur);
+    return ee.Image(image).subtract(climCur).copyProperties(ee.Image(image));
   });
   
     // 'reduced' delta MAP and MAT (i.e., pixelwise low, median, and median across GCMs)
@@ -424,6 +424,7 @@ var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
 var img = ee.Image(d.get('qPropMed'))
 // var dir = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first().select('Q5s')
 var dir = ee.ImageCollection(d.get('diffIc')).first().select('Q5s')
+print(dir)
 // var c9 = ee.ImageCollection(d.get('c9Red')).filter(ee.Filter.eq('GCM', 'median')).first()
 var c9 = ee.ImageCollection(d.get('c9Ic')).first()
 var problem = ee.Image(0)
