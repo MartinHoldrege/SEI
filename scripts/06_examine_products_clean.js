@@ -81,13 +81,14 @@ var bandsRed = ['low', 'high', 'median'];
 // MAP
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 2, interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed2')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 2, interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 1, interpolated)', false);
 }
 
 // MAT
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', type 2, interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', type 1, interpolated)', false);
 }
 
 // contributions by each Q compontent to changes --------------------------------------
@@ -140,9 +141,9 @@ map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v11)', false);
 // c9 maps ----------------------------------------------------------------------
 var c9RedImg = SEI.ic2Image(ee.ImageCollection(d.get('c9Red')), 'GCM');
 
-map.addLayer(c9RedImg.select('c9_high'), fig.visc9, '9 class transition (good case across GCMs)', false); 
-map.addLayer(c9RedImg.select('c9_low'), fig.visc9, '9 class transition  (bad case across GCMs)', false);  
-map.addLayer(ee.Image(d.get('p')).select('p6_c9Med'), fig.visc9, '9 class transition (median)', true);
+map.addLayer(c9RedImg.select('c9_high'), fig.visc9, '9 class transition (high, type 1)', false); 
+map.addLayer(c9RedImg.select('c9_low'), fig.visc9, '9 class transition  (low, type 1)', false);  
+map.addLayer(ee.Image(d.get('p')).select('p6_c9Med'), fig.visc9, '9 class transition (median, type 1)', true);
 
 // 'backgroud' layers ---------------------------------------------------------------------------
 map.addLayer(fig.statesOutline, {}, 'state outlines', false); // outline of states (white background)
