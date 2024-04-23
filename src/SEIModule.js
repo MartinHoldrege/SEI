@@ -441,18 +441,18 @@ var uniqueImageSuffix = function(image) {
   var list = image.bandNames()
   .map(function(x) {
     var suffix1 = ee.String(x)
-      .match('_[[:alpha:]]+$')
+      .match('_[^_]+$')
       .get(0);
       
     var suffix = ee.String(suffix1)
-      .match('[[:alpha:]]+$')// excluding the underscore
+      .match('[^_]+$')// excluding the underscore
       .get(0);
       
     return ee.String(suffix);
   });
   return list.distinct();
 };
-
+exports.uniqueImageSuffix = uniqueImageSuffix;
 /**
  * convert and image to an image collection, each new image comes from bands with 
  * the same suffix, this suffix then become a property
@@ -500,16 +500,16 @@ var ic2Image = function(ic, propertyName) {
 }
 
 exports.ic2Image = ic2Image;
-/*
-// testing image2Ic and ic2Image functions
 
+// testing image2Ic and ic2Image functions
+/*
 var image = ee.Image(0).addBands(ee.Image(0)).addBands(ee.Image(0)).addBands(ee.Image(0))
-  .rename(['lyr1_min', 'lyr1_max', 'lyr2_min', 'lyr2_max']);
+  .rename(['lyr1_min', 'lyr2_min', 'lyr1_CESM1-CAM5', 'lyr2_CESM1-CAM5']);
 var ic = image2Ic(image, 'reducer')
 print(ic)
 print(ic2Image(ic, 'reducer'))
-
 */
+
 
 // this function factory is for two (or more) banded images (x) that contain band(s) with data and q5s band
 // if the Q5s band is (approximately) equal to the redImage band (reduced image)
@@ -530,7 +530,7 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBan
       .abs()
       // if the SEI is very closed to the estimated reduced value, 
       // then assume that is the correct GCM
-      .lt(0.0001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
+      .lt(0.000001) // for debugging look at the minimum of the difference, and see if there are values > 0.0001
       .rename(reducerName);
       
 
