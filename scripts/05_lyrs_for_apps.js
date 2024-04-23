@@ -226,7 +226,7 @@ var main = exports.main = function(args) {
    
   var createRedImg = redImgFactory(futIc.select('Q5s'), seiMed);  // image to calculate type 1 summaries (values associated w/ low, median, high SEI)
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
-  var bandNames2 = bandNamesl
+  var bandNames2 = bandNames
   bandNames2.push('Q3y')
   // function that masks image if SEI is not equal to the median SEI
 /*  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
