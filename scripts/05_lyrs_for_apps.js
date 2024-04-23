@@ -395,7 +395,7 @@ var main = exports.main = function(args) {
     'climCur': climCur,
     'cur': cur0,
     'climDeltaRed': climDeltaRed, // type 1 summary
-    'climDeltaRed2': climDeltaRed2, // type 2 summary
+    'climDeltaRed2': climDeltaRed2, // type 2 summary (main 1 to use)
     'p': p,
     'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division) (type 1)
     'diffRed2': diffIc.reduce(reducers), // type 2 (image)
