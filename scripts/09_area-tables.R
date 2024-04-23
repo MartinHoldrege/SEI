@@ -27,23 +27,22 @@ area_c9a <- area_med_c9 %>%
 # for a table
 # rounding percentages more aggressively
 area_c9b <- area_c9a %>% 
+  ungroup() %>% 
   select(-tot_area, -c3_name, -rcp_years) %>% 
   pivot_longer(cols = matches('area_'),
                names_to = c('units', 'summary'),
                names_pattern = 'area_(.*)_(.*)') %>%
+  # converting from 1000 km2 to 1000 ha
+  mutate(value = ifelse(units == 'km2', value*100, value),
+         units = ifelse(units == 'km2', '1000ha', units)) %>% 
   mutate(
-    value = round(value, 3), # want to be rounded to the nearest 1km (for 1000km2 values)
+    value = round(value, 2), 
     value_char = case_when(
       units == "perc" & value >= 1 ~ as.character(round(value, 0)),
       units == "perc" & value < 1 ~ as.character(signif(value, 1)),
-      units == "km2" & value >= 1 ~ as.character(round(value, 1)),
-      units == "km2" & value < 1 ~ as.character(signif(value, 2)),
+      units == "1000ha" & value >= 1 ~ as.character(round(value, 0)),
+      units == "1000ha" & value < 1 ~ as.character(signif(value, 1)),
       TRUE ~ NA_character_
-    ),
-    value_char = case_when(
-      # adding a lagging 0 which got removed by as.character
-      units == "km2" & value >= 1 & !str_detect(value_char, "\\.") ~ paste0(value_char, '.0'),
-      TRUE ~ value_char
     ),
     # reordering c9_name so stable comes first for each category (to make table easier to read)
     c9_order2 = c(1, 2, 3, 5, 4, 6, 8, 9, 7)[as.numeric(c9)],
@@ -53,15 +52,16 @@ area_c9b <- area_c9a %>%
   pivot_wider(id_cols = c(run, RCP, years, units,  summary),
               names_from = 'c9_name',
               values_from = 'value_char') %>% 
-  mutate(summary = factor(summary, levels = c('lo', 'med', 'hi')),
-         units = str_replace(units, 'km2', '1000km2')) %>% 
-  arrange(run, RCP, years, units, summary)
+  mutate(summary = factor(summary, levels = c('lo', 'med', 'hi'))) %>% 
+  arrange(run, RCP, years, units, summary) %>% 
+  select(everything(), `Stable GOA`, `GOA becomes CSA`, `GOA becomes ORA`,
+         `Stable ORA`, `ORA becomes CSA`, `ORA becomes GOA`)
 
 names(area_c9b)
 
 area_c3b <- area_c3 %>% 
-  mutate(tot_area = tot_area/1000,
-         units = '1000km2') %>% 
+  mutate(tot_area = tot_area/10,
+         units = '1000ha') %>% 
   pivot_wider(values_from = "tot_area",
               names_from = 'c3_name')
 
