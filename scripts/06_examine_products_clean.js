@@ -81,13 +81,13 @@ var bandsRed = ['low', 'high', 'median'];
 // MAP
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 2, interpolated)', false);
 }
 
 // MAT
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAT_' + b), deltaMATvis, 'delta MAT (' + b + ', type 2, interpolated)', false);
 }
 
 // contributions by each Q compontent to changes --------------------------------------
@@ -120,8 +120,8 @@ var diffRedImg = SEI.ic2Image(ee.ImageCollection(d.get('diffRed')), 'GCM');
 for (var j = 0; j < diffBands.length; j++) {
   var band = diffBands[j];
   
-  map.addLayer(diffRedImg.select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, pixelwise type 1)', false);
-  map.addLayer(diffRedImg.select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, pixelwise type 1)', false);
+  map.addLayer(diffRedImg.select(band + '_low').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (low, type 1)', false);
+  map.addLayer(diffRedImg.select(band + '_high').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (high, type 1)', false);
   
   // median is already pre-computed for Q5s (these layers aren't perfect--and shouldn't be used for analysis, but are nearly identical
   // for display)
@@ -168,7 +168,7 @@ var firstLine = ui.Label({
 });
 
 var secondLine = ui.Label({
-  value: '(type 1 summaries are values that correspond the low, median, high SEI; type 2 are the ordinary summaries of the values)',
+  value: '(type 1 summaries are values that correspond the low, median, high SEI; type 2 are the ordinary summaries of the values; both are pixelwise)',
   style: {
     fontSize: '12px',
     margin: '0 0 4px 0', // Adjust margin as needed
