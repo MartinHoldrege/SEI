@@ -229,7 +229,7 @@ var main = exports.main = function(args) {
   var bandNames2 = bandNames
   bandNames2.push('Q3y')
   // function that masks image if SEI is not equal to the median SEI
-/*  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
+  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
   var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
   var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
   
@@ -253,9 +253,9 @@ var main = exports.main = function(args) {
   var qComb = qMed
     .addBands(qLow)
     .addBands(qHigh)
-    .regexpRename('_first$', '');*/
+    .regexpRename('_first$', '');
     
-  var qComb = createRedImg(futIc.select(bandNames2));
+//  var qComb = createRedImg(futIc.select(bandNames2));
 
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
 
