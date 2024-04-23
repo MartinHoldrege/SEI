@@ -130,11 +130,12 @@ for (var j = 0; j < diffBands.length; j++) {
   // for display)
   if (diffBands == 'Q5s') {
     var medianLyr = ee.Image(d.get('p')).select('p1_diffQ5sMed');
+    map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 1)', false);
   } else {
     var medianLyr = diffRedImg.select(band + '_median');
+    map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 1)', false);
     map.addLayer(diffRedImg2.select(band + '_median').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 2)', false);
   }
-  map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 1)', false);
   
 }
 // c3 ------------------------------------------------------------------------------
