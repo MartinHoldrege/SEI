@@ -418,7 +418,8 @@ var main = exports.main = function(args) {
 
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-print(ee.Image(d.get('gcmNum')))
+var img = ee.Image(d.get('diffPcentRedImg'));
+Map.addLayer(img.select('Q1raw_median'), {}, 'pcent')
 Map.addLayer(ee.Image(d.get('gcmNum')).select('gcmNum_median'), {min: 1, max: 13}, 'gcmNum')
 var img = ee.Image(d.get('qPropMed'))
 // var dir = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first().select('Q5s')
