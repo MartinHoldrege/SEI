@@ -138,6 +138,20 @@ for (var j = 0; j < diffBands.length; j++) {
   }
   
 }
+
+// gcm number (type 1) -------------------------------------------------------------
+// provide the gcm number (1-13) associated with the low, median, high SEI
+var pal = [
+  'FF0000', 'FF7F00', 'FFFF00', '7FFF00',
+  '00FF00', '00FF7F', '00FFFF', '007FFF',
+  '0000FF', '7F00FF', 'FF00FF', 'FF007F',
+  '777777'
+];
+var visGN = {min: 1, max: 13, palette: pal};
+var gcmNum = ee.Image(d.get('gcmNum'));
+map.addLayer(gcmNum.select('gcmNum_low'), visGN, 'GCM num (low, type 1)', false);
+map.addLayer(gcmNum.select('gcmNum_high'), visGN, 'GCM num (high, type 1)', false);
+map.addLayer(gcmNum.select('gcmNum_median'), visGN, 'GCM num (median, type 1)', false);
 // c3 ------------------------------------------------------------------------------
 
 map.addLayer(SEI.cur.select('Q5sc3'), fig.visc3, '3 class SEI (v11)', false);
