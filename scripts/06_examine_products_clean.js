@@ -136,8 +136,24 @@ for (var j = 0; j < diffBands.length; j++) {
     map.addLayer(medianLyr.sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 1)', false);
     map.addLayer(diffRedImg2.select(band + '_median').sldStyle(sldRampDiff1), {}, 'delta ' + namesBands[j] + ' (median, type 2)', false);
   }
-  
 }
+
+// percentile of delta (fut-historical values) (type 1 summaries) -------------------------------
+// e.g. what percentile of Q1 difference (across 13 GCMs in a given pixel) corresponds to the median SEI
+var diffPcentRedImg = ee.Image(d.get('diffPcentRedImg'));
+var pcentBands = ['Q1raw', 'Q2raw', 'Q3raw'];
+var namesPBands = ['Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)'];
+
+var visP = {min: 0, max: 1, palette: 'red,white,blue'};
+for (var j = 0; j < pcentBands.length; j++) {
+  var band = pcentBands[j];
+  
+  map.addLayer(diffPcentRedImg.select(band + '_low'),visP, 'pcent ' + namesPBands[j] + ' (low, type 1)', false);
+  map.addLayer(diffPcentRedImg.select(band + '_high'),visP, 'pcent ' + namesPBands[j] + ' (high, type 1)', false);
+  map.addLayer(diffPcentRedImg.select(band + '_median'),visP, 'pcent ' + namesPBands[j] + ' (median, type 1)', false);
+
+}
+
 
 // gcm number (type 1) -------------------------------------------------------------
 // provide the gcm number (1-13) associated with the low, median, high SEI
