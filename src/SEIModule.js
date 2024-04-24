@@ -594,7 +594,7 @@ var createExpressionArgs = function(percentileList, pcentImage) {
     if(i === 0) {
       var string = 'b("pcent") == ' + pName + ' ? ' + p/100 + ' : ';
     } else {
-     var string = 'b("pcent") <= ' + pName + ' ? ' + (p/100) + ' : ';
+      var string = 'b("pcent") <= ' + pName + ' ? ' + (p/100) + ' : ';
     }
     var expression = expression + string;
     // small number added, so that the <= is ensured
@@ -632,12 +632,12 @@ var assignPcent = function(ic) {
       .expression(args)
       .toFloat();
   };
-  return ic.map(assignPcent);
+  return ic.map(f);
 };
 
 exports.assignPcent = assignPcent;
 
-/* // testing
+/* // testing assingPcent()
 
 var startDate = ee.Date('2020-01-01');
 var ic = ee.ImageCollection(ee.List.sequence(0, 12).map(function (i) {
