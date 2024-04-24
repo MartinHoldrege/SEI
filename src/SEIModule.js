@@ -631,9 +631,8 @@ var assignPcent = function(ic) {
     var out = ee.Image(image)
       .rename('pcent') // args have this band name hard coded
       .expression(args)
-      .copyProperties(ee.Image(image))
       .toFloat();
-    return ee.Image(out).rename(oldNames);
+    return ee.Image(out).rename(oldNames).copyProperties(ee.Image(image));
   };
   return ic.map(f);
 };
