@@ -351,7 +351,7 @@ var main = exports.main = function(args) {
   var pcentQ3 = SEI.assignPcent(diffIc.select('Q3raw'));
   var diffPcentIc = pcentQ1.combine(pcentQ2).combine(pcentQ3);
   
-  var diffPcentRed = createRedImg(diffPcentIc);
+  var diffPcentRedImg = createRedImg(diffPcentIc);
   
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
@@ -407,7 +407,7 @@ var main = exports.main = function(args) {
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
-    'diffPcentRed': diffPcentRed, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
+    'diffPcentRedImg': diffPcentRedImg, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
     'gcmNum': gcmNum // the number of GCM (1-13) associated with low, median, high SEI (type 1)
     // 'curC3': curC3
   });
