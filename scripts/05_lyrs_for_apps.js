@@ -21,7 +21,7 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'};
 
 // helper functions --------------------------------------------------------
 
@@ -152,7 +152,6 @@ var main = exports.main = function(args) {
   // * robust change c9
   // considering robust if all but 1 GCM agree on future classification
   var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
-  
   
   // GCM level results -------------------------------------------------------------
   
@@ -350,9 +349,8 @@ var main = exports.main = function(args) {
   var pcentQ2 = SEI.assignPcent(diffIc.select('Q2raw'));
   var pcentQ3 = SEI.assignPcent(diffIc.select('Q3raw'));
   var diffPcentIc = pcentQ1.combine(pcentQ2).combine(pcentQ3);
-  
   var diffPcentRedImg = createRedImg(diffPcentIc);
-  
+
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
   // for areas that are currently core the the number of GCMs that agree that will be core in the futre
