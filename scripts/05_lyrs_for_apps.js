@@ -160,7 +160,7 @@ var main = exports.main = function(args) {
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
   var diffBands2 = diffBands;
   diffBands2.push('Q3y');
-  var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
+
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
   // future SEI
