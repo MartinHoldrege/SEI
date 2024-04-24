@@ -160,7 +160,7 @@ var main = exports.main = function(args) {
   var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
   var diffBands2 = diffBands;
   diffBands2.push('Q3y');
-
+  var qBands = ['Q1raw', 'Q2raw', 'Q3raw'];
   var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
   
   // future SEI
@@ -226,35 +226,9 @@ var main = exports.main = function(args) {
 
   var createRedImg = redImgFactory(futIc.select('Q5s'), seiMed);  // image to calculate type 1 summaries (values associated w/ low, median, high SEI)
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
-  var bandNames2 = bandNames
-  bandNames2.push('Q3y')
-  // // function that masks image if SEI is not equal to the median SEI
-  // var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
-  // var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
-  // var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
-  
-  // var futIcTmp = futIc
-  //   .select(diffBands2);
-  
-  // var qMed = futIcTmp
-  //   .map(maskMedian)
-  //   // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
-  //   // specific GCM
-  //   .reduce(ee.Reducer.firstNonNull());
+  var bandNames2 = bandNames;
+  bandNames2.push('Q3y');
 
-  // var qLow = futIcTmp
-  //   .map(maskLow)
-  //   .reduce(ee.Reducer.firstNonNull());
-    
-  // var qHigh = futIcTmp
-  //   .map(maskHigh)
-  //   .reduce(ee.Reducer.firstNonNull());
-
-  // var qComb = qMed
-  //   .addBands(qLow)
-  //   .addBands(qHigh)
-  //   .regexpRename('_first$', '');
-    
   var qComb = createRedImg(futIc.select(bandNames2));
 
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
@@ -269,6 +243,8 @@ var main = exports.main = function(args) {
       .subtract(cur1.select(diffBands))
       .copyProperties(ee.Image(image));
   });
+  
+  
 
   var diffRed = futRed.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands2)
@@ -367,6 +343,16 @@ var main = exports.main = function(args) {
   
   var gcmNum = createRedImg(gcmNumIc);
   
+  // determine what percentiles correspond to median etc SEI ----------------------------------------
+  
+  // convert pixel values to their pixel-wise quantile/percentile [pixels take on values between 0-1]
+  var pcentQ1 = SEI.assignPcent(diffIc.select('Q1raw'));
+  var pcentQ2 = SEI.assignPcent(diffIc.select('Q2raw'));
+  var pcentQ3 = SEI.assignPcent(diffIc.select('Q3raw'));
+  var diffPcentIc = pcentQ1.combine(pcentQ2).combine(pcentQ3);
+  
+  var diffPcentRed = createRedImg(diffPcentIc);
+  
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
   // for areas that are currently core the the number of GCMs that agree that will be core in the futre
@@ -421,6 +407,7 @@ var main = exports.main = function(args) {
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    'diffPcentRed': diffPcentRed, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
     'gcmNum': gcmNum // the number of GCM (1-13) associated with low, median, high SEI (type 1)
     // 'curC3': curC3
   });
