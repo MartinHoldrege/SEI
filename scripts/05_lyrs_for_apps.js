@@ -355,6 +355,18 @@ var main = exports.main = function(args) {
     .filter(ee.Filter.eq('GCM', 'median'))
     .first(); // just extracting the image
     
+  // determine which GCM is associated w/ median SEI --------------------------------------
+  var gcmNumIc = futIc.map(function(x) {
+    var index = ee.Image(x).get('system:index');
+    var out = ee.Image(ee.Number.parse(index).add(1))
+      .copyProperties(ee.Image(x));
+     return ee.Image(out).rename('gcmNum')
+      .mask(SEI.mask)
+      .toFloat();
+  });
+  
+  var gcmNum = createRedImg(gcmNumIc);
+  
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
   // for areas that are currently core the the number of GCMs that agree that will be core in the futre
@@ -408,7 +420,8 @@ var main = exports.main = function(args) {
     'qPropRed': qPropRed,
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
-    'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    'gcmNum': gcmNum // the number of GCM (1-13) associated with low, median, high SEI (type 1)
     // 'curC3': curC3
   });
   
@@ -420,11 +433,12 @@ var main = exports.main = function(args) {
 
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-// print(d)
+print(ee.Image(d.get('gcmNum')))
+Map.addLayer(ee.Image(d.get('gcmNum')).select('gcmNum_median'), {min: 1, max: 13}, 'gcmNum')
 var img = ee.Image(d.get('qPropMed'))
 // var dir = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first().select('Q5s')
 var dir = ee.ImageCollection(d.get('diffIc')).first().select('Q5s')
-print(dir)
+// print(dir)
 // var c9 = ee.ImageCollection(d.get('c9Red')).filter(ee.Filter.eq('GCM', 'median')).first()
 var c9 = ee.ImageCollection(d.get('c9Ic')).first()
 var problem = ee.Image(0)
