@@ -627,9 +627,11 @@ var assignPcent = function(ic) {
   var args = createExpressionArgs(l, pcentImage);
   
   var f = function(image) {
+    var oldNames = ee.Image(image).bandNames();
     return ee.Image(image)
       .rename('pcent') // args have this band name hard coded
       .expression(args)
+      .rename(oldNames)
       .copyProperties(ee.Image(image))
       .toFloat();
   };
