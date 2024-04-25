@@ -36,12 +36,16 @@ area_c9b <- area_c9a %>%
   mutate(value = ifelse(units == 'km2', value*100, value),
          units = ifelse(units == 'km2', '1000ha', units)) %>% 
   mutate(
-    value = round(value, 2), 
+    #value = round(value, 5), 
     value_char = case_when(
       units == "perc" & value >= 1 ~ as.character(round(value, 0)),
-      units == "perc" & value < 1 ~ as.character(signif(value, 1)),
+      units == "perc" & value < 1 &  value >= 0.1 ~ as.character(signif(value, 1)),
+      units == "perc" & value < 0.1 &  value > 0 ~ '<0.1',
+      units == "perc" & value == 0 ~ '0',
       units == "1000ha" & value >= 1 ~ as.character(round(value, 0)),
-      units == "1000ha" & value < 1 ~ as.character(signif(value, 1)),
+      units == "1000ha" & value < 1 &  value >= 0.1 ~ as.character(signif(value, 1)),
+      units == "1000ha" & value < 0.1 &  value > 0 ~ '<0.1',
+      units == "1000ha" & value == 0 ~ '0',
       TRUE ~ NA_character_
     ),
     # reordering c9_name so stable comes first for each category (to make table easier to read)
@@ -61,7 +65,8 @@ names(area_c9b)
 
 area_c3b <- area_c3 %>% 
   mutate(tot_area = tot_area/10,
-         units = '1000ha') %>% 
+         units = '1000ha',
+         tot_area = round(tot_area, 0)) %>% 
   pivot_wider(values_from = "tot_area",
               names_from = 'c3_name')
 
