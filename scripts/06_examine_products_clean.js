@@ -81,8 +81,8 @@ var bandsRed = ['low', 'high', 'median'];
 // MAP
 for (var i = 0; i < bandsRed.length; i++) {
   var b = bandsRed[i];
-  map.addLayer(ee.Image(d.get('climDeltaRed2')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 2, interpolated)', false);
-  map.addLayer(ee.Image(d.get('climDeltaRed')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 1, interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed2Img')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 2, interpolated)', false);
+  map.addLayer(ee.Image(d.get('climDeltaRed2Img')).select('MAP_' + b), deltaMAPvis, 'delta MAP (' + b + ', type 1, interpolated)', false);
 }
 
 // MAT
@@ -116,7 +116,7 @@ var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q
 var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
 
 var diffRedImg = SEI.ic2Image(ee.ImageCollection(d.get('diffRed')), 'GCM');
-var diffRedImg2 = ee.Image(d.get('diffRed2'));
+var diffRedImg2 = ee.Image(d.get('diffRed2Img'));
 // type 1 summaries are are values that correspond to the summary of SEI. e.g. the 'median' Q1 would be the Q1 that corresponds to the median SEI
 // while type 2 is the regular median (e.g. actually the median Q1 which need not correspond to the median SEI)
 for (var j = 0; j < diffBands.length; j++) {
