@@ -116,13 +116,13 @@ for (var i = 0; i < roots.length; i++) {
   // of Q1-Q3, and each image is for a different GCM.
   // if proportion change isn't in direction of change in q3y then treated as 0 change
   var qIc = ee.ImageCollection(d.get('qPropIc'));
-  var qRed = ee.ImageCollection(d.get('qPropRed')); // same but pixelwise values of low, median, high
+  var qRed = ee.ImageCollection(d.get('qPropRed2')); // same but pixelwise values of low, median, high
   
   // print(qIc)
   // one image per GCM (& reducere), each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
   var driver2 = qIc.merge(qRed).map(detDomDriver);
   
-  var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
+  var diffRed = ee.ImageCollection(d.get('diffRed2')) // change in SEI 
     .select('Q5s');
     
 /*  Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
@@ -238,7 +238,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240419';
+var s = versionFull + '_20240425';
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {
