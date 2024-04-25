@@ -243,7 +243,8 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
-  
+  var diffRed2Img = diffIc.reduce(reducers); // type 2 (image)
+  var diffRed2 = SEI.image2Ic(diffRed2Img, 'GCM'); // type 2 Ic
 
   var diffRed = futRed.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands2)
@@ -323,13 +324,17 @@ var main = exports.main = function(args) {
   };
   var qPropRed = diffRed.map(correctPropTmp);
   var qPropIc = diffIc.map(correctPropTmp);
-  
+  var qPropRed2Img = qPropIc.reduce(reducers)
+  var qPropRed2 = SEI.image2Ic(qPropRed2Img, 'GCM') // type 2 summary
   // The proportion that each q component contributed to the change in sei, for the 
   // median SEI (pixelwise)
   var qPropMed = qPropRed
     .filter(ee.Filter.eq('GCM', 'median'))
     .first(); // just extracting the image
-    
+  
+  var qPropMed2 = qProdRed2
+    .filter(ee.Filter.eq('GCM', 'median'))
+    .first(); // just extracting the image
   // determine which GCM is associated w/ median SEI --------------------------------------
   var gcmNumIc = futIc.map(function(x) {
     var index = ee.Image(x).get('system:index');
@@ -396,7 +401,8 @@ var main = exports.main = function(args) {
     'climDeltaRed2Img': climDeltaRed2, // type 2 summary (main 1 to use)
     'p': p,
     'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division) (type 1)
-    'diffRed2Img': diffIc.reduce(reducers), // type 2 (image)
+    'diffRed2Img': diffRed2Img, // type 2 (image)
+    'diffRed2': diffRed2, // type 2 (ic)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
     'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC) (type 1)
     'futIc': futIc, // image collection future sei etc by GCM
