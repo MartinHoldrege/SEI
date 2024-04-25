@@ -342,7 +342,7 @@ var main = exports.main = function(args) {
     .filter(ee.Filter.eq('GCM', 'median'))
     .first(); // just extracting the image
   
-  var qPropMed2 = qProdRed2
+  var qPropMed2 = qPropRed2
     .filter(ee.Filter.eq('GCM', 'median'))
     .first(); // just extracting the image
   // determine which GCM is associated w/ median SEI --------------------------------------
