@@ -245,6 +245,16 @@ var main = exports.main = function(args) {
   
   var diffRed2Img = diffIc.reduce(reducers); // type 2 (image)
   var diffRed2 = SEI.image2Ic(diffRed2Img, 'GCM'); // type 2 Ic
+  
+  var diffPropRed2Img = diffIc.map(function(image) {
+    return ee.Image(image)
+      .select(diffBands)
+      // subtract current conditions
+      .divide(cur1.select(diffBands)) // this was previously incorrect (multiply)
+      .copyProperties(ee.Image(image));
+  }).reduce(reducers);
+  
+  var diffPropRed2 = SEI.image2Ic(diffPropRed2Img, 'GCM');
 
   var diffRed = futRed.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands2)
@@ -405,12 +415,14 @@ var main = exports.main = function(args) {
     'diffRed2': diffRed2, // type 2 (ic)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
     'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC) (type 1)
+    'diffPropRed2': diffPropRed2, // type 2 (ic)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'futRed2Img' : futIc.reduce(reducers),
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
+    'qPropMed2': qPropMed2, // type 2
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
     'qPropRed2Img' : qPropIc.reduce(reducers), // type 2
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
