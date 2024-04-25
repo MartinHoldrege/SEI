@@ -126,7 +126,7 @@ r_c9diff_all <- list(
 # layer for visualizing contribution of sagebrush, perennials and annuals to delta SEI
 
 file_regex4 <- file_regex %>% 
-  str_replace('9ClassTransition', 'qPropMed') # the version with 'noagree' suffix means that all Q changes were used regardless of whether they were in the same direction as SEI
+  str_replace('9ClassTransition', 'qPropMed2') # median q1, q2, q3 absolute value of proportion change (if in same direction as Q5y) (type 2)
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex4, email = email) %>% 
@@ -140,7 +140,7 @@ r_qprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex4) %>%
 # proportion change of Qs and SEI from current to future
 
 file_regex5 <- file_regex %>% 
-  str_replace('9ClassTransition', 'diffProp') 
+  str_replace('9ClassTransition', 'diffProp2')  # medians (type 2)
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex5, email = email) %>% 
@@ -153,7 +153,7 @@ r_diffprop1 <- newest_file_path('data_processed/ca_lyrs', file_regex5) %>%
 # absolute change of Qs and SEI from current to future
 
 file_regex5b <- file_regex %>% 
-  str_replace('9ClassTransition', 'diff') 
+  str_replace('9ClassTransition', 'diff2') # type 2
 
 if(download) {
   drive_ls_filtered(path = "gee", file_regex = file_regex5b, email = email) %>% 
@@ -162,7 +162,6 @@ if(download) {
 
 r_diff1 <- newest_file_path('data_processed/ca_lyrs', file_regex5b) %>% 
   rast()
-
 
 # * numGcmGood  ----------------------------------------------------
 
@@ -617,7 +616,7 @@ g <- wrap_plots(q_diffprop) +  sei_diff +
 
 # Figure 4 in manuscript
 jpeg(paste0(paste('figures/delta_maps/perc-abs-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
+                  rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
@@ -871,8 +870,39 @@ write_csv(area_numGcm3, paste0('data_processed/summary_stats/area-by-agreement_'
 # data checks -------------------------------------------------------------
 # this section can be deleted later
 
+# * fig 4 checks ----------------------------------------------------------
+# median proportion change of q1, q2, q3 is shown, as well as median sei change
+# b/ the median q's don't create the median sei, it is possible to have
+# increases in all the qs and decreases in SEI (in addition to this happening
+# b/ of sei smoothing). Trying to see how often that artifact occurs
+tol_q <- 0.05 # absolute proportion change considered 'significant' and shown on the map
+tol_sei <- 0.01 # absolute change in SEI shown on map
+q1 <- r_diffprop1[[lyrs2[1:3]]]
+s1 <- r_diff1[['Q5s_median_RCP45_2070-2100']]
+q2 <- q1; 
+s2 <- s1
+q2[abs(q2) < tol_q] <- 0
+s2[abs(s2) < tol_sei] <- 0
 
-# re-creating fig 3 -------------------------------------------------------
+# areas that show up as one direction in at least one of the q panels (and 
+# grey or that same direction in the others), but opposite direction in the other
+# panels
+pos2 <- s2 > 0 & ((q2[[1]] < 0 & q2[[2]] <= 0 & q2[[3]] <= 0)|
+                    (q2[[1]] <= 0 & q2[[2]] < 0 & q2[[3]] <= 0) |
+                    (q2[[1]] <= 0 & q2[[2]] <= 0 & q2[[3]] < 0))
+neg2 <- s2 < 0 & ((q2[[1]] > 0 & q2[[2]] >= 0 & q2[[3]] >= 0)|
+                    (q2[[1]] >= 0 & q2[[2]] > 0 & q2[[3]] >= 0) |
+                    (q2[[1]] >= 0 & q2[[2]] >= 0 & q2[[3]] > 0))
+any2 <- pos2 | neg2
+plot(any2, main = 'places with color reversals in fig 4 (panels a-c vs d)')
+
+names(any2) <- 'problem_spots'
+r <- c(q1, s1, any2)
+df <- as.data.frame(r)
+df2 <- df %>% 
+  filter(problem_spots)
+
+# * re-creating fig 3 -------------------------------------------------------
 # recreat rgb figure from components of fig 4.
 # this is an exercise to validate those to sets of figures
 
