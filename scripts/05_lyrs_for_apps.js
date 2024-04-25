@@ -424,7 +424,8 @@ var main = exports.main = function(args) {
     'qPropRed': qPropRed,
     'qPropMed2': qPropMed2, // type 2
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
-    'qPropRed2Img' : qPropIc.reduce(reducers), // type 2
+    'qPropRed2Img' : qPropRed2Img, // type 2
+    'qPropRed2': qPropRed2, // type 2
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
     'diffPcentRedImg': diffPcentRedImg, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
