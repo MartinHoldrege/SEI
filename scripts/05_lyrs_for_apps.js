@@ -383,6 +383,8 @@ var main = exports.main = function(args) {
     .rename('numGcmGood');
   
   // combining into single dictionary ----------------------------------------
+  // type 2 summaries are just the straight summary (e.g. median) of the values across gcm.
+  // type 1 are values that are associated with the summary of SEI (e.g. Q1 that corresponds to median SEI)
   var out = ee.Dictionary({
     'versionFull': versionFull,
     'root': root,
@@ -391,18 +393,20 @@ var main = exports.main = function(args) {
     'climCur': climCur,
     'cur': cur0,
     'climDeltaRed': climDeltaRed, // type 1 summary
-    'climDeltaRed2': climDeltaRed2, // type 2 summary (main 1 to use)
+    'climDeltaRed2Img': climDeltaRed2, // type 2 summary (main 1 to use)
     'p': p,
     'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division) (type 1)
-    'diffRed2': diffIc.reduce(reducers), // type 2 (image)
+    'diffRed2Img': diffIc.reduce(reducers), // type 2 (image)
     'diffIc': diffIc, // absolute change, for relavent bands, by GCM
-    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC)
+    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC) (type 1)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
+    'futRed2Img' : futIc.reduce(reducers),
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
+    'qPropRed2Img' : qPropIc.reduce(reducers), // type 2
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
     'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
     'diffPcentRedImg': diffPcentRedImg, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
