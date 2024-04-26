@@ -29,7 +29,7 @@ var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has ar
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // params ---------------------------------------------------------------
-var testRun = true; // lower resolution, for testing
+var testRun = false; // lower resolution, for testing
 var versionFull = 'vsw4-3-4';
 // repeat each element of the list the desired number of times
 var roots = SEI.repeatelemList(['fire0_eind1_c4grass1_co20_', 'fire1_eind1_c4grass1_co20_2311_', 
