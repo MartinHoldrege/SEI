@@ -234,7 +234,8 @@ var main = exports.main = function(args) {
 
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-
+  var futRed2 = futIc.select(diffBands2).reduce('reducers');
+  
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands)
@@ -276,7 +277,7 @@ var main = exports.main = function(args) {
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
-  var futC3Red = futRed.map(function(x) {
+  var futC3Red = futRed2.map(function(x) {
     return SEI.seiToC3(ee.Image(x).select('Q5s'))
       .rename('c3')
       .copyProperties(ee.Image(x));
