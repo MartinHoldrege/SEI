@@ -482,7 +482,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 # Figure 3 in manuscript
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v4.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v5.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
@@ -529,7 +529,7 @@ comb <- tmp + wrap_elements(triangle) +
 #comb
 
 jpeg(paste0('figures/climate_attribution/maps/rgb_by-scenario_', 
-            version, "_", root_c9, '_v2.jpg'), 
+            version, "_", root_c9, '_v3.jpg'), 
      width = 6.5, height = 6, units = 'in',
      res = 600)
 comb
@@ -657,7 +657,7 @@ for(Q in Qs) {
     theme(legend.position = 'right')
   
   jpeg(paste0('figures/delta_maps/perc-change_', Q, "_",
-              version, "_", root_c9, '_v2.jpg'),
+              version, "_", root_c9, '_v3.jpg'),
        width = 6, height = 6, units = 'in',
        res = 600)
   print(g)

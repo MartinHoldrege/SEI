@@ -105,7 +105,7 @@ g <- area_med_c9 %>%
   facet_wrap(~c9_name, scales = 'free_y') +
   labs(x = 'Scenario') 
 
-filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v3")
+filename <- paste0("c9_area_barplot_by-scenario-run", "_", version, "_v4")
 jpeg(paste0("figures/area/", filename, ".jpg"),     
      units = 'in', height = 6, width = 6, res = 600)
 g
@@ -199,7 +199,7 @@ g <- area_med_dir %>%
   base_c12() +
   guides(fill = guide_legend(nrow = 2))
 g
-jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, "_v3.jpg"),     
+jpeg(paste0("figures/area/c12_driver", "_", version, "_", rcp, "_", yr_save, "_v4.jpg"),     
      units = 'in', height = 7, width = 7, res = 600)
 g
 dev.off()

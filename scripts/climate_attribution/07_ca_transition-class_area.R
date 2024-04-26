@@ -109,7 +109,7 @@ if(nrow(tmp) > 0) {
   area2 <- area2 %>% 
     mutate(tmp = case_when(
       sei_dir == 'decreasing' & c9 %in% c(4, 7, 8) ~ 'increasing',
-      sei_dir == 'increasing' & c9 %in% c(2, 7, 8) ~ 'decreasing',
+      sei_dir == 'increasing' & c9 %in% c(2, 3, 6) ~ 'decreasing',
       TRUE ~ sei_dir),
       sei_dir = factor(tmp, levels(sei_dir))
       ) %>% 
