@@ -234,7 +234,7 @@ var main = exports.main = function(args) {
 
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-  var futRed2 = futIc.select(diffBands2).reduce('reducers');
+  var futRed2 = futIc.select(diffBands2).reduce(reducers);
   
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
