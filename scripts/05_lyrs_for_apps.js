@@ -234,7 +234,7 @@ var main = exports.main = function(args) {
 
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-  var futRed2 = futIc.select(diffBands2).reduce(reducers);
+  var futRed2Img = futIc.select(diffBands2).reduce(reducers);
   
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
@@ -277,7 +277,7 @@ var main = exports.main = function(args) {
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
-  var futC3Red = futRed2.map(function(x) {
+  var futC3Red = SEI.image2Ic(futRed2Img).map(function(x) {
     return SEI.seiToC3(ee.Image(x).select('Q5s'))
       .rename('c3')
       .copyProperties(ee.Image(x));
@@ -419,7 +419,7 @@ var main = exports.main = function(args) {
     'diffPropRed2': diffPropRed2, // type 2 (ic)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
-    'futRed2Img' : futIc.reduce(reducers),
+    'futRed2Img' : futRed2Img,
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
