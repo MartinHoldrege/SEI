@@ -179,7 +179,7 @@ base_c12 <- function() {
     facet_wrap(~c12_name, nrow = 3),
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
             legend.position = 'bottom'),
-    scale_fill_manual(values = c('red', 'green', 'blue', 'black'),
+    scale_fill_manual(values = c('red', 'green', 'blue', 'grey'),
                         name = "Primary driver of change"),
     geom_bar(aes(y = area_perc_med), stat = 'identity',
                position = position_dodge()),

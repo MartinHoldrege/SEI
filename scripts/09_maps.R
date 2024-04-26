@@ -444,25 +444,55 @@ map2(all_g, names(all_g), function(g, run) {
 })
 
 # RGB-maps ----------------------------------------------------------------
+# areas with below threshold changes in SEI will show up as gray on the map
+sei_thresh <- 0.01
+r_qprop2 <- r_qprop1
+for (lyr in names(r_qprop1)) {
+  period <- str_replace(lyr, 'Q\\draw_', '')
+  r <- r_diff1[[paste0('Q5s_median_', period)]]
+  r_qprop2[[lyr]][abs(r) < sei_thresh] <- 0
+}
 
 # converting to a 'rgb' stars object
-s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>% 
-  # for some reason code breaks when not using spatsample
-  spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
+s_rgb <- r_qprop2[[paste0('Q', 1:3, "raw_RCP45_2070-2100")]] %>% 
   #spatSample(c(100, 100), method = 'regular', as.raster = TRUE) %>% 
-  # subst(from = c(-Inf, Inf), to = NA) %>% 
   stars::st_as_stars() %>% 
   stars::st_rgb(maxColorValue = 1)
-  
+ 
+# replacing black with grey (these are areas with little or no change in SEI)
+s_rgb[[1]][s_rgb[[1]] == "#000000"] <- '#BEBEBE' 
+
 rgb <- plot_map2(s_rgb#,
                  #panel_tag = fig_letters[1]
                  )+
   scale_fill_identity()
 
+# creating additional legend (describing grey areas) using a dummy plot
+dummy <- data.frame(
+  x = 1,
+  y = 1,
+  group = 'Delta') %>% 
+  ggplot(aes(x, y, fill = group)) +
+  geom_col() +
+  scale_fill_manual(
+    values = c("Delta" = "#BEBEBE"),
+    labels = "|ΔSEI| < 0.01",
+    name = ""
+  )  +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 8),  # Smaller text in the legend
+        legend.key.size = unit(0.5, "cm"))
+legend <- ggpubr::get_legend(dummy)
+
 rgb2 <- rgb + 
   inset_element(triangle,
                 0.002, 0.002, 0.25, 0.2,
                 align_to = "panel",
+                clip = FALSE,
+                ignore_tag = TRUE) +
+  inset_element(legend,
+                0.78, 0.004, 0.97, 0.13,
+                align_to = 'panel',
                 clip = FALSE,
                 ignore_tag = TRUE)
 
@@ -482,7 +512,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 # Figure 3 in manuscript
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v5.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v6.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 600)
 comb
@@ -498,13 +528,14 @@ scenarios <- names(r_qprop1) %>%
 
 # creating rgb maps for each scenario
 rgb_l <- map2(scenarios, fig_letters[1:length(scenarios)], function(x, let) {
-  s_rgb <- r_qprop1[[paste0('Q', 1:3, "raw_", x)]] %>% 
+  s_rgb <- r_qprop2[[paste0('Q', 1:3, "raw_", x)]] %>% 
     #spatSample(c(500, 500), method = 'regular', as.raster = TRUE) %>% # for testing
     subst(from = c(-Inf, Inf),
           to = c(NA, NA)) %>% 
     stars::st_as_stars() %>% 
     stars::st_rgb(maxColorValue = 1)
-  
+  # replacing black with grey (these are areas with little or no change in SEI)
+  s_rgb[[1]][s_rgb[[1]] == "#000000"] <- '#BEBEBE' 
   rgb <- plot_map2(s_rgb#,
                    #panel_tag = fig_letters[1]
   )+
