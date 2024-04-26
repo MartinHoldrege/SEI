@@ -54,7 +54,7 @@ if (testRun) {
 var detDomDriver = function(x) {
     var q = ee.Image(x);
     var out = ee.Image(0)
-      .where(q.select('Q5s').abs().lt(ee.Image(0)), 0) // if there is little SEI change, consider there to by no dominant diriver
+      .where(q.select('Q5s').abs().lt(ee.Image(0.01)), 0) // if there is little SEI change, consider there to by no dominant diriver
       .where(q.select('Q1raw')
         .gt(q.select('Q2raw'))
         .and(q.select('Q1raw').gt(q.select('Q3raw'))),
