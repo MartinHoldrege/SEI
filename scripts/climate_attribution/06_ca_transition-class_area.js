@@ -9,6 +9,10 @@ numGcmGood categoreis (for core and grow the number of GCMs that project things 
 get better. This is done here (although it's not climate attribution) b/ to piggy back off
 the other code developed here)
 
+Notes:
+20240425 version included 'dominant' driver for all areas w/ > 0 SEI change,
+2024026 version considers the drivers to be 0 when |delta sei| < 0.01
+
 Author: Martin Holdrege
 
 Started: Nov 20, 2023
@@ -41,7 +45,7 @@ if (testRun) {
   var roots = ['fire1_eind1_c4grass1_co20_2311_']; // for testing
   var resolutionCompute = 10000; // resolution area is computed at. 
 } else {
-  var resolutionCompute = resolution
+  var resolutionCompute = resolution;
 }
 // functions ---------------------------------------------------------
 
@@ -50,7 +54,7 @@ if (testRun) {
 var detDomDriver = function(x) {
     var q = ee.Image(x);
     var out = ee.Image(0)
-      .where(q.select('Q1raw')
+        .where(q.select('Q1raw')
         .gt(q.select('Q2raw'))
         .and(q.select('Q1raw').gt(q.select('Q3raw'))),
         1) // sagebrush dominant driver of change
@@ -62,6 +66,7 @@ var detDomDriver = function(x) {
         .gt(q.select('Q1raw'))
         .and(q.select('Q3raw').gt(q.select('Q2raw'))),
         3)// annuals
+      .where(q.select('Q5s').abs().lt(ee.Image(0.01)), 0) // if there is little SEI change, consider there to by no dominant diriver
       .toByte()
       .rename('driver')
       .copyProperties(q);
@@ -78,20 +83,6 @@ var detDir = function(x) {
       .rename('dirQ5s')
       .copyProperties(img);
 };
-
-// // convert bands, with names of GCMs to individual
-// // images in image collection with GCM property
-// var bandsToGcmIc = function(x, newBandName) {
-//   var list = ee.Image(x)
-//     .bandNames()
-//     .map(function(band) {
-//       return c9Reda.select([band])
-//         .rename(newBandName)
-//         .set('GCM', ee.String(band));
-//     });
-//   return ee.ImageCollection.fromImages(list);
-// };
-
 
 // dictionary of data objections --------------------------------------
 
@@ -110,21 +101,37 @@ for (var i = 0; i < roots.length; i++) {
   }); // returns a dictionary
   print(i);
   
+  // creating image collection where the reduced values (low, median, and high) estimates
+  // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
+  // and summaries will be made for all. 
+  // these low, median, high values are pixel wise
+
+  // direction of change of SEI--1 = decrease, 2 = increase (or no change)
+  var diffRed = ee.ImageCollection(d.get('diffRed2')) // change in SEI 
+    .select('Q5s');
+    
+  var diffIcb = ee.ImageCollection(d.get('diffIc'))
+    .select('Q5s')
+    // merging in pixel wise
+    .merge(diffRed.select('Q5s'));
+
+  var dirQ5s = diffIcb.map(detDir);
+  
   // which Q dominant driver of change ---------------------------------
   
   // image collection of 3 banded images where bands are the proportion change 
   // of Q1-Q3, and each image is for a different GCM.
   // if proportion change isn't in direction of change in q3y then treated as 0 change
   var qIc = ee.ImageCollection(d.get('qPropIc'));
-  var qRed = ee.ImageCollection(d.get('qPropRed')); // same but pixelwise values of low, median, high
+  var qRed = ee.ImageCollection(d.get('qPropRed2')); // same but pixelwise values of low, median, high
   
   // print(qIc)
   // one image per GCM (& reducere), each image provides the dominant driver of change (1, 2 or 3), or 0 which is non are dominant
-  var driver2 = qIc.merge(qRed).map(detDomDriver);
+  var driver2 = qIc
+    .merge(qRed)
+    .combine(diffIcb)
+    .map(detDomDriver);
   
-  var diffRed = ee.ImageCollection(d.get('diffRed')) // change in SEI 
-    .select('Q5s');
-    
 /*  Map.addLayer(driver2.filter(ee.Filter.eq('GCM', 'median')).first().updateMask(SEI.mask), 
     {min: 0, max: 4, palette:['grey', 'red', 'green', 'blue', 'grey']}, 
     'median driver');*/
@@ -134,7 +141,7 @@ for (var i = 0; i < roots.length; i++) {
   
   var eco = ee.Image().paint(SEI.WAFWAecoregions, 'ecoregionNum')
     .updateMask(SEI.mask);
-    
+  
   var bandsRed = ee.List(['low', 'median', 'high']);
   
   // first digit ecoregion, 2nd 9 class transition (last digit is 0, and is 'empty')
@@ -154,43 +161,28 @@ for (var i = 0; i < roots.length; i++) {
       return out;
   });
   
-  // creating image collection where the reduced values (low, median, and high) estimates
-  // are called 'GCMs' so that this IC can be combined witht the actual GCM level estimates,
-  // and summaries will be made for all. 
-  // these low, median, high values are pixel wise
 
-  // direction of change of SEI--1 = decrease, 2 = increase (or no change)
-
-  var diffIcb = ee.ImageCollection(d.get('diffIc'))
-    .select('Q5s')
-    // merging in pixel wise
-    .merge(diffRed.select('Q5s'));
-
-  var dirQ5s = diffIcb.map(detDir);
-   
-
-   
   // making the 3rd digit  which PFT most dominant driver of change
   // and 4th digit (which direction SEI changed--this is relevant for 'stable' classes--still want to know
   // which direction the change was)
   var ecoC9comb = ecoC9.combine(driver2).combine(dirQ5s);
   
-    var index = ecoC9comb
-    //.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
-    .map(function(x) {
-      var image = ee.Image(x);
-      var out = image.select('ecoC9')
-        .add(image.select('driver').unmask()) // for the reduced images in collection for some reason are masked, so making all the same
-        .multiply(10)
-        .add(image.select('dirQ5s'))
-        .updateMask(SEI.mask)
-        .rename('index')
-        .toInt()
-        .copyProperties(ee.Image(x));
-      return out;
-    });
-  
-  // Map.addLayer(index.filter(), {palette: 'blue'}, 'index');
+  var index = ecoC9comb
+  //.filter(ee.Filter.inList("GCM", ee.List(SEI.GCMList)))
+  .map(function(x) {
+    var image = ee.Image(x);
+    var out = image.select('ecoC9')
+      .add(image.select('driver').unmask()) // for the reduced images in collection for some reason are masked, so making all the same
+      .multiply(10)
+      .add(image.select('dirQ5s'))
+      .updateMask(SEI.mask)
+      .rename('index')
+      .toInt()
+      .copyProperties(ee.Image(x));
+    return out;
+  });
+   
+  //Map.addLayer(index.first(), {palette: 'blue'}, 'index');
   // Map.addLayer(SEI.mask, {palette: 'grey'}, 'mask')
   // calculate area for unique values of the spatial index ----------------
   
@@ -238,7 +230,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240419';
+var s = versionFull + '_20240426'; 
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {

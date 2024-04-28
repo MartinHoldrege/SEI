@@ -546,6 +546,111 @@ exports.maskSeiRedFactory = function(redImage, reducerName, bandNames, renameBan
   return f;
 };
 
+
+/*
+  Functions for converting values in images in an image collection to their percentile (pixel-wise)
+*/
+// ideally this function would be converted to all client side
+
+/**
+ * create a list of quantiles that correspond to ordered list of n numbers
+ * @param {ee.Number} n the number of image in the imaage collection collection where each image contains a unique value of propertyName
+ * @return {ee.List} n quantiles
+*/
+var createPercentileList = function(n) {
+  var N = ee.Number(n).subtract(1);
+  var seq = ee.List.sequence(0, N);
+  var pcents = seq.map(function(x) {
+    var i = ee.Number(x);
+    
+    return i.divide(N)
+      .multiply(10000).round().divide(100); // doing this instead of just *100 so can round to do decimal places
+      // this may still be imperfect b/ some pcents will be rounded down which may cause inaccurate outputs
+  });
+  return pcents;
+};
+
+/**
+ * create the arguments needed to be passed to ee.Image.expression
+ * @param {ee.List} percentileList output from createPercentileList
+ * @param {ee.Image} pcentImage an image that is by percentiles reducer, with 
+ * the bands that provided percentiles corresponding to percentileList
+ * @return {dictionary} arguments for the expression method. This
+ * 
+*/
+var createExpressionArgs = function(percentileList, pcentImage) {
+  // need percentile names b/ the percentile function names bands in a rounded way
+  // so they are not identical to the actual percentile
+  var pNames = pcentImage.bandNames().getInfo();
+  
+  var l = percentileList;
+  var expression = '';
+  var map = {};
+  
+  // looping over each percentile too add it to the expression arguments
+  for (var i = 0; i < l.length; i++) {
+    var p = l[i];
+    var pName = pNames[i];
+    if(i === 0) {
+      var string = 'b("pcent") == ' + pName + ' ? ' + p/100 + ' : ';
+    } else {
+      var string = 'b("pcent") <= ' + pName + ' ? ' + (p/100) + ' : ';
+    }
+    var expression = expression + string;
+    // small number added, so that the <= is ensured
+    map[pName] = pcentImage.select(pName).add(ee.Image(0.0001));
+  }
+  var expression = expression + ' 1.0';  
+  return {expression: expression, map: map};
+};
+
+/**
+ * function that converts the values
+ * of images in an image collection to their quantile (on a pixel-wise basis)
+ * @param {ee.List} ic the image collection (can just contain one band per image)
+ * @param {ee.Image} pcentImage an image that is by percentiles reducer, with 
+ * the bands that provided percentiles corresponding to percentileList
+ * @return {imageCollection} values of the images correspond to their pixelwise quantile (0-1)
+ * Note--values will not be correct if a given grid-cell has masked values in some of the images
+ * 
+*/
+var assignPcent = function(ic) {
+  var n = ic.size(); // number of images, this function will fall apart (in part b/ of lyr naming) if n >= 100)
+  var lServ = createPercentileList(n);
+  var l = lServ.getInfo(); // not good practice (client/server)
+  var pcentImage = ic.reduce(ee.Reducer.percentile({percentiles: lServ, maxRaw: 100}))
+    // removing leading part of bandname so works with any normal named band
+    .regexpRename('[[:alpha:]]*_', '') 
+    .toFloat();
+    
+  // create arguments for expression 
+  var args = createExpressionArgs(l, pcentImage);
+  
+  var f = function(image) {
+    var oldNames = ee.Image(image).bandNames();
+    var out = ee.Image(image)
+      .rename('pcent') // args have this band name hard coded
+      .expression(args)
+      .toFloat();
+    return ee.Image(out).rename(oldNames).copyProperties(ee.Image(image));
+  };
+  return ic.map(f);
+};
+
+exports.assignPcent = assignPcent;
+
+/* // testing assingPcent()
+
+var startDate = ee.Date('2020-01-01');
+var ic = ee.ImageCollection(ee.List.sequence(0, 12).map(function (i) {
+  return ee.Image.constant(i).toFloat()
+    .rename('constant') // Ensure all images have the same band name
+    .set('system:time_start', startDate.advance(i, 'month').millis());
+}));
+var pcentIc = assignPcent(ic);
+Map.addLayer(pcentIc.median(), {}, 'pcent')
+*/ // end testing
+
 /*
  
  Datasets 

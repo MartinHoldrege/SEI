@@ -68,13 +68,10 @@ for(var i = 0; i<rcpList.length; i++) {
   
   var c9_fire0 = ee.Image(d_fire0.get('p')).select('p6_c9Med');
    
-  var tst = ee.ImageCollection(d_fire0.get('diffRed'))
-  //print(tst)
-  // print(SEI.ic2Image(tst, 'GCM'))
-  var dQ5s_fire0  = SEI.ic2Image(ee.ImageCollection(d_fire0.get('diffRed')), 'GCM')
+  var dQ5s_fire0  = SEI.ic2Image(ee.ImageCollection(d_fire0.get('diffRed2')), 'GCM')
     .select('Q5s_median'); // median change in SEI
    
-  var dQ5s_fire1  = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffRed')), 'GCM')
+  var dQ5s_fire1  = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffRed2')), 'GCM')
     .select('Q5s_median'); // median change in SEI
   
   // where are c9 transition different? (1 = same transition & same SEI
@@ -91,7 +88,7 @@ for(var i = 0; i<rcpList.length; i++) {
   
   var c9_co21 = ee.Image(d_co21.get('p')).select('p6_c9Med');
   
-  var dQ5s_co21 = SEI.ic2Image(ee.ImageCollection(d_co21.get('diffRed')), 'GCM')
+  var dQ5s_co21 = SEI.ic2Image(ee.ImageCollection(d_co21.get('diffRed2')), 'GCM')
     .select('Q5s_median');
   
   // where are c9 transition different? 
@@ -105,7 +102,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // to show where habitat classification is different when c4 grass expansion is not allowed
   
   var c9_grass0 = ee.Image(d_grass0.get('p')).select('p6_c9Med');
-  var dQ5s_grass0 = SEI.ic2Image(ee.ImageCollection(d_grass0.get('diffRed')), 'GCM')
+  var dQ5s_grass0 = SEI.ic2Image(ee.ImageCollection(d_grass0.get('diffRed2')), 'GCM')
     .select('Q5s_median');
   
   // where are c9 transition different? 
@@ -117,7 +114,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // proportion change layers -------------------------------------
   // (proportion change from current to future conditions)
   
-  var diffProp = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffPropRed')), 'GCM')
+  var diffProp = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffPropRed2')), 'GCM')
     .select('Q\\draw_median', 'Q5s_median')
     .regexpRename('$', '_' + rcp_yr)
   
@@ -127,7 +124,7 @@ for(var i = 0; i<rcpList.length; i++) {
   // absolute change layers -------------------------------------
   // (absolute change from current to future conditions)
   
-  var diff = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffRed')), 'GCM')
+  var diff = SEI.ic2Image(ee.ImageCollection(d_fire1.get('diffRed2')), 'GCM')
     .select('Q\\draw_median', 'Q5s_median')
     .regexpRename('$', '_' + rcp_yr)
   
@@ -138,7 +135,7 @@ for(var i = 0; i<rcpList.length; i++) {
   
   // this in now based on median SEI (and associated changes in Q etc. )
   // print(d_fire1.get('qPropMed'))
-  var qPropMeanComb = ee.Image(d_fire1.get('qPropMed'))
+  var qPropMeanComb = ee.Image(d_fire1.get('qPropMed2'))
     .regexpRename('$', '_' + rcp_yr)
     .addBands(qPropMeanComb);
  
@@ -241,7 +238,7 @@ Export.image.toDrive({
 // proportional changes in Q & SEI
 Export.image.toDrive({
   image: diffPropComb,
-  description: outString('diffProp', root_fire1),
+  description: outString('diffProp2', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
@@ -253,7 +250,7 @@ Export.image.toDrive({
 // absolute changes in Q & SEI
 Export.image.toDrive({
   image: diffComb,
-  description: outString('diff', root_fire1),
+  description: outString('diff2', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,
@@ -266,7 +263,7 @@ Export.image.toDrive({
 // q prop (for RGB maps)
 Export.image.toDrive({
   image: qPropMeanComb,
-  description: outString('qPropMed', root_fire1),
+  description: outString('qPropMed2', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
   scale: resolutionOut,

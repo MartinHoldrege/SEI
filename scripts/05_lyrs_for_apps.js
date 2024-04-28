@@ -21,7 +21,7 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-//var args = {root: 'fire1_eind1_c4grass1_co20_2311_'}
+// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'};
 
 // helper functions --------------------------------------------------------
 
@@ -70,7 +70,44 @@ var correctedProp = function(x, cur) {
     return absPropNorm.copyProperties(ee.Image(x));
   };
 
+/**
+ * create funtion that creates an image of type 1 summaries (i.e. values corresponding to low median, high SEI)
+ * @param {ee.imageCollection} q5sc collection where each image  is q5s for a given GCM
+ * @param {ee.Image}  Q5sRed reduced (low, median, high) SEI
+ * @return {ee.Image}
+*/
+var redImgFactory = function(q5sIc, Q5sRed) {
+  
+  // ic is the collection to calculate the type 1 summaries of
+  var f = function(ic) {
+    var bandNames = ic.first().bandNames();
+    var maskMedian = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_median'), 'median', bandNames, true);
+    var maskLow = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_low'), 'low', bandNames, true);
+    var maskHigh = SEI.maskSeiRedFactory(Q5sRed.select('Q5s_high'), 'high', bandNames, true);
+    var ic = ic.combine(q5sIc);
+    var med = ic
+      .map(maskMedian)
+      // grabbing the first value (instead of mean/median so can gaurentee values at a pixel come from
+      // specific GCM
+      .reduce(ee.Reducer.firstNonNull());
 
+    var low = ic
+      .map(maskLow)
+      .reduce(ee.Reducer.firstNonNull());
+      
+    var high = ic
+      .map(maskHigh)
+      .reduce(ee.Reducer.firstNonNull());
+  
+    var out = med
+      .addBands(low)
+      .addBands(high)
+      .regexpRename('_first$', '');
+      
+    return out;
+  };
+  return f;
+};
 
 // the main function, arguments are the user defined variables, passed as a dictionary
 // the dictionary items can be any of root, RCP, epoch, versionFull, and resolution
@@ -92,20 +129,6 @@ var main = exports.main = function(args) {
   // output (and input) resolution
   if (resolution === undefined){var resolution = 90}
   
-  
-  // prepare climate data -----------------------------------------------------
-  // This is interpolated climate data from STEPWAT (historical and future) (i.e.,
-  // this data only has 200 unique values);
-  
-  var climCur = clim.loadHistoricalSwClim();
-  
-  var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image per GCM
-  
-  // change in climate variables
-  var climDelta = climFut.map(function(image) {
-    return ee.Image(image).subtract(climCur);
-  });
-  
   var n = SEI.GCMList.length - 1;
   // percentiles of the 2nd lowest (ranked) GCM and 2nd highest
   var pcents = [1/n*100, (n-1)/n*100];
@@ -116,10 +139,6 @@ var main = exports.main = function(args) {
     reducer2: ee.Reducer.median(),
     sharedInputs: true
   });
-  
-  // 'reduced' delta MAP and MAT (i.e., pixelwise low, median, and median across GCMs)
-  var climDeltaRed = climDelta.reduce(reducers); 
-  
   
   // read in data product  -------------------------------------------------
   
@@ -133,7 +152,6 @@ var main = exports.main = function(args) {
   // * robust change c9
   // considering robust if all but 1 GCM agree on future classification
   var whereNotRobust = p.select('p3_numAgree').lt(ee.Image(SEI.GCMList.length - 1));
-  
   
   // GCM level results -------------------------------------------------------------
   
@@ -204,42 +222,20 @@ var main = exports.main = function(args) {
   var seiMed = futIc
     .select('Q5s')
     .reduce(reducers);
-   
+
+  var createRedImg = redImgFactory(futIc.select('Q5s'), seiMed);  // image to calculate type 1 summaries (values associated w/ low, median, high SEI)
   var bandNames = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw'];
-  var bandNames2 = bandNames
-  bandNames2.push('Q3y')
-  // function that masks image if SEI is not equal to the median SEI
-  var maskMedian = SEI.maskSeiRedFactory(seiMed.select('Q5s_median'), 'median', bandNames2, true);
-  var maskLow = SEI.maskSeiRedFactory(seiMed.select('Q5s_low'), 'low', bandNames2, true);
-  var maskHigh = SEI.maskSeiRedFactory(seiMed.select('Q5s_high'), 'high', bandNames2, true);
-  
-  var futIcTmp = futIc
-    .select(diffBands2);
-  
-  var qMed = futIcTmp
-    .map(maskMedian)
-    // grabbing the first value (instead of mean/median so can gaurentee q values at a pixel come from
-    // specific GCM
-    .reduce(ee.Reducer.firstNonNull());
+  var bandNames2 = bandNames;
+  bandNames2.push('Q3y');
 
-  var qLow = futIcTmp
-    .map(maskLow)
-    .reduce(ee.Reducer.firstNonNull());
-    
-  var qHigh = futIcTmp
-    .map(maskHigh)
-    .reduce(ee.Reducer.firstNonNull());
-
-  var qComb = qMed
-    .addBands(qLow)
-    .addBands(qHigh)
-    .regexpRename('_first$', '');
+  var qComb = createRedImg(futIc.select(bandNames2));
 
   var qFutRed = SEI.image2Ic(qComb, 'GCM');
 
   var futRed = SEI.image2Ic(seiMed, 'GCM')
     .combine(qFutRed);
-
+  var futRed2Img = futIc.select(diffBands2).reduce(reducers);
+  
   // differences relative to current conditions for relavent bands
   var diffIc = futIc.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands)
@@ -248,6 +244,19 @@ var main = exports.main = function(args) {
       .copyProperties(ee.Image(image));
   });
   
+  var diffRed2Img = diffIc.reduce(reducers); // type 2 (image)
+  var diffRed2 = SEI.image2Ic(diffRed2Img, 'GCM'); // type 2 Ic
+  
+  var diffPropRed2Img = diffIc.map(function(image) {
+    return ee.Image(image)
+      .select(diffBands)
+      // subtract current conditions
+      .divide(cur1.select(diffBands)) // this was previously incorrect (multiply)
+      .copyProperties(ee.Image(image));
+  }).reduce(reducers);
+  
+  var diffPropRed2 = SEI.image2Ic(diffPropRed2Img, 'GCM');
+
   var diffRed = futRed.map(function(image) { // for each GCM
     return ee.Image(image).select(diffBands2)
       // subtract current conditions
@@ -268,7 +277,7 @@ var main = exports.main = function(args) {
   // calculating 'worst and best' case c9
   
   // first recalculating c3 for low, median, high SEI
-  var futC3Red = futRed.map(function(x) {
+  var futC3Red = SEI.image2Ic(futRed2Img).map(function(x) {
     return SEI.seiToC3(ee.Image(x).select('Q5s'))
       .rename('c3')
       .copyProperties(ee.Image(x));
@@ -298,6 +307,24 @@ var main = exports.main = function(args) {
       
       return ee.Image(out).regexpRename('c3', 'c9');
   });
+  
+    // prepare climate data -----------------------------------------------------
+  // This is interpolated climate data from STEPWAT (historical and future) (i.e.,
+  // this data only has 200 unique values);
+  
+  var climCur = clim.loadHistoricalSwClim();
+  
+  var climFut = clim.loadFutureSwClim(RCP, epoch); // image collection, one image per GCM
+  
+  // change in climate variables
+  var climDelta = climFut.map(function(image) {
+    return ee.Image(image).subtract(climCur).copyProperties(ee.Image(image));
+  });
+  
+    // 'reduced' delta MAP and MAT (i.e., pixelwise low, median, and median across GCMs)
+  var climDeltaRed2 = climDelta.reduce(reducers); // 'type 2
+  
+  var climDeltaRed = createRedImg(climDelta);
 
   // contributions by each Q compontent to changes --------------------------------------
   // calculated but taking the proportional change in Q (if it is in the same direction as the change in SEI)
@@ -308,13 +335,38 @@ var main = exports.main = function(args) {
   };
   var qPropRed = diffRed.map(correctPropTmp);
   var qPropIc = diffIc.map(correctPropTmp);
-  
+  var qPropRed2Img = qPropIc.reduce(reducers)
+  var qPropRed2 = SEI.image2Ic(qPropRed2Img, 'GCM') // type 2 summary
   // The proportion that each q component contributed to the change in sei, for the 
   // median SEI (pixelwise)
   var qPropMed = qPropRed
     .filter(ee.Filter.eq('GCM', 'median'))
     .first(); // just extracting the image
-    
+  
+  var qPropMed2 = qPropRed2
+    .filter(ee.Filter.eq('GCM', 'median'))
+    .first(); // just extracting the image
+  // determine which GCM is associated w/ median SEI --------------------------------------
+  var gcmNumIc = futIc.map(function(x) {
+    var index = ee.Image(x).get('system:index');
+    var out = ee.Image(ee.Number.parse(index).add(1))
+      .copyProperties(ee.Image(x));
+     return ee.Image(out).rename('gcmNum')
+      .mask(SEI.mask)
+      .toFloat();
+  });
+  
+  var gcmNum = createRedImg(gcmNumIc);
+  
+  // determine what percentiles correspond to median etc SEI ----------------------------------------
+  
+  // convert pixel values to their pixel-wise quantile/percentile [pixels take on values between 0-1]
+  var pcentQ1 = SEI.assignPcent(diffIc.select('Q1raw'));
+  var pcentQ2 = SEI.assignPcent(diffIc.select('Q2raw'));
+  var pcentQ3 = SEI.assignPcent(diffIc.select('Q3raw'));
+  var diffPcentIc = pcentQ1.combine(pcentQ2).combine(pcentQ3);
+  var diffPcentRedImg = createRedImg(diffPcentIc);
+
   // climate confidence layers -----------------------------------
   // Layer that will inform confidence that a area will have worse (or not) habitat classification in the future
   // for areas that are currently core the the number of GCMs that agree that will be core in the futre
@@ -347,6 +399,8 @@ var main = exports.main = function(args) {
     .rename('numGcmGood');
   
   // combining into single dictionary ----------------------------------------
+  // type 2 summaries are just the straight summary (e.g. median) of the values across gcm.
+  // type 1 are values that are associated with the summary of SEI (e.g. Q1 that corresponds to median SEI)
   var out = ee.Dictionary({
     'versionFull': versionFull,
     'root': root,
@@ -354,19 +408,29 @@ var main = exports.main = function(args) {
     'epoch': epoch,
     'climCur': climCur,
     'cur': cur0,
-    'climDeltaRed': climDeltaRed,
+    'climDeltaRed': climDeltaRed, // type 1 summary
+    'climDeltaRed2Img': climDeltaRed2, // type 2 summary (main 1 to use)
     'p': p,
-    'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division)
-    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC)
+    'diffRed': diffRed, // absolute change (of Q1-Q5, sei etc) (this is an ic, same as diffPropRed, but no division) (type 1)
+    'diffRed2Img': diffRed2Img, // type 2 (image)
+    'diffRed2': diffRed2, // type 2 (ic)
+    'diffIc': diffIc, // absolute change, for relavent bands, by GCM
+    'diffPropRed': diffPropRed, // proportion change, for relavent bands, by reducer (this is an IC) (type 1)
+    'diffPropRed2': diffPropRed2, // type 2 (ic)
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
-    'diffIc': diffIc, // absolute change, for relavent bands, by GCM
+    'futRed2Img' : futRed2Img,
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
+    'qPropMed2': qPropMed2, // type 2
     'qPropIc': qPropIc, // image collection of climate attribution (proportion change, in direction of q3y)
+    'qPropRed2Img' : qPropRed2Img, // type 2
+    'qPropRed2': qPropRed2, // type 2
     'c9Ic': c9Ic, // image collection (one image per GCM) of c9 transitions
-    'numGcmGood': numGoodC3 // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    'numGcmGood': numGoodC3, // image where first digit is c3 class, 2nd digit (for cores and grows) is number of GCMs with positive outlooks
+    'diffPcentRedImg': diffPcentRedImg, // the percentiles of difference values (of Q1-Q3) that correspond to the low, median, high SEI (i.e. type 1 percentiles)
+    'gcmNum': gcmNum // the number of GCM (1-13) associated with low, median, high SEI (type 1)
     // 'curC3': curC3
   });
   
@@ -378,10 +442,13 @@ var main = exports.main = function(args) {
 
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
-// print(d)
+var img = ee.Image(d.get('diffPcentRedImg'));
+Map.addLayer(img.select('Q1raw_median'), {}, 'pcent')
+Map.addLayer(ee.Image(d.get('gcmNum')).select('gcmNum_median'), {min: 1, max: 13}, 'gcmNum')
 var img = ee.Image(d.get('qPropMed'))
 // var dir = ee.ImageCollection(d.get('diffRed')).filter(ee.Filter.eq('GCM', 'median')).first().select('Q5s')
 var dir = ee.ImageCollection(d.get('diffIc')).first().select('Q5s')
+// print(dir)
 // var c9 = ee.ImageCollection(d.get('c9Red')).filter(ee.Filter.eq('GCM', 'median')).first()
 var c9 = ee.ImageCollection(d.get('c9Ic')).first()
 var problem = ee.Image(0)
