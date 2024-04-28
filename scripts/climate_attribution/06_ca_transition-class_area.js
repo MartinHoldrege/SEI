@@ -54,8 +54,7 @@ if (testRun) {
 var detDomDriver = function(x) {
     var q = ee.Image(x);
     var out = ee.Image(0)
-      .where(q.select('Q5s').abs().lt(ee.Image(0.01)), 0) // if there is little SEI change, consider there to by no dominant diriver
-      .where(q.select('Q1raw')
+        .where(q.select('Q1raw')
         .gt(q.select('Q2raw'))
         .and(q.select('Q1raw').gt(q.select('Q3raw'))),
         1) // sagebrush dominant driver of change
@@ -67,6 +66,7 @@ var detDomDriver = function(x) {
         .gt(q.select('Q1raw'))
         .and(q.select('Q3raw').gt(q.select('Q2raw'))),
         3)// annuals
+      .where(q.select('Q5s').abs().lt(ee.Image(0.01)), 0) // if there is little SEI change, consider there to by no dominant diriver
       .toByte()
       .rename('driver')
       .copyProperties(q);
