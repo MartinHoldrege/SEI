@@ -20,7 +20,7 @@ theme_set(theme_custom1())
 
 # params ------------------------------------------------------------------
 
-download <- TRUE # try and download the newest version of the file?
+download <- FALSE # try and download the newest version of the file
 version <- 'vsw4-3-4'
 
 test_run <- FALSE

@@ -514,7 +514,7 @@ comb <- wrap_elements(full = rgb2) +
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
                   root_c9, rcp_c9, years_c9, sep = "_"), '_v6.jpg'), 
      width = 7.5, height = 5, units = 'in',
-     res = 600)
+     res = 800)
 comb
 dev.off()
 
