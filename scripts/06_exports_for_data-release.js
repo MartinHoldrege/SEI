@@ -18,8 +18,8 @@
 
 // dependencies ---------------------------------------------
 
-var SEI = require("users/mholdrege/SEI:src/SEIModule.js");
-var lyrMod = require("users/mholdrege/SEI:scripts/05_lyrs_for_apps.js");
+var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
+var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 
 // User-defined variables -----------------------------------------------------
  
@@ -98,7 +98,7 @@ for (var j = 0; j<rootList.length; j++) {
     
     // extract future SEI layer
     
-    var seiIc = ee.ImageCollection(d.get('futRed'))
+    var seiIc = ee.ImageCollection(d.get('futRed2'))
       .select('Q5s') // image collection for low, median, high
       .map(function(x) {
         return ee.Image(x).rename('SEI_');
@@ -130,7 +130,7 @@ for (var j = 0; j<rootList.length; j++) {
     // Here exporting the median future Q1, Q2, and Q3 (these are the Q 
     // values that correspond to median etc. future SEI)
  
-    var futRedQ = ee.ImageCollection(d.get('futRed'))
+    var futRedQ = ee.ImageCollection(d.get('futRed2'))
       .select(['Q1raw', 'Q2raw', 'Q3raw'])
       .map(function(x) {
         return ee.Image(x).regexpRename('raw$', '');
