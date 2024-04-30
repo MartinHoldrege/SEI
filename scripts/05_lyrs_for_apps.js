@@ -420,6 +420,7 @@ var main = exports.main = function(args) {
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'futRed2Img' : futRed2Img,
+    'futRed2': SEI.image2Ic(futRed2Img, 'GCM'),
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
