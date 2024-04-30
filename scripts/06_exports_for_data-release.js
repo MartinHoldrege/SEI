@@ -24,10 +24,10 @@ var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 // User-defined variables -----------------------------------------------------
  
 // which layers to export
-var exportSei = false; // whether to export the continous SEI layers (future)
+var exportSei = true; // whether to export the continous SEI layers (future)
 var exportSeiCur = false; // current SEI
 var exportC9 = false;
-var exportQ = false; // future Q1-Q3
+var exportQ = true; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -110,11 +110,11 @@ for (var j = 0; j<rootList.length; j++) {
     var s = 'SEI_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
     
     if (exportSei) {
-    Export.image.toCloudStorage({
+    
+    Export.image.toDrive({
       image: seiImage,
       description: s,
-      fileNamePrefix: 'SEI/' + s,
-      bucket: 'usgs-gee-drylandecohydrology',
+      folder: 'SEI',
       maxPixels: 1e13, 
       scale: resolution,
       region: SEI.region,
@@ -123,6 +123,20 @@ for (var j = 0; j<rootList.length; j++) {
       formatOptions: {
         cloudOptimized: false
     }
+    
+    // Export.image.toCloudStorage({
+    //   image: seiImage,
+    //   description: s,
+    //   fileNamePrefix: 'SEI/' + s,
+    //   bucket: 'usgs-gee-drylandecohydrology',
+    //   maxPixels: 1e13, 
+    //   scale: resolution,
+    //   region: SEI.region,
+    //   crs: SEI.crs,
+    //   fileFormat: 'GeoTIFF',
+    //   formatOptions: {
+    //     cloudOptimized: false
+    // }
     });
     }
     
@@ -142,7 +156,7 @@ for (var j = 0; j<rootList.length; j++) {
     var s = 'Q_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm';  
     if (exportQ) {
     
-      Export.image.toDrive({
+    Export.image.toDrive({
       image: qComb,
       description: s,
       folder: 'SEI',
@@ -193,20 +207,31 @@ var root = 'fire1_eind1_c4grass1_co20_2311_';
     var s = 'c9_' + versionFull + '_' + root + rcp_yr + '_' + resolution + 'm'; 
     
     if (exportC9) {
-    Export.image.toCloudStorage({
+      
+    Export.image.toDrive({
       image: c9,
       description: s,
-      fileNamePrefix: 'SEI/' + s,
-      bucket: 'usgs-gee-drylandecohydrology',
+      folder: 'SEI',
       maxPixels: 1e13, 
       scale: resolution,
       region: SEI.region,
       crs: SEI.crs,
-      fileFormat: 'GeoTIFF',
-      formatOptions: {
-        cloudOptimized: false
-      }
-    });
+      fileFormat: 'GeoTIFF'
+    });  
+    // Export.image.toCloudStorage({
+    //   image: c9,
+    //   description: s,
+    //   fileNamePrefix: 'SEI/' + s,
+    //   bucket: 'usgs-gee-drylandecohydrology',
+    //   maxPixels: 1e13, 
+    //   scale: resolution,
+    //   region: SEI.region,
+    //   crs: SEI.crs,
+    //   fileFormat: 'GeoTIFF',
+    //   formatOptions: {
+    //     cloudOptimized: false
+    //   }
+    // });
     }
     
 
