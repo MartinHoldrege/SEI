@@ -185,7 +185,7 @@ q_files <- list.files(file.path(path, 'temp_not_cog'),
                       '.tif$')
 names(q_files) <- q_files
 
-map(q_files[16], function(name) {
+map(q_files, function(name) {
   r <- rast(file.path(path, 'temp_not_cog', name))
   writeRaster(r, file.path(path, 'data_publication2', name),
               filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
@@ -205,3 +205,4 @@ new_names <- basename(old_names) %>%
 
 file.rename(from = old_names,
             to = file.path(path, 'data_publication2', new_names))
+
