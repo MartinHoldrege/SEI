@@ -283,7 +283,7 @@ for (var j=0; j<RCPList.length; j++) {
   // and the original SEI calculated SEI (possibly due to data type, or projection differences at time of smoothing?)
   // these rounding differences lead to movement of the 'edge' of what is classified as core, growth, other, so they 
   // are important. The downside of this correction, is that it can lead to (very slightly) negative SEI values
-  // 
+  // these are fixed in the lyrs_for_app.js script
   var Q5s_delta = outputByGCMTemp.select('Q5s_.*').subtract(outputByGCM.select('Q5s_control'));
   var Q5s_corrected = Q5s_delta.add(cur.select('Q5s'));
 
