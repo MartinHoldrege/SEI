@@ -27,7 +27,7 @@ var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
 var exportSei = true; // whether to export the continous SEI layers (future)
 var exportSeiCur = false; // current SEI
 var exportC9 = false;
-var exportQ = true; // future Q1-Q3
+var exportQ = false; // future Q1-Q3
 var resolution = 90;     // output (and input) resolution, 30 m eventually
 
 var versionFull = 'vsw4-3-4';
@@ -101,7 +101,7 @@ for (var j = 0; j<rootList.length; j++) {
     var seiIc = ee.ImageCollection(d.get('futRed2'))
       .select('Q5s') // image collection for low, median, high
       .map(function(x) {
-        return ee.Image(x).rename('SEI_');
+        return ee.Image(x).rename('SEI');
     });
       
     var seiImage = SEI.ic2Image(seiIc, 'GCM')
