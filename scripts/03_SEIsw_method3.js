@@ -282,7 +282,8 @@ for (var j=0; j<RCPList.length; j++) {
   // this is to deal with the problem that there are slight rounding differences between the 'control' band
   // and the original SEI calculated SEI (possibly due to data type, or projection differences at time of smoothing?)
   // these rounding differences lead to movement of the 'edge' of what is classified as core, growth, other, so they 
-  // are important
+  // are important. The downside of this correction, is that it can lead to (very slightly) negative SEI values
+  // 
   var Q5s_delta = outputByGCMTemp.select('Q5s_.*').subtract(outputByGCM.select('Q5s_control'));
   var Q5s_corrected = Q5s_delta.add(cur.select('Q5s'));
 
