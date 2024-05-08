@@ -4,7 +4,6 @@
 *.jpeg
 *.jpg
 *.pdf
-
 # data
 *.csv
 *.RDS
@@ -12,20 +11,17 @@
 *.xml
 # word
 *.docx
-
-
 # knitted docs
 *.html
-
 # specific folders
 scripts/example_scripts_from_others/*
 data_raw
 data_processed/*
 paper
 data_publication1/*
+data_publication2/*
 misc/*
 presentations/*
-
 # History files
 .Rhistory
 .Rapp.history
@@ -54,4 +50,3 @@ vignettes/*.pdf
 *.knit.md
 # R Environment Variables
 .Renviron
-

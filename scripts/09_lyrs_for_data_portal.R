@@ -29,8 +29,8 @@ c9a <- rast(file.path(path_ext, 'data_publication2', c9_file_name))
 
 # file created in 06_exports_for_maps.js with resolution set to 90m
 r_numGcm1 <- rast(file.path(path_ext, 
-  paste0('tiles/', v, '_numGcmGood_90_fire1_eind1_c4grass1_co20_2311.tif')))
-
+  paste0('temp_not_cog/', v, '_numGcmGood_90_fire1_eind1_c4grass1_co20_2311.tif')))
+r_numGcm1 <- r_numGcm1[['numGcmGood_RCP45_2070-2100']]
 # prepare rasters ---------------------------------------------------------
 
 # *c9 ---------------------------------------------------------------------
@@ -97,12 +97,14 @@ f1 <- paste0(names(c9b[1]), '.tif')
 writeRaster(c9b, 
             file.path(path_save,f1),
             overwrite = TRUE,
+            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
             datatype = 'INT1U')
 
 file_name <- stringr::str_replace(names(r_numGcm1), '_RCP', '_Default_RCP')
 f2 <- paste0(names(r_numGcm2[1]), '.tif')
 writeRaster(r_numGcm2, 
             file.path(path_save,f2),
+            filetype = "COG", wopt = list(gdal = "COMPRESS=DEFLATE"),
             overwrite = TRUE,
             datatype = 'INT1U')
 
@@ -114,3 +116,4 @@ if(FALSE) {
   r2 <- rast(file.path(path_save,f2))
   plot(r2)
 }
+

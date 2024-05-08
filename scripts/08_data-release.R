@@ -154,7 +154,6 @@ map2(sei_fut_l, out_names, function(x, name) {
               overwrite = TRUE)
 })
 
-
 # * c9 --------------------------------------------------------------------
 
 out_names <- paste0('c9_', run_scenario(names(c9_l2)))
@@ -165,7 +164,6 @@ map2(c9_l2, out_names, function(x, name) {
               overwrite = TRUE,
               datatype = 'INT1U')
 })
-
 
 # *Q ----------------------------------------------------------------------
 
