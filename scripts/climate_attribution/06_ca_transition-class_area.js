@@ -230,7 +230,7 @@ for (var i = 0; i < roots.length; i++) {
 
 // save output ------------------------------------------------------------------------------------
 
-var s = versionFull + '_20240426'; 
+var s = versionFull + '_20240508'; 
 
 var descript = 'area-by-ecoregionC9Driver_' + resolutionCompute + 'm_' + s;
 if(testRun) {
