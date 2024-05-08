@@ -21,7 +21,7 @@ var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");
 var path = SEI.path;
 
 // for testing
-// var args = {root: 'fire1_eind1_c4grass1_co20_2311_'};
+var args = {root: 'fire1_eind1_c4grass1_co20_2311_'};
 
 // helper functions --------------------------------------------------------
 
@@ -168,7 +168,7 @@ var main = exports.main = function(args) {
   // this image should have bands showing sei (continuous, 'Q5s_' prefix) and 3 class (Q5sc_ prefix) for each GCM
   var fut00 = ee.Image(path + version + '/forecasts/' + assetName)
     .updateMask(SEI.mask);
-    
+  
   // fixing issue with extra (non corrected lyrs saved in 03_SEIsw_method3)
   // the Q5s, and Q5sc3 corrected layrs have a _1 ended, because the non corrected
   // versions were mistakenly also outputted in the asset. here replacing the non-corrected
@@ -204,15 +204,18 @@ var main = exports.main = function(args) {
     fut0.bandNames().removeAll(cur0.bandNames())
   );
   
+  
   // each image in collection from a different GCM
    var futIc = SEI.image2Ic(fut1,'GCM')
     .map(function(x) {
       var img = ee.Image(x);
+      var Q5s = img.select('Q5s').min(1).max(0); // setting 0, 1 limits (due to slight correction made in SEIsw_method3.js)
       var Q3y = img.select('Q1raw')
         .multiply(img.select('Q2raw'))
         .multiply(img.select('Q3raw'))
         .rename('Q3y');
-      return img.addBands(Q3y);
+      var bandsButQ5s = img.bandNames().removeAll(ee.List(['Q5s']));
+      return img.select(bandsButQ5s).addBands(Q5s).addBands(Q3y);
     });
 
   // future reduced -----------------------------------------------------------------
@@ -420,6 +423,7 @@ var main = exports.main = function(args) {
     'futIc': futIc, // image collection future sei etc by GCM
     'futRed': futRed, // future SEI & Q1-Q3, by reduction (IC) (i.e pixewlise summaries)
     'futRed2Img' : futRed2Img,
+    'futRed2': SEI.image2Ic(futRed2Img, 'GCM'),
     'c9Red': c9Red,
     'qPropMed': qPropMed, // climate attribution (proportion)
     'qPropRed': qPropRed,
@@ -442,6 +446,21 @@ var main = exports.main = function(args) {
 
 /*
 var d = main({root: 'fire1_eind1_c4grass1_co20_2311_'})
+var seiIc = ee.ImageCollection(d.get('futRed'))
+      .select('Q5s') // image collection for low, median, high
+      .map(function(x) {
+        return ee.Image(x).rename('SEI');
+    });
+      
+    var seiImage = SEI.ic2Image(seiIc, 'GCM')
+      .toFloat(); // 32 bit Float
+print(seiImage)
+//Map.addLayer(seiImage.select('SEI_median').lt(0).selfMask(), {palette: 'black'}, 'sei < 0')
+var img = ee.ImageCollection(d.get('futIc')).first().select('Q5s')
+Map.addLayer(img.lt(0).selfMask(), {palette: 'black'}, 'sei < 0')
+
+
+
 var img = ee.Image(d.get('diffPcentRedImg'));
 Map.addLayer(img.select('Q1raw_median'), {}, 'pcent')
 Map.addLayer(ee.Image(d.get('gcmNum')).select('gcmNum_median'), {min: 1, max: 13}, 'gcmNum')
