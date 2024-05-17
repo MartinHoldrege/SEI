@@ -29,7 +29,20 @@ exports.sldRampDiff1 =
       '<ColorMapEntry color="#053061" quantity="1" label="0.75" />' + //dark blue
     '</ColorMap>' +
   '</RasterSymbolizer>';
+  
+// legend for gcm agreement maps ---------------------------------------
 
+var colsNumGcm = ['#053061',
+                '#92c5de',
+                 '#e31a1c',
+                 '#800026',
+                 '#252525',
+                 '#bdbdbd',
+                 '#ffeda0',
+                 '#fd8d3c',
+                 '#D9D9D9'];
+
+exports.colsNumGcm = colsNumGcm
 // legend for c9 transition maps ----------------------------------------
 
 /* old palette (stables are black, decrease red, increase blues)
