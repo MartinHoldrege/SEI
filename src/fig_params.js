@@ -30,19 +30,7 @@ exports.sldRampDiff1 =
     '</ColorMap>' +
   '</RasterSymbolizer>';
   
-// legend for gcm agreement maps ---------------------------------------
 
-var colsNumGcm = ['#053061',
-                '#92c5de',
-                 '#e31a1c',
-                 '#800026',
-                 '#252525',
-                 '#bdbdbd',
-                 '#ffeda0',
-                 '#fd8d3c',
-                 '#eee1ba'];
-
-exports.colsNumGcm = colsNumGcm
 // legend for c9 transition maps ----------------------------------------
 
 /* old palette (stables are black, decrease red, increase blues)
@@ -95,7 +83,7 @@ var legendTitle = ui.Label({
   value: 'Transition',
   style: {
     fontWeight: 'bold',
-    fontSize: '18px',
+    fontSize: '12px',
     margin: '0 0 4px 0',
     padding: '0'
     }
@@ -112,15 +100,18 @@ var makeRow = function(color, name) {
         style: {
           backgroundColor: color,
           // Use padding to give the box height and width.
-          padding: '8px',
-          margin: '0 0 4px 0'
+          padding: '6px',
+          margin: '0 0 1px 0'
         }
       });
  
       // Create the label filled with the description text.
       var description = ui.Label({
         value: name,
-        style: {margin: '0 0 4px 6px'}
+        style: {
+          margin: '0 0 1px 1px',
+          fontSize: '12px'
+        }
       });
  
       // return the panel
@@ -138,6 +129,60 @@ for (var i = 0; i < c9Palette.length; i++) {
  
 exports.legendc9 = legend;
 //Map.add(legend)
+
+// legend for gcm agreement maps ---------------------------------------
+
+var colsNumGcm = ['#053061',
+                '#92c5de',
+                 '#e31a1c',
+                 '#800026',
+                 '#252525',
+                 '#bdbdbd',
+                 '#ffeda0',
+                 '#fd8d3c',
+                 '#eee1ba'];
+
+exports.visNumGcm = {min: 1, max: 9, palette: colsNumGcm};
+
+var labelsNumGcm = ["Stable CSA (robust agreement)", 
+                    "Stable CSA (non-robust agreement)", 
+                    "Loss of CSA (non-robust agreement)", 
+                    "Loss of CSA (robust agreement)", 
+                    "Stable (or improved) GOA (robust agreement)", 
+                    "Stable (or improved) GOA (non-robust agreement)", 
+                    "Loss of GOA (non-robust agreement)", 
+                    "Loss of GOA (robust agreement)", 
+                    "Other rangeland area"];
+
+// set position of panel
+var legend = ui.Panel({
+  style: {
+    position: 'bottom-left',
+    padding: '8px 15px'
+  }
+});
+ 
+// Create legend title
+var legendTitle = ui.Label({
+  value: 'Agreement among GCMs',
+  style: {
+    fontWeight: 'bold',
+    fontSize: '12px',
+    margin: '0 0 4px 0',
+    padding: '0'
+    }
+});
+ 
+// Add the title to the panel
+legend.add(legendTitle);
+ 
+// Add color and and names
+for (var i = 0; i < colsNumGcm.length; i++) {
+  legend.add(makeRow(colsNumGcm[i], labelsNumGcm[i]));
+  }  
+ 
+exports.legendNumGcm = legend;
+
 
 // legends for continuous mapped values -----------------------------------------------------
 
@@ -238,7 +283,8 @@ exports.makeVisParamsRampLegend = function(existing_panel, visParams, title) {
     .add(panel2)
     .add(thumb);
   return new_panel;
-}
+};
+
 
 // creating a white basemap map -------------------------------------------------------------
 
