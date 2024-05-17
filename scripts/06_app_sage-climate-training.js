@@ -81,8 +81,8 @@ map.addLayer(forRgb, rgbViz, 'RGB' + rgbLab, false);
 // Delta (fut-historical) values (min, max, median, etc) ----------------------------------
 
 // bands of interest and their descriptions
-var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
-var namesBands = ['sage cover', 'perennial cover', 'annual cover', 'Q1 (sage)', 'Q2 (perennials)', 'Q3 (annuals)', 'SEI'];
+var diffBands = ['Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
+var namesBands = ['Q1 (sage)', 'Q2 (perennials)', 'Q3 (annuals)', 'SEI'];
 
 
 // type 1 summaries are are values that correspond to the summary of SEI. e.g. the 'median' Q1 would be the Q1 that corresponds to the median SEI
