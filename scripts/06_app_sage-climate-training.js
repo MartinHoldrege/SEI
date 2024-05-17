@@ -1,4 +1,4 @@
- 'projects/usgs-gee-drylandecohydrology/assets/SEI/products/vsw4-3-4_gcmAgreement_RCP45_2070-2100'
+
  
  /********************************************************
  * Purpose:
@@ -82,7 +82,7 @@ map.addLayer(forRgb, rgbViz, 'RGB' + rgbLab, false);
 
 // bands of interest and their descriptions
 var diffBands = ['sage560m', 'perennial560m', 'annual560m', 'Q1raw', 'Q2raw', 'Q3raw', 'Q5s'];
-var namesBands = ['sage', 'perennial', 'annual', 'Q1 (sage)', 'Q2 (perennial)', 'Q3 (annual)', 'SEI'];
+var namesBands = ['sage cover', 'perennial cover', 'annual cover', 'Q1 (sage)', 'Q2 (perennials)', 'Q3 (annuals)', 'SEI'];
 
 
 // type 1 summaries are are values that correspond to the summary of SEI. e.g. the 'median' Q1 would be the Q1 that corresponds to the median SEI
@@ -96,8 +96,10 @@ for (var j = 0; j < diffBands.length; j++) {
 
 // agreement among GCMs -------------------------------------------------------------
 
+// lyr used for figure 2 in manuscript ('default' simulation settings)
+var numGcm = ee.Image('projects/usgs-gee-drylandecohydrology/assets/SEI/products/vsw4-3-4_gcmAgreement_RCP45_2070-2100');
 
-
+map.addLayer(numGcm, fig.visNumGcm, 'Agreement among GCMs');
 
 // c3 ------------------------------------------------------------------------------
 
@@ -121,8 +123,8 @@ var panel = ui.Panel({
  
 // Create legend title
 var firstLine = ui.Label({
-  value: 'STEPWAT simulation settings: ' + d.get('root').getInfo() + ' (' + d.get('RCP').getInfo() 
-    + ', ' + d.get('epoch').getInfo() + ')' + ' (' + d.get('versionFull').getInfo() + ')',
+  value: 'Simulations done for ' + d.get('RCP').getInfo() 
+    + ', ' + d.get('epoch').getInfo() + ' (default STEPWAT2 assumptions used)',
   style: {
     fontSize: '12px',
     margin: '0 0 0 0', // Adjust margin as needed
@@ -153,7 +155,7 @@ panel.add(panelDescript);
 map.add(panel);
 
 // panel  for c9 legend
-map.add(fig.legendc9);
+map.add(fig.legendc9).add(fig.legendNumGcm);
 
 // color bar legends --------------------
 
