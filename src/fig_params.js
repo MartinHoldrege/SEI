@@ -1,3 +1,11 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-113.24078729186874, 42.59783002510826],
+          [-113.04886987243515, 42.71750778570451],
+          [-113.0516164544664, 42.99435321406661],
+          [-113.4581105950914, 42.984307855521095],
+          [-113.44437768493515, 42.65391031066751]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 /**
  * The fig params module contains objects useful for when creating
  * visualizations (e.g. colors etc. )
