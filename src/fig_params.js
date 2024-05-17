@@ -40,7 +40,7 @@ var colsNumGcm = ['#053061',
                  '#bdbdbd',
                  '#ffeda0',
                  '#fd8d3c',
-                 '#D9D9D9'];
+                 '#eee1ba'];
 
 exports.colsNumGcm = colsNumGcm
 // legend for c9 transition maps ----------------------------------------
