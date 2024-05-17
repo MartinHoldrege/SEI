@@ -99,7 +99,7 @@ for (var j = 0; j < diffBands.length; j++) {
 // lyr used for figure 2 in manuscript ('default' simulation settings)
 var numGcm = ee.Image('projects/usgs-gee-drylandecohydrology/assets/SEI/products/vsw4-3-4_gcmAgreement_RCP45_2070-2100');
 
-map.addLayer(numGcm, fig.visNumGcm, 'Agreement among GCMs');
+map.addLayer(numGcm, fig.visNumGcm, 'Agreement among GCMs', false);
 
 // c3 ------------------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ var exerciseArea = /* color: #d63000 */ee.Geometry.Polygon(
           [-113.4581105950914, 42.984307855521095],
           [-113.44437768493515, 42.65391031066751]]]);
           
-map.addLayer(ee.FeatureCollection(exerciseArea).style({fillColor: '00000000'}), {}, 'Exercise area (for sage climate training)')  
+map.addLayer(ee.FeatureCollection(exerciseArea).style({fillColor: '00000000'}), {}, 'Exercise area (for sage climate training)', false);
 
 // misc labels -------------------------------------------------------------------------
 
