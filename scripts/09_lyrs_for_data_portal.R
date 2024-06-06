@@ -108,12 +108,37 @@ writeRaster(r_numGcm2,
             overwrite = TRUE,
             datatype = 'INT1U')
 
+# file containing colors/labels for Geoff
+
+cols_ng
+labels_ng
+table_ng <- cols_ng %>% 
+  rename(color = label) %>% 
+  left_join(labels_ng) %>% 
+  mutate(raster = 'Level of Agreement',
+         label = str_replace(label, '\\n',''))
+
+table_c9 <- c9cols
+table_c9$label <- row.names(c9cols) 
+
+metadata <- table_c9 %>% 
+  rename(value = cell_value, color = colors) %>% 
+  mutate(raster = 'SEI class change') %>% 
+  bind_rows(table_ng) %>% 
+  select(raster, value, label, everything()) %>% 
+  rename(cell_value = value)
+row.names(metadata) <- NULL
+
+write_csv(metadata, file.path(path_save, 'colors-and-labels.csv'))
 # testing -----------------------------------------------------------------
 
 if(FALSE) {
-  r1 <- rast(file.path(path_save,f1))
+  files <- list.files(path_save, '.tif$', full.names = TRUE)
+  r1 <- rast(files[[1]])
   plot(r1)
-  r2 <- rast(file.path(path_save,f2))
+  r2 <- rast(files[[2]])
   plot(r2)
 }
+
+
 
