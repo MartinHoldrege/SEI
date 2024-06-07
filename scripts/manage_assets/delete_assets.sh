@@ -12,11 +12,11 @@ cd
 source $".bashrc" # b/ of aliases etc. for conda environment (just needed b/ idiosyncracies on my machine)
 conda activate ee # earthengine commandline environment
 
-EE_FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/stepwat_biomass"
-REGEX_PATTERN="c4on_.*"
+EE_FOLDER="projects/usgs-gee-drylandecohydrology/assets/SEI/vsw4-3/"
+REGEX_PATTERN=".*vsw4-3-3.*"
 
 # List assets in the specified folder
-assets=$(earthengine ls ${EE_FOLDER})
+assets=$(earthengine ls -rl ${EE_FOLDER})
 
 # Filter assets based on the regex pattern
 assets_to_delete=($(echo "${assets}" | grep -E "${REGEX_PATTERN}"))
@@ -28,7 +28,7 @@ else
   # Delete the identified assets
   for asset in "${assets_to_delete[@]}"; do
     echo "Deleting ${asset}"
-    # earthengine rm -r ${asset} --dry_run # use for code testing
+    #earthengine rm -r ${asset} --dry_run # use for code testing
     earthengine rm -r ${asset} 
   done
   echo "Deletion complete."

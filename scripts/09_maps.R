@@ -311,16 +311,14 @@ base_diff <- function() {
   )
 }
 
-labels <- c('Same SEI (+/- 0.01) projected relative to default, and same SEI class',
-            'Better SEI projected relative to default, but same SEI class',
-            'Worse SEI projected relative to default, but same SEI class',
-            'Better SEI & SEI class projected relative to default',
-            'Worse SEI & SEI class projected relative to default')
+labels <- c('Same SEI (+/- 0.01) projected\nrelative to default, and same SEI class',
+            'Better SEI projected \nrelative to default, but same SEI class',
+            'Worse SEI projected \nrelative to default, but same SEI class',
+            'Better SEI & SEI class projected\nrelative to default',
+            'Worse SEI & SEI class projected\nrelative to default')
 
 # preparing raster (converting to factor etc.)
 lyr <- "RCP45_2070-2100"
-
-
 
 # preparing raster
 prepare_r_diff <- function(x) {
@@ -362,12 +360,13 @@ g_map <- plot_map2(s) +
   facet_wrap(~band, ncol = 2)+
   theme(legend.position = 'bottom',
         legend.title = element_blank(),
-        legend.text = element_text(size = rel(0.6)),
-        strip.text = element_text(hjust = 0)
+        legend.text = element_text(size = rel(0.65)),
+        strip.text = element_text(hjust = 0),
+        legend.key.spacing.y = unit(0.1, 'cm'),
+        legend.key.spacing.x = unit(0.1, 'cm')
   ) +
   guides(fill = guide_legend(ncol = 2))
   
-#g_map
 
 # ** creating barchart -------------------------------------------------------
 # barchart of areas in the map 
@@ -389,7 +388,8 @@ bar <- ggplot(area_c9diff2, aes(run_name, area_km2, fill = diffClass)) +
        subtitle = fig_letters['d'])+
   scale_y_continuous(labels = km2millionha) +
   theme(legend.position = 'none',
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        axis.title = element_text(size = rel(0.8)))
 
 
 # ** combine --------------------------------------------------------------
@@ -405,7 +405,7 @@ comb <- g_map + inset_element(bar,
 # Figure 5 in manuscript
 jpeg(paste0('figures/transition_maps/c9-diff_map-bar_', version, 
             "_", rcp_c9, "_", years_c9, '_v2.jpg'), 
-     width = 7, height = 8, units = 'in',
+     width = 5.2, height = 7, units = 'in',
      res = 800)
 comb
 dev.off()
@@ -413,7 +413,6 @@ dev.off()
 
 # ** 4 panel --------------------------------------------------------------
 # for e.g. diff from default for no grass show for each RCP/time-period
-
 
 all_f <- map(r_c9diff_all, prepare_r_diff)
 
@@ -436,7 +435,7 @@ all_g <- map(all_s, function(s) {
 
 map2(all_g, names(all_g), function(g, run) {
   jpeg(paste0('figures/transition_maps/c9-diff_by-scenario_', version, 
-              "_", run, '_v2.jpg'), 
+              "_", run, '_v3.jpg'), 
        width = 7, height = 8, units = 'in',
        res = 800)
   print(g)
@@ -512,7 +511,7 @@ comb <- wrap_elements(full = rgb2) +
 # comb
 # Figure 3 in manuscript
 jpeg(paste0(paste('figures/climate_attribution/maps/rgb_with-barplot', version, 
-                  root_c9, rcp_c9, years_c9, sep = "_"), '_v6.jpg'), 
+                  root_c9, rcp_c9, years_c9, sep = "_"), '_v7.jpg'), 
      width = 7.5, height = 5, units = 'in',
      res = 800)
 comb
@@ -647,7 +646,7 @@ g <- wrap_plots(q_diffprop) +  sei_diff +
 
 # Figure 4 in manuscript
 jpeg(paste0(paste('figures/delta_maps/perc-abs-change_Qs-SEI', version, root_c9, 
-                  rcp_c9, years_c9, sep = "_"), '_v3.jpg'), 
+                  rcp_c9, years_c9, sep = "_"), '_v4.jpg'), 
      width = 8, height = 8, units = 'in',
      res = 600)
 g
