@@ -6,6 +6,9 @@
 //including leap years. For leap years, the Daymet database includes leap day. Values for December 31 
 //are discarded from leap years to maintain a 365-day year.
 
+// dependencies
+var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js"); // contains the crs we're using elsewhere
+
 // First, load DayMet dataset and filter to only contain precipitation & temp:
 var v = 4; // Daymet version
 var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
@@ -143,7 +146,7 @@ Export.image.toDrive({
   maxPixels: 1e13, 
   scale: 1000,
   region: geometry,
-  crs: daymet30.first().projection().wkt().getInfo(),
+  crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
 
