@@ -7,10 +7,13 @@
 //are discarded from leap years to maintain a 365-day year.
 
 // First, load DayMet dataset and filter to only contain precipitation & temp:
-var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V3").select(['prcp','tmax','tmin']);
+var v = 4; // Daymet version
+var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
 
-//Next, filter to include only those images need to calculate the 30-year norm (1981-2010):
-var daymet30 = daymet.filterDate( '1981-01-01','2011-01-01' );	 
+//Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
+var yearStart = 1991;
+var yearEnd = 2020;
+var daymet30 = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	// end date is exclusive
 
 // Create a function to generate a Year property for each image
 // Note: .parse converts string to a number.
@@ -135,7 +138,7 @@ print(combOut.bandNames());
 
 Export.image.toDrive({
   image: combOut,
-  description: 'daymet_monthly_normals_1981-2010',
+  description: 'daymet_v'+ v + '_monthly_normals_' + yearStart + '-' + yearEnd,
   folder: 'gee',
   maxPixels: 1e13, 
   scale: 1000,
