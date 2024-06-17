@@ -12,6 +12,7 @@
 
 library(tidyverse)
 library(terra)
+library(patchwork)
 source("src/spatial_functions.R")
 source("src/figure_functions.R")
 
@@ -20,8 +21,8 @@ source("src/figure_functions.R")
 template <- rast("../grazing_effects/data_processed/interpolation_data/cellnumbers.tif")
 # matching quality (calculated in the grazing_effects/scripts/03_interpolate.r)
 # where matching was done use study area wide criteria, but matching quality
-# calculated via criteria based on the 200 sites
-qual1 <- read_csv('../grazing_effects/data_processed/interpolation_data/match-qual_v1-interp_v2-criteria.csv')
+# calculated via criteria used in Renne et al 2024
+qual1 <- read_csv('../grazing_effects/data_processed/interpolation_data/match-qual_v1-interp_v3-criteria.csv')
 
 # c9 layer (to convert to c3)
 c9 <- rast('data_processed/transitions/vsw4-3-4_9ClassTransitionMed_180_fire1_eind1_c4grass1_co20_2311.tif')
@@ -49,10 +50,6 @@ plot(r_qual_grow)
 
 # figures of matching quality ---------------------------------------------
 
-
-plot(r_qual_grow)
-plot(r_qual_grow, main = 'matching quality', breaks = c(0, 0.5, 1, 1.5, 2, 3, 4, 5, 10),
-     col = rev(RColorBrewer::brewer.pal(10, 'RdBu'))[3:10])
 cols <- rev(RColorBrewer::brewer.pal(10, 'RdBu'))[3:9]
 
 match_fill <- function() {
@@ -68,23 +65,25 @@ match_fill <- function() {
   )
 }
 
-jpeg('figures/matching_quality/match-qual_CSA.jpg',
-    res = 800, width = 6, height = 6, units = 'in')
-plot_map2(r_qual_core,
-          panel_tag = 'Matching quality in Core Sagebrush Areas') +
+g1 <- plot_map2(r_qual_core,
+          panel_tag = 'Matching quality in CSAs') +
   match_fill() 
-dev.off()
 
-jpeg('figures/matching_quality/match-qual_GOA.jpg',
-     res = 800, width = 6, height = 6, units = 'in')
-plot_map2(r_qual_grow,
-          panel_tag = 'Matching quality in Growth Opportunity Areas') +
+
+g2 <- plot_map2(r_qual_grow,
+          panel_tag = 'Matching quality in GOAs') +
   match_fill() 
-dev.off()
 
-jpeg('figures/matching_quality/match-qual_all-SCD.jpg',
-     res = 800, width = 6, height = 6, units = 'in')
-plot_map2(r_qual3,
-          panel_tag = 'Matching quality across SCD study area') +
+g3 <- plot_map2(r_qual3,
+          panel_tag = 'Matching quality across study area') +
   match_fill()
+
+jpeg('figures/matching_quality/match-qual_Renne-criteria.jpg',
+     res = 800, width = 8, height = 8, units = 'in')
+design <- "
+AB
+C#
+"
+g1 + g2 + g3 + patchwork::plot_layout(design = design) +
+  plot_annotation(caption = 'Matching quality calculated using Criteria from Renne et al. 2024')
 dev.off()
