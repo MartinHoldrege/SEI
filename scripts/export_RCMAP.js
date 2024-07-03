@@ -42,7 +42,7 @@ Map.addLayer(SEI.mask, {min:0, max:1, palette: ['white','black']}, 'SCD study ar
 Map.addLayer(sageAvg.gt(0), {min:0, max:1, palette: ['white','blue']}, 'sage based study area',false)
 
 // export ------------------------------------------------------------
-var s = 'RCMAPv6_sage-cover_mean_scd-extent_gt1_' + yearStart + '_' + yearEnd  + '_' + resolution + 'm';
+var s = 'RCMAPv6_sage-cover_mean_scd-extent_' + yearStart + '_' + yearEnd  + '_' + resolution + 'm';
 Export.image.toDrive({
   image: sageAvg,
   description: s,
