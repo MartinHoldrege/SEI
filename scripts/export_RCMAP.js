@@ -7,7 +7,7 @@
 
 // params ---------------------------------------------------------------
 
-var resolution = 90; // output resolution
+var resolution = 30; // output resolution
 var yearStart = '2001';
 var yearEnd = '2020';
 
