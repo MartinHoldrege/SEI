@@ -519,8 +519,8 @@ dev.off()
 
 
 # * 4 panel ---------------------------------------------------------------
-
-scenarios <- names(r_qprop1) %>% 
+names(r_qprop2) <- update_yr(names(r_qprop2))
+scenarios <- names(r_qprop2) %>% 
   str_replace('Q\\draw_', "") %>% 
   unique() %>% 
   sort()
@@ -662,6 +662,7 @@ Qs <- str_extract(lyrs, 'Q\\draw') %>%
 
 create_lyr_names <- function(r) {
   lyr_names <- names(r) %>% 
+    update_yr() %>% 
     str_extract('RCP.+') %>% 
     str_replace("_", " ") %>% 
     paste(fig_letters[1:length(.)], .)
@@ -677,8 +678,7 @@ for(Q in Qs) {
   
   g <- r %>% 
     # for some reason an error is thrown when this sampling step not taken
-    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% # uncomment for testing
-    #st_as_stars(as_attributes = FALSE) %>% 
+    spatSample(c(3000, 3000), method = 'regular', as.raster = TRUE) %>% 
     plot_map2(mapping = aes(fill = cut(a, breaks))) +
     facet_wrap(~band,
                labeller = labeller(band = lyr_names)) +
