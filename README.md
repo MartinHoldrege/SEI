@@ -1,9 +1,13 @@
 # SEI
+
+**Please see the 'zenodo' branch of this repository**
+
 Analysis of sagebrush ecological integrity. This is the main branch of the
 repository that has all scripts (including old/defunct scripts). Please
 switch to the 'zenodo' branch to see the cleaner, more curated, and better documented version
 of the repository that only provides the scripts needed for the analyses presented
 in Holdrege et al. 2024 (Rangeland Ecology and Management)
+
 
 **A note on git:**
 
