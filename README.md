@@ -1,4 +1,4 @@
-# SEI
+# Overview
 
 Analysis of sagebrush ecological integrity responses to climate change. 
 
@@ -39,6 +39,8 @@ intensive tasks were conducted using GEE. Output (and some inputs)
 were post (pre) processed in R. The creation of summary tables, and figures 
 was done in R. Analysis scripts are in the `/scripts` folder, and source code
 (i.e., scripts that define functions etc.) is found the `/src` folder.
+R scripts assume the working directory is the project directory (you can
+set the working directory by opening the .Rproj file)
 
 ### `/scripts` folder
 

@@ -15,6 +15,8 @@ Started: October 4, 2023
 
 // Load module with functions 
 // The functions, lists, etc are used by calling SEI.nameOfObjectOrFunction
+// the repository is synced between 'users/mholdrege' and 'user/MartinHoldrege'
+// so can require from either. 
 var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
 var fig = require("users/MartinHoldrege/SEI:src/fig_params.js");
 var clim = require("users/MartinHoldrege/SEI:src/loadClimateData.js");

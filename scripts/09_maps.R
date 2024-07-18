@@ -24,7 +24,10 @@ library(stars)
 library(patchwork)
 source("src/general_functions.R")
 source('src/figure_functions.R')
-source('../grazing_effects/src/fig_params.R') # for labels
+
+# source('../grazing_effects/src/fig_params.R') # for labels
+# source script from github (via a permalink)
+source('https://raw.githubusercontent.com/MartinHoldrege/grazing_effects/1f2f2b4daf96980aa46ac8f87425b68d8ddf649f/src/fig_params.R')
 # source('scripts/rgb_triangle.R') # run this to create rgb triangle png used below
 theme_set(theme_custom1())
 
