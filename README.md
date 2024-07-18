@@ -1,5 +1,5 @@
 # SEI
-Analysis of sagebrush ecological integrity 
+Analysis of sagebrush ecological integrity responses to climate change. 
 
 **A note on git:**
 
