@@ -3,8 +3,8 @@
 # Script started March 17, 2023
 
 # Use shrub biomass vs cover relationship (developed by Scott Carpenter)
-# to derive a shrub biomass q curve. And do the same for annuals and perennials
-# but based on relationships fit to rap cover and rap biomass data
+# the slopes and intercepts are output (in addition to q curves with biomass
+# instead of cover on the 'x axis'--these aren't used in the updated workflow)
 
 
 # parameters --------------------------------------------------------------
@@ -22,8 +22,6 @@ library(patchwork)
 library(tidyverse)
 theme_set(theme_classic())
 library(mgcv)
-
-
 
 
 # read in data ------------------------------------------------------------
