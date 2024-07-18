@@ -16,10 +16,10 @@ run <- "fire1_eind1_c4grass1_co20"
 
 # set the 'runs' (i.e what simulations settings) that data should be fore
 # in this script
-source("scripts/01_create_sw_biomass_df.R")
 source("src/general_functions.R")
 source("src/fig_params.R")
 library(patchwork)
+library(tidyverse)
 theme_set(theme_classic())
 library(mgcv)
 
@@ -28,19 +28,12 @@ library(mgcv)
 
 # read in data ------------------------------------------------------------
 
-# * stepwat biomass -------------------------------------------------------
-
-# stepwat biomass under current conditions
-sw_bio_cur <- sw_bio_cur %>% # created in 01_create_sw_biomass_df.R
-  filter(run == .GlobalEnv$run)
-
 # *Q curves ---------------------------------------------------------------
 
 # main q curves (i.e. used in doherty et al 2022)
 q1 <- parse_q_curves()
 
 regions <- names(q1[[1]])[2:4]
-
 
 # * RAP cover/biomass table -------------------------------------------------
 # RAP data was smoothed to 560m
@@ -215,103 +208,6 @@ q2_long <- q2 %>%
   pivot_longer(c(great_basin, intermountain, great_plains),
                values_to = "q", names_to = "region")
 
-# figures  -----------------------------------------------------------
-
-# converting biomass to be 'rap' equivelant]
-x <- 1:1000
-
-sw_afg <- sw_bio_cur %>% 
-  filter(PFT == "afg") %>% 
-  mutate(# rap equivelant cover
-         cover_rap_eq = bio2cov_afg_rap(biomass),
-         # convert to cover (based on mahood relationship)
-         cover_mahood_eq = bio2cov_afg_mahood(biomass))
-
-hist(sw_afg$cover_rap_eq)
-# separate figure for annuals
-a <- q2_long %>% 
-  filter(PFT == "afg") %>% 
-  ggplot(aes(x = cover, y = q, color = region)) +
-  geom_line() +
-  scale_color_manual(values = cols_region)
-
-a1 <- a  +
-  scale_x_continuous(sec.axis = sec_axis(trans = cov2bio_afg_rap_lin,
-                                         name = "Biomass (RAP)")) 
-a1
-a2 <- a  +
-  scale_x_continuous(sec.axis = sec_axis(trans = ~cov2bio_afg_mahood(.*100),
-                                         name = "Biomass (Mahood)"))
-a2
-
-a3 <- a +
-    geom_histogram(data = sw_afg, 
-                   aes(x = cover_rap_eq/100, y = after_stat(density)/30),
-                   bins = 100, color = 'gray') +
-    labs(caption = 'Stepwat biomass converted to cover based on 
-       Rap cover vs biomass',
-         subtitle = paste0("RAP equivelant cover", "\nsimulation settings: ", run))
-
-
-a4 <- a +
-  geom_histogram(data = sw_afg, 
-                 aes(x = cover_mahood_eq/100, y = after_stat(density)/60),
-                 bins = 100, color = 'gray') +
-  labs(caption = 'Stepwat biomass converted to cover based on 
-       mahood equation',
-       subtitle = paste0("Mahood equivelant cover", "\nsimulation settings: ", run))
-
-pdf("figures/q_curves/q_curves_mahood-vs-rap-biomass_v2.pdf",
-    width = 11, height = 8)
-  wrap_plots(a1, a2, a3, a4, guides = 'collect', ncol = 2) +
-    plot_annotation(title = "annuals")
-dev.off()
-
-
-g <- ggplot(q2_long, aes(y = q, color = region)) +
-  facet_wrap(~PFT, ncol = 2, scales = 'free') +
-  labs(y = "Q Value") +
-  scale_color_manual(values = cols_region)# +
-  # geom_histogram(data = sw_bio_cur, 
-  #                aes(biomass, y = after_stat(density)*20), color = 'gray')
-
-pdf(paste0("figures/q_curves/q_curves_from-cover-vs-biomass_", run, ".pdf"),
-    width = 6, height = 4)
-cap1 <- paste("sage cover-biomass conversion done w/ Scott Carpenters equations",
-              "\npfg & afg converted based on RAP relationships")
-g +
-  geom_line(aes(x = cover)) +
-  labs(subtitle = "Original Q curve (Theobald 2022)")
-
-g2 <- g + 
-  labs(x =  lab_bio0,
-       subtitle = "Cover converted to biomass (using cover-biomass relationships)",
-       caption = cap1)
-
-g2 +
-  geom_line(aes(x = biomass))
-
-ggplot(sw_bio_cur, aes(biomass)) +
-  geom_histogram()  +
-  facet_wrap(~PFT, ncol = 2, scales = 'free') +
-  labs(subtitle = 'stepwat biomass (current conditions)',
-       x = lab_bio0)
-
-q2_long %>% 
-  filter((PFT == 'sage' & biomass < 1000) | PFT != 'sage') %>% 
-  ggplot(aes(y = q, color = region)) +
-  facet_wrap(~PFT, ncol = 2, scales = 'free') +
-  labs(y = "Q Value",
-       subtitle = "comparing stepwat biomass (histograms) to q curves",
-       caption = cap1) +
-  scale_color_manual(values = cols_region) +
-  geom_histogram(data = sw_bio_cur, 
-                 aes(biomass, y = after_stat(density)*20), color = 'gray')  +
-  facet_wrap(~PFT, ncol = 2, scales = 'free') +
-  geom_line(aes(x = biomass))
-
-dev.off()
-
 
 # output q-curves ----------------------------------------------------------
 
@@ -369,7 +265,6 @@ write_lines(lin2write, "src/qCurves4StepwatOutput2.js", append = TRUE)
 
 
 # write coefficients to rds objects ---------------------------------------
-
 
 bio2cov_b0b1 <- list(
   'b0b1_sage1' = c(b0 = b0_sage, b1 = b1_sage),
