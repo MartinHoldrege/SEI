@@ -402,7 +402,7 @@ var main = exports.main = function(args) {
     .rename('numGcmGood');
   
   // combining into single dictionary ----------------------------------------
-  // type 2 summaries are just the straight summary (e.g. median) of the values across gcm.
+  // type 2 summaries are just the straight summary (e.g. median) of the values across gcm. (what should use from now on)
   // type 1 are values that are associated with the summary of SEI (e.g. Q1 that corresponds to median SEI)
   var out = ee.Dictionary({
     'versionFull': versionFull,
