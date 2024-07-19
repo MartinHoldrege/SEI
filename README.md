@@ -1,5 +1,7 @@
 # Overview
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12775518.svg)](https://doi.org/10.5281/zenodo.12775518)
+
 Analysis of sagebrush ecological integrity responses to climate change. 
 
 This is the branch of this repository that provides the scripts used for the analyses presented
