@@ -8,11 +8,11 @@
 
 // dependencies
 var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js"); // contains the crs we're using elsewhere
+var cor = require("users/MartinHoldrege/SEI:src/correlation.js"); // for pearsonCorrelation function
 
 // First, load DayMet dataset and filter to only contain precipitation & temp:
 var v = 4; // Daymet version
 var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
-print(daymet.first())
 
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
@@ -63,14 +63,40 @@ function NoteMonthForEachImage(typicalIMAGE){
 
 // Apply that function to all images in Daymett collection
 var updatedIMAGES3 = updatedIMAGES2.map(NoteMonthForEachImage);
-
-//print(updatedIMAGES3.limit(1));
-
+print(updatedIMAGES3.first());
 // Create separate Image Collection for each variable:
 var daymet30prcp = updatedIMAGES3.select("prcp");
 var daymet30tmin = updatedIMAGES3.select("tmin");
 var daymet30tmax = updatedIMAGES3.select("tmax");
 
+// calculate correlation between monthly prcp and tmean for 
+// each year, then average across years ( what we have called type 2 corrTP' elsewher)
+
+var  daymet30tmean = updatedIMAGES3.map(function(x) {
+  var image = ee.Image(x);
+  return image.select("tmin")
+    .add(image.select("tmax"))
+    .divide(ee.Image(2))
+    .rename('tmean')
+    .copyProperties(image);
+});
+print(daymet30tmean.first())
+print(daymet30tmean.filter(ee.Filter.eq('thisyear', '1991')))
+
+var corList = ee.List.sequence(yearStart, yearEnd)
+  .map(function(number) {
+    var yr = ee.Number(number);
+    var dailytmean = daymet30tmean.filter(ee.Filter.eq('thisyear', yr));
+    var dailyprcp = daymet30prcp.filter(ee.Filter.eq('thisyear', yr));
+    
+    
+    return ee.Image(cor.pearsonCorrelation(x, y));
+  });
+
+print('corList', corList.get(0));
+var corMean = ee.ImageCollection(corList).mean();
+
+//print('cormean', corMean)
 // Create function that calculates monthly precip all months:
 function monthlyprcp( thismonth ){
   var monthlyIMAGES = daymet30prcp.filterMetadata('month','equals',thismonth);
