@@ -80,8 +80,10 @@ var  daymet30tmean = updatedIMAGES3.map(function(x) {
     .rename('tmean')
     .copyProperties(image);
 });
-print(daymet30tmean.first())
-print(daymet30tmean.filter(ee.Filter.eq('thisyear', '1991')))
+
+var years = ee.List.sequence(yearStart, yearEnd);
+
+
 
 var corList = ee.List.sequence(yearStart, yearEnd)
   .map(function(number) {
@@ -89,7 +91,7 @@ var corList = ee.List.sequence(yearStart, yearEnd)
     var dailytmean = daymet30tmean.filter(ee.Filter.eq('thisyear', yr));
     var dailyprcp = daymet30prcp.filter(ee.Filter.eq('thisyear', yr));
     
-    
+    monthly
     return ee.Image(cor.pearsonCorrelation(x, y));
   });
 
