@@ -43,10 +43,10 @@ var diffFromMean = function(ic) {
 // main function,
 // calculates the pixelwise correlation between two image collections
 var pearsonCorrelation = function(x, y) {
-  ensureImageCollection(x);
-  ensureImageCollection(y);
-  ensureSingleBandImage(x.first());
-  ensureSingleBandImage(y.first());
+  //ensureImageCollection(x);
+  //ensureImageCollection(y);
+  //ensureSingleBandImage(x.first());
+  //ensureSingleBandImage(y.first());
   
   var x = x.map(function(image) {
     return ee.Image(image).rename('x');
