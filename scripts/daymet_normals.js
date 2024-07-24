@@ -12,6 +12,7 @@ var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js"); // contains the 
 // First, load DayMet dataset and filter to only contain precipitation & temp:
 var v = 4; // Daymet version
 var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
+print(daymet.first())
 
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
@@ -21,11 +22,11 @@ var daymet30 = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	
 // Create a function to generate a Year property for each image
 // Note: .parse converts string to a number.
 function NoteYearForEachImage( typicalIMAGE ){
-var bigSTRING = typicalIMAGE.get('system:index');
-var bigNUMBER = ee.Number.parse(bigSTRING);
-var yearNUMBER = bigNUMBER.divide(10000).int();
-var updatedIMAGE = typicalIMAGE.set('thisyear',ee.String(yearNUMBER));
-return updatedIMAGE;
+  var bigSTRING = typicalIMAGE.get('system:index');
+  var bigNUMBER = ee.Number.parse(bigSTRING);
+  var yearNUMBER = bigNUMBER.divide(10000).int();
+  var updatedIMAGE = typicalIMAGE.set('thisyear',ee.String(yearNUMBER));
+  return updatedIMAGE;
 }
 
 // Apply that function to all images in the GridMet collection
@@ -34,14 +35,14 @@ var updatedIMAGES1 = daymet30.map( NoteYearForEachImage );
 // Create a function to generate a DOY property for each image
 // Note: .parse converts string to a number.
 function NoteDOYForEachImage( typicalIMAGE ){
-var bigSTRING = typicalIMAGE.get('system:index');
-var bigNUMBER = ee.Number.parse(bigSTRING);
-var year = typicalIMAGE.get('thisyear');
-var yearNUMBER = ee.Number.parse(year);
-var bigyearNUMBER = yearNUMBER.multiply(10000);
-var modayNUMBER = bigNUMBER.subtract(bigyearNUMBER);
-var updatedIMAGE = typicalIMAGE.set('doy',ee.String(modayNUMBER));
-return updatedIMAGE;
+  var bigSTRING = typicalIMAGE.get('system:index');
+  var bigNUMBER = ee.Number.parse(bigSTRING);
+  var year = typicalIMAGE.get('thisyear');
+  var yearNUMBER = ee.Number.parse(year);
+  var bigyearNUMBER = yearNUMBER.multiply(10000);
+  var modayNUMBER = bigNUMBER.subtract(bigyearNUMBER);
+  var updatedIMAGE = typicalIMAGE.set('doy',ee.String(modayNUMBER));
+  return updatedIMAGE;
 }
 
 // Apply that function to all images in the GridMet collection
@@ -50,18 +51,19 @@ var updatedIMAGES2 = updatedIMAGES1.map( NoteDOYForEachImage );
 
 // Create a function to generate a MONTH property for each image:
 function NoteMonthForEachImage(typicalIMAGE){
-var bigSTRING = typicalIMAGE.get('system:index');
-var bigNUMBER = ee.Number.parse(bigSTRING);
-var doy = typicalIMAGE.get('doy');
-var doynumber = ee.Number.parse(doy);
-var month = doynumber.divide(100);
-var month1 = month.round();
-var updatedIMAGE = typicalIMAGE.set('month',ee.String(month1));
-return updatedIMAGE;
+  var bigSTRING = typicalIMAGE.get('system:index');
+  var bigNUMBER = ee.Number.parse(bigSTRING);
+  var doy = typicalIMAGE.get('doy');
+  var doynumber = ee.Number.parse(doy);
+  var month = doynumber.divide(100);
+  var month1 = month.round();
+  var updatedIMAGE = typicalIMAGE.set('month',ee.String(month1));
+  return updatedIMAGE;
 }
 
 // Apply that function to all images in Daymett collection
-var updatedIMAGES3 = updatedIMAGES2.map( NoteMonthForEachImage );
+var updatedIMAGES3 = updatedIMAGES2.map(NoteMonthForEachImage);
+
 //print(updatedIMAGES3.limit(1));
 
 // Create separate Image Collection for each variable:
@@ -71,31 +73,31 @@ var daymet30tmax = updatedIMAGES3.select("tmax");
 
 // Create function that calculates monthly precip all months:
 function monthlyprcp( thismonth ){
-var monthlyIMAGES = daymet30prcp.filterMetadata('month','equals',thismonth);
-var monthlysumIMAGE = monthlyIMAGES.sum();
-var monthlymeanIMAGE = monthlysumIMAGE.divide(30);
-var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-return monthlymeanIMAGE1;
+  var monthlyIMAGES = daymet30prcp.filterMetadata('month','equals',thismonth);
+  var monthlysumIMAGE = monthlyIMAGES.sum();
+  var monthlymeanIMAGE = monthlysumIMAGE.divide(30);
+  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
+  return monthlymeanIMAGE1;
 }
 
 // Create function that calculates monthly tmin for all months:
 function monthlytmin( thismonth ){
-var monthlyIMAGES = daymet30tmin.filterMetadata('month','equals',thismonth);
-var totaldays = monthlyIMAGES.size();
-var monthlysumIMAGE = monthlyIMAGES.sum();
-var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
-var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-return monthlymeanIMAGE1;
+  var monthlyIMAGES = daymet30tmin.filterMetadata('month','equals',thismonth);
+  var totaldays = monthlyIMAGES.size();
+  var monthlysumIMAGE = monthlyIMAGES.sum();
+  var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
+  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
+  return monthlymeanIMAGE1;
 }
 
 // Create function that calculates monthly tmax for all months:
 function monthlytmax( thismonth ){
-var monthlyIMAGES = daymet30tmax.filterMetadata('month','equals',thismonth);
-var monthlysumIMAGE = monthlyIMAGES.sum();
-var totaldays = monthlyIMAGES.size();
-var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
-var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-return monthlymeanIMAGE1;
+  var monthlyIMAGES = daymet30tmax.filterMetadata('month','equals',thismonth);
+  var monthlysumIMAGE = monthlyIMAGES.sum();
+  var totaldays = monthlyIMAGES.size();
+  var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
+  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
+  return monthlymeanIMAGE1;
 }
 
 
@@ -139,7 +141,7 @@ var prcpImage = renameBands(meanMonthlyPrcp.toBands(), 'prcp');
 var combOut = tmaxImage.addBands(tminImage).addBands(prcpImage);
 print(combOut.bandNames());
 
-Export.image.toDrive({
+/*Export.image.toDrive({
   image: combOut,
   description: 'daymet_v'+ v + '_monthly_normals_' + yearStart + '-' + yearEnd,
   folder: 'gee',
@@ -148,5 +150,5 @@ Export.image.toDrive({
   region: geometry,
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
-});
+});*/
 
