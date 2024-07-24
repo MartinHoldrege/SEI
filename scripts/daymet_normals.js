@@ -13,57 +13,101 @@ var cor = require("users/MartinHoldrege/SEI:src/correlation.js"); // for pearson
 // First, load DayMet dataset and filter to only contain precipitation & temp:
 var v = 4; // Daymet version
 var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
-
+print(daymet.first())
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
 var yearEnd = 2020;
-var daymet30 = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	// end date is exclusive
+var daymet30a = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	// end date is exclusive
 
-// Create a function to generate a Year property for each image
-// Note: .parse converts string to a number.
-function NoteYearForEachImage( typicalIMAGE ){
-  var bigSTRING = typicalIMAGE.get('system:index');
-  var bigNUMBER = ee.Number.parse(bigSTRING);
-  var yearNUMBER = bigNUMBER.divide(10000).int();
-  var updatedIMAGE = typicalIMAGE.set('thisyear',ee.String(yearNUMBER));
+// functions -----------------------------------------------------------------------------
+
+// function to generate a month and year property for each image:
+function yearMonthForEachImage(x){
+  var image = ee.Image(x);
+  var date = ee.Date(image.get('system:time_start'));
+  var updatedIMAGE = image
+    .set('month',date.get('month'))
+    .set('year', date.get('year'));
   return updatedIMAGE;
 }
 
-// Apply that function to all images in the GridMet collection
-var updatedIMAGES1 = daymet30.map( NoteYearForEachImage );
-
-// Create a function to generate a DOY property for each image
-// Note: .parse converts string to a number.
-function NoteDOYForEachImage( typicalIMAGE ){
-  var bigSTRING = typicalIMAGE.get('system:index');
-  var bigNUMBER = ee.Number.parse(bigSTRING);
-  var year = typicalIMAGE.get('thisyear');
-  var yearNUMBER = ee.Number.parse(year);
-  var bigyearNUMBER = yearNUMBER.multiply(10000);
-  var modayNUMBER = bigNUMBER.subtract(bigyearNUMBER);
-  var updatedIMAGE = typicalIMAGE.set('doy',ee.String(modayNUMBER));
-  return updatedIMAGE;
+// summarize given daily info for a single year
+// and convert to an image collection with 12 images
+function summarizeByMonth(ic, reducer, year) {
+  var months = ee.List.sequence(1, 12);
+  var monthlyList = months.map(function(x) {
+    var month = ee.Number(x);
+    var summarized = ic
+      .filter(ee.Filter.eq('month', month))
+      .reduce(reducer)
+      .set('month', month)
+      .set('year', year);
+    return summarized;
+  });
+  return ee.ImageCollection.fromImages(monthlyList);
 }
 
-// Apply that function to all images in the GridMet collection
-var updatedIMAGES2 = updatedIMAGES1.map( NoteDOYForEachImage );
-//print(updatedIMAGES2.limit(1));
-
-// Create a function to generate a MONTH property for each image:
-function NoteMonthForEachImage(typicalIMAGE){
-  var bigSTRING = typicalIMAGE.get('system:index');
-  var bigNUMBER = ee.Number.parse(bigSTRING);
-  var doy = typicalIMAGE.get('doy');
-  var doynumber = ee.Number.parse(doy);
-  var month = doynumber.divide(100);
-  var month1 = month.round();
-  var updatedIMAGE = typicalIMAGE.set('month',ee.String(month1));
-  return updatedIMAGE;
+function summarizeByMonthYear(ic, reducer, years) {
+   var yearlyList = years.map(function(x) {
+    var year = ee.Number(x);
+    var icFiltered = ic
+      .filter(ee.Filter.eq('year', year));
+    return summarizeByMonth(icFiltered, reducer, year);
+  });
+  // following this advice: https://gis.stackexchange.com/questions/423392 to flatten
+  var fc = ee.FeatureCollection(yearlyList).flatten(); // flatten so not list of collections
+  return ee.ImageCollection(fc);
 }
+
+// end functions --------------------------------------------------------------------------
 
 // Apply that function to all images in Daymett collection
-var updatedIMAGES3 = updatedIMAGES2.map(NoteMonthForEachImage);
-print(updatedIMAGES3.first());
+var daymet30b = daymet30a.map(yearMonthForEachImage);
+
+// summarize data to month/year --------------------------------------------------------------
+
+var years = ee.List.sequence(yearStart, yearEnd);
+
+// monthly values for each year
+var tMonthly = summarizeByMonthYear(daymet30b.select(['tmin', 'tmax']), ee.Reducer.mean(), years)
+  .map(function(image) {
+    return ee.Image(image).regexpRename('_mean', "");
+  });
+  
+var prcpMonthly = summarizeByMonthYear(daymet30b.select('prcp'), ee.Reducer.sum(), years)
+    .map(function(image) {
+    return ee.Image(image).rename('prcp_sum', "prcp");
+  });
+  
+var tmeanMonthly = tMonthly.map(function(x) {
+  var image = ee.Image(x);
+  return image.select('tmin')
+    .add(image.select('tmax'))
+    .divide(ee.Image(2))
+    .rename('tmean');
+});
+
+// calculate T-P correlation -----------------------------------------------------------------
+
+// correlation between monthly temperature and precipitation, calculated for each year
+// then the mean is calculated ( what we have called type 2 corrTP' elsewher)
+var corList = years
+  .map(function(number) {
+    var yr = ee.Number(number);
+    var x = tmeanMonthly.filter(ee.Filter.eq('year', yr));
+    var y = prcpMonthly.filter(ee.Filter.eq('year', yr));
+    return ee.Image(cor.pearsonCorrelation(x, y))
+      .set('year', yr);
+  });
+var corByYear = ee.ImageCollection.fromImages(corList);
+var corMean = corByYear.mean().rename('corrTP2'); 
+
+// mean across years of monthly T and P ------------------------------------------------------
+
+var combMonthly = prcpMonthly.combine(tMonthly);
+var c
+
+
 // Create separate Image Collection for each variable:
 var daymet30prcp = updatedIMAGES3.select("prcp");
 var daymet30tmin = updatedIMAGES3.select("tmin");
