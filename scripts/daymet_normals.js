@@ -135,8 +135,8 @@ var combOut = combMonthlyMeans
 // print(combOut.bandNames());
 
 // Create a geometry representing decadal study area:
-var geometry = ee.Geometry.Polygon([[-133.2146, 28.90959],[-133.2146,55.06167],
-                                    [-94.93751, 55.06167],[-94.93751,28.90959]]);
+/*var geometry = ee.Geometry.Polygon([[-133.2146, 28.90959],[-133.2146,55.06167],
+                                    [-94.93751, 55.06167],[-94.93751,28.90959]]);*/
 
 Export.image.toDrive({
   image: combOut,
@@ -144,7 +144,7 @@ Export.image.toDrive({
   folder: 'gee',
   maxPixels: 1e13, 
   scale: 1000,
-  region: geometry,
+  region: SEI.geometry,
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
