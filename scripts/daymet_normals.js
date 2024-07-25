@@ -48,6 +48,7 @@ function summarizeByMonth(ic, reducer, year) {
   return ee.ImageCollection.fromImages(monthlyList);
 }
 
+// return monthly values for each year (input ic nee)
 function summarizeByMonthYear(ic, reducer, years) {
    var yearlyList = years.map(function(x) {
     var year = ee.Number(x);
@@ -128,7 +129,9 @@ var combMonthlyMeans = ee.ImageCollection.fromImages(combMonthlyBands)
   
 // print('combMonthlyMeans', combMonthlyMeans)
 
-var combOut = combMonthlyMeans.addBands(corMean);
+var combOut = combMonthlyMeans
+  .addBands(corMean)
+  .toFloat();
 // print(combOut.bandNames());
 
 // Create a geometry representing decadal study area:
