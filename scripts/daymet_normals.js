@@ -1,6 +1,6 @@
 // Calculating daymet monthly normals
 
-// This is written by by Rachel Renne and modified by Martin Holdrege 
+// This code was Martin Holdrege and inspired by code written by Rachel Renne and modified by
 
 // Note: The Daymet calendar is based on a standard calendar year. All Daymet years have 1 - 365 days, 
 //including leap years. For leap years, the Daymet database includes leap day. Values for December 31 
@@ -13,9 +13,10 @@ var cor = require("users/MartinHoldrege/SEI:src/correlation.js"); // for pearson
 // First, load DayMet dataset and filter to only contain precipitation & temp:
 var v = 4; // Daymet version
 var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax','tmin']);
-print(daymet.first())
+
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
+// var yearStart = 2019; // for testing
 var yearEnd = 2020;
 var daymet30a = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	// end date is exclusive
 
@@ -76,7 +77,7 @@ var tMonthly = summarizeByMonthYear(daymet30b.select(['tmin', 'tmax']), ee.Reduc
   
 var prcpMonthly = summarizeByMonthYear(daymet30b.select('prcp'), ee.Reducer.sum(), years)
     .map(function(image) {
-    return ee.Image(image).rename('prcp_sum', "prcp");
+    return ee.Image(image).rename("prcp");
   });
   
 var tmeanMonthly = tMonthly.map(function(x) {
@@ -84,13 +85,15 @@ var tmeanMonthly = tMonthly.map(function(x) {
   return image.select('tmin')
     .add(image.select('tmax'))
     .divide(ee.Image(2))
-    .rename('tmean');
+    .rename('tmean')
+    .copyProperties(image);
 });
 
 // calculate T-P correlation -----------------------------------------------------------------
 
 // correlation between monthly temperature and precipitation, calculated for each year
 // then the mean is calculated ( what we have called type 2 corrTP' elsewher)
+
 var corList = years
   .map(function(number) {
     var yr = ee.Number(number);
@@ -104,116 +107,35 @@ var corMean = corByYear.mean().rename('corrTP2');
 
 // mean across years of monthly T and P ------------------------------------------------------
 
-var combMonthly = prcpMonthly.combine(tMonthly);
-var c
+// converting month property to string for later band naming
+var combMonthly = prcpMonthly.combine(tMonthly)
+  .map(function(x) {
+    var monthString = ee.String(ee.Number(ee.Image(x).get('month')).format('%.0f'));
+    return ee.Image(x).set('month', monthString);
+  });
 
-
-// Create separate Image Collection for each variable:
-var daymet30prcp = updatedIMAGES3.select("prcp");
-var daymet30tmin = updatedIMAGES3.select("tmin");
-var daymet30tmax = updatedIMAGES3.select("tmax");
-
-// calculate correlation between monthly prcp and tmean for 
-// each year, then average across years ( what we have called type 2 corrTP' elsewher)
-
-var  daymet30tmean = updatedIMAGES3.map(function(x) {
-  var image = ee.Image(x);
-  return image.select("tmin")
-    .add(image.select("tmax"))
-    .divide(ee.Image(2))
-    .rename('tmean')
-    .copyProperties(image);
+// now one image per year, and one band per month per variable
+var combMonthlyBands = years.map(function(x) {
+  var yr = ee.Number(x);
+  var filtered = combMonthly.filter(ee.Filter.eq('year', yr));
+  var image = SEI.ic2Image(filtered, 'month').set('year', yr);
+  return image.regexpRename('^[[:alnum:]]+_', ''); // removing leading numbers
 });
 
-var years = ee.List.sequence(yearStart, yearEnd);
+var combMonthlyMeans = ee.ImageCollection.fromImages(combMonthlyBands)
+  .mean() // means across years for given month
+  .regexpRename('_mean', '');
+  
+// print('combMonthlyMeans', combMonthlyMeans)
 
-
-
-var corList = ee.List.sequence(yearStart, yearEnd)
-  .map(function(number) {
-    var yr = ee.Number(number);
-    var dailytmean = daymet30tmean.filter(ee.Filter.eq('thisyear', yr));
-    var dailyprcp = daymet30prcp.filter(ee.Filter.eq('thisyear', yr));
-    
-    monthly
-    return ee.Image(cor.pearsonCorrelation(x, y));
-  });
-
-print('corList', corList.get(0));
-var corMean = ee.ImageCollection(corList).mean();
-
-//print('cormean', corMean)
-// Create function that calculates monthly precip all months:
-function monthlyprcp( thismonth ){
-  var monthlyIMAGES = daymet30prcp.filterMetadata('month','equals',thismonth);
-  var monthlysumIMAGE = monthlyIMAGES.sum();
-  var monthlymeanIMAGE = monthlysumIMAGE.divide(30);
-  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-  return monthlymeanIMAGE1;
-}
-
-// Create function that calculates monthly tmin for all months:
-function monthlytmin( thismonth ){
-  var monthlyIMAGES = daymet30tmin.filterMetadata('month','equals',thismonth);
-  var totaldays = monthlyIMAGES.size();
-  var monthlysumIMAGE = monthlyIMAGES.sum();
-  var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
-  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-  return monthlymeanIMAGE1;
-}
-
-// Create function that calculates monthly tmax for all months:
-function monthlytmax( thismonth ){
-  var monthlyIMAGES = daymet30tmax.filterMetadata('month','equals',thismonth);
-  var monthlysumIMAGE = monthlyIMAGES.sum();
-  var totaldays = monthlyIMAGES.size();
-  var monthlymeanIMAGE = monthlysumIMAGE.divide(totaldays); //total number of days = 900
-  var monthlymeanIMAGE1 = monthlymeanIMAGE.set('month',ee.String(thismonth));
-  return monthlymeanIMAGE1;
-}
-
-
-// Create list of all months, 30 day months, and 31 day months.
-var monthLIST = ee.List(["1.0","2.0","3.0","4.0","5.0","6.0","7.0","8.0","9.0","10.0","11.0","12.0"]);
-
-// this function requires a 12 band image, and renames appropriately
-var renameBands = function(image, prefix) {
-  var newNames = monthLIST.map(function(x) {
-    var monthString = ee.String(x).replace('.0$', '');
-    return ee.String(prefix).cat(ee.String('_')).cat(monthString);
-  });
-  return image.rename(newNames);
-};
-// Map functions over appropriate Image Collections, and convert list to ImageCollection:
-var meanMonthlyprcpLIST = monthLIST.map(monthlyprcp);
-var meanMonthlyPrcp = ee.ImageCollection(meanMonthlyprcpLIST);
-//print(meanMonthlyPrcp.limit(1));
-
-var meanMonthlytminLIST = monthLIST.map(monthlytmin);
-var meanMonthlytmin = ee.ImageCollection(meanMonthlytminLIST);
-//print(meanMonthlytmin);
-
-var meanMonthlytmaxLIST = monthLIST.map(monthlytmax);
-var meanMonthlytmax = ee.ImageCollection(meanMonthlytmaxLIST);
-//print(meanMonthlytmax);
+var combOut = combMonthlyMeans.addBands(corMean);
+// print(combOut.bandNames());
 
 // Create a geometry representing decadal study area:
 var geometry = ee.Geometry.Polygon([[-133.2146, 28.90959],[-133.2146,55.06167],
                                     [-94.93751, 55.06167],[-94.93751,28.90959]]);
-Map.addLayer(geometry,{color: "333333"}, "Study Area for Decadal Runs");
 
-// Export the image, specifying scale and region.
-// Have to manually set ImageColection and month to get all datalayers:
-
-// nameBands
-var tmaxImage = renameBands(meanMonthlytmax.toBands(), 'tmax');
-var tminImage = renameBands(meanMonthlytmin.toBands(), 'tmin');
-var prcpImage = renameBands(meanMonthlyPrcp.toBands(), 'prcp');
-
-var combOut = tmaxImage.addBands(tminImage).addBands(prcpImage);
-print(combOut.bandNames());
-
-/*Export.image.toDrive({
+Export.image.toDrive({
   image: combOut,
   description: 'daymet_v'+ v + '_monthly_normals_' + yearStart + '-' + yearEnd,
   folder: 'gee',
@@ -222,5 +144,5 @@ print(combOut.bandNames());
   region: geometry,
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
-});*/
+});
 
