@@ -144,7 +144,7 @@ Export.image.toDrive({
   folder: 'gee',
   maxPixels: 1e13, 
   scale: 1000,
-  region: SEI.geometry,
+  region: SEI.region,
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
