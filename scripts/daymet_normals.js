@@ -108,20 +108,7 @@ var corMean = corByYear.mean().rename('corrTP2');
 
 // mean across years of monthly T and P ------------------------------------------------------
 
-// converting month property to string for later band naming
-var combMonthly = prcpMonthly.combine(tMonthly)
-  .map(function(x) {
-    var monthString = ee.String(ee.Number(ee.Image(x).get('month')).format('%.0f'));
-    return ee.Image(x).set('month', monthString);
-  });
 
-// now one image per year, and one band per month per variable
-var combMonthlyBands = years.map(function(x) {
-  var yr = ee.Number(x);
-  var filtered = combMonthly.filter(ee.Filter.eq('year', yr));
-  var image = SEI.ic2Image(filtered, 'month').set('year', yr);
-  return image.regexpRename('^[[:alnum:]]+_', ''); // removing leading numbers
-});
 
 var combMonthlyMeans = ee.ImageCollection.fromImages(combMonthlyBands)
   .mean() // means across years for given month
