@@ -17,7 +17,7 @@ var daymet = ee.ImageCollection("NASA/ORNL/DAYMET_V" + v).select(['prcp','tmax',
 
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
-var yearStart = 2019; // for testing
+// var yearStart = 2019; // for testing
 var yearEnd = 2020;
 var daymet30a = daymet.filterDate(yearStart + '-01-01',(yearEnd + 1) +'-01-01');	// end date is exclusive
 
@@ -91,23 +91,22 @@ var combMonthly = prcpMonthly.combine(tMonthly)
 
 // writing files
 // now one image per year, and one band per month per variable
-for (i=yearStart;i<=yearEnd;i++) {
+for (var i=yearStart;i<=yearEnd;i++) {
   var yr = ee.Number(i);
   var filtered = combMonthly.filter(ee.Filter.eq('year', yr));
   var image = SEI.ic2Image(filtered, 'month')
     .set('year', yr)
     .regexpRename('^[[:alnum:]]+_', '');
-  var s = SEI.path + '/daymet/daymet_v'+ v + '_monthly-values_' + i;
+  var s = 'daymet_v'+ v + '_monthly_values_' + i;
   
   Export.image.toAsset({
     image: image,
     description: s,
-    folder: 'gee',
+    assetId: SEI.path + 'daymet/' + s
     maxPixels: 1e13, 
     scale: 1000,
     region: SEI.region,
-    crs: SEI.crs,
-    fileFormat: 'GeoTIFF'
+    crs: SEI.crs
   });
 }
   
