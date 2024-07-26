@@ -102,7 +102,7 @@ for (var i=yearStart;i<=yearEnd;i++) {
   Export.image.toAsset({
     image: image,
     description: s,
-    assetId: SEI.path + 'daymet/' + s
+    assetId: SEI.path + 'daymet/' + s,
     maxPixels: 1e13, 
     scale: 1000,
     region: SEI.region,
