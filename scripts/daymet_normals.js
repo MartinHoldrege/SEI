@@ -13,7 +13,7 @@ var v = 4; // Daymet version
 
 //Next, filter to include only those images need to calculate the 30-year norm (1991-2010):
 var yearStart = 1991;
-// var yearStart = 2019; // for testing
+var yearStart = 2019; // for testing
 var yearEnd = 2020;
 
 // read in data ----------------------------------------------------------------------------
