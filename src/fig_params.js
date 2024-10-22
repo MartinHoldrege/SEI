@@ -64,15 +64,15 @@ var c9Palette =  ['#142b65', // stable core (black)
              '#eee1ba'] // stable impacted
              
 var c9Names =  [
-  'Stable core',
-  'Core becomes grow',
-  'Core becomes other',
-  'Grow becomes core',
-  'Stable grow',
-  'Grow becomes other',
-  'Other becomes core',
-  'Other becomes grow',
-  'Stable other'
+  'Stable CSA',
+  'CSA becomes GOA',
+  'CSA becomes ORA',
+  'GOA becomes CSA',
+  'Stable GOA',
+  'GOA becomes ORA',
+  'ORA becomes CSA',
+  'ORA becomes GOA',
+  'Stable ORA'
 ];
 
 var imageVisc9 = {"opacity":1,"min":1,"max":9, "palette":c9Palette};
