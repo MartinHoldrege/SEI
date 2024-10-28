@@ -158,7 +158,7 @@ for(var i = 0; i<rcpList.length; i++) {
   
   // dictionary where each element is a an image for a given run
   var numGoodC3Comb = numGoodC3Comb.map(function(key, value) {
-      out = ee.Image(d.get(key).get('numGcmGood'))
+      var out = ee.Image(ee.Dictionary(d.get(key)).get('numGcmGood'))
         .regexpRename('$', '_' + rcp_yr)
         .addBands(value);
       return out;
@@ -205,6 +205,7 @@ var outString = function(description, root) {
   return v + description + '_' + resolutionOut + '_' +  rootShort;
 };
 
+if(!exportToAsset) {
 if(!onlyHiRes) {
 Export.image.toDrive({
   image: c9_fireComb,
@@ -314,20 +315,23 @@ Export.table.toDrive({
   fileFormat: 'CSV'
 });
 }
-
+}
 // export num GCM good to asset -----------------------------------
 
 // export 1 num gcm good asset per run type (these
 // are for visualizations, because they're slow to load otherwise
+
 if(exportToAsset) {
+  var majorVersion = 'vsw4-3';
   var keys = numGoodC3Comb.keys().getInfo();
   for (var k = 0; k < keys.length; k++) {
     var key = keys[k];
-    var fileName = outString('numGcmGood', d.get(key).get('root'));
+    var root = ee.Dictionary(d.get(key)).get('root').getInfo();
+    var fileName = outString('numGcmGood', root);
     
     Export.image.toAsset({ 
       image: numGoodC3Comb.get(key), //single image with multiple bands
-      assetId: SEI.path + v + '/products/' + fileName,
+      assetId: SEI.path + majorVersion + '/products/' + fileName,
       description: fileName,
       maxPixels: 1e13, 
       scale: resolutionOut,
