@@ -22,8 +22,8 @@ var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85']; // for normal runs
 // var rcpList = ['RCP45']; // for testing
 var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100']; // for normal runs
 
-var onlyHiRes = true; // only export layers that want in I res (i.e. for data layers,
-// not actually for maps)
+var onlyHiRes = true; // only export layers that want in I res (i.e. for data layers, not for maps)
+var exportToAsset = true;// export select layers to asset (resolution out should be 90)
 
 // var epochList = ['2070-2100']
 // dependencies ---------------------------------------------
@@ -42,7 +42,13 @@ var c9DiffGrassComb = ee.Image([]);
 var diffPropComb = ee.Image([]);
 var diffComb = ee.Image([]);
 var qPropMeanComb = ee.Image([]);
-var numGoodC3Comb = ee.Image([]);
+var numGoodC3Comb = ee.Dictionary({
+  fire1: ee.Image([]),
+  fire0: ee.Image([]),
+  co21: ee.Image([]),
+  grass0: ee.Image([])
+})
+  ;
 
 for(var i = 0; i<rcpList.length; i++) {
   
@@ -56,6 +62,7 @@ for(var i = 0; i<rcpList.length; i++) {
   var d_fire0 = lyrMod.main({root: root_fire0, RCP: rcp, epoch: epoch}); 
   var d_co21 = lyrMod.main({root: root_co21, RCP: rcp, epoch: epoch}); 
   var d_grass0 = lyrMod.main({root: root_grass0, RCP: rcp, epoch: epoch});
+  var d = ee.Dictionary({'fire1': d_fire1, 'fire0': d_fire0, 'co21': d_co21, 'grass0': d_grass0});
   var v = d_fire1.get('versionFull').getInfo() + '_';
   
   // c9 layer ------------------------------------------------
@@ -148,10 +155,14 @@ for(var i = 0; i<rcpList.length; i++) {
   // for areas that are currently grow, the number of GCMS that agree that will be Core or Grow in the future
   
   // first digit is c3 classification, 2nd and 3rd digit is number of gcms that suggest things get better or stay the same (for grows and cores)
-  var numGoodC3Comb = ee.Image(d_fire1.get('numGcmGood'))
-    .regexpRename('$', '_' + rcp_yr)
-    .addBands(numGoodC3Comb);
-    
+  
+  // dictionary where each element is a an image for a given run
+  var numGoodC3Comb = numGoodC3Comb.map(function(key, value) {
+      out = ee.Image(d.get(key).get('numGcmGood'))
+        .regexpRename('$', '_' + rcp_yr)
+        .addBands(value);
+      return out;
+  });
 
   // calculating c9-diff area -----------------------------------
   // calculating the area in the 5 categories of the transition comparison lyrs;
@@ -281,7 +292,7 @@ Export.image.toDrive({
 });
 
 Export.image.toDrive({
-  image: numGoodC3Comb,
+  image: numGoodC3Comb.get('fire1'),
   description: outString('numGcmGood', root_fire1),
   folder: 'gee',
   maxPixels: 1e13, 
@@ -303,3 +314,27 @@ Export.table.toDrive({
   fileFormat: 'CSV'
 });
 }
+
+// export num GCM good to asset -----------------------------------
+
+// export 1 num gcm good asset per run type (these
+// are for visualizations, because they're slow to load otherwise
+if(exportToAsset) {
+  var keys = numGoodC3Comb.keys().getInfo();
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+    var fileName = outString('numGcmGood', d.get(key).get('root'));
+    
+    Export.image.toAsset({ 
+      image: numGoodC3Comb.get(key), //single image with multiple bands
+      assetId: SEI.path + v + '/products/' + fileName,
+      description: fileName,
+      maxPixels: 1e13, 
+      scale: resolutionOut,
+      region: SEI.region,
+      crs: SEI.crs
+    });
+  }
+}
+
+
