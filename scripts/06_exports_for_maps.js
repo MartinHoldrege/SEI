@@ -10,7 +10,7 @@ Data started: November 21, 2023
 
 // params ---------------------------------------------------
 
-var resolutionOut = 500; // 90; //  resolution of output maps (normally 500 m)
+var resolutionOut = 90; // 500; //  resolution of output maps (use high res, if want to save/ and use data layer)
 var resolutionOutC9 = 180; // resolution of output for c9 maps (needs higher resolution b/ pyramid artifacts)
 var resolutionArea = 90; // resolution for area calculations
 var root_fire1 = 'fire1_eind1_c4grass1_co20_2311_';
@@ -21,6 +21,10 @@ var root_grass0 = 'fire1_eind1_c4grass0_co20_2311_';
 var rcpList = ['RCP45', 'RCP45', 'RCP85', 'RCP85']; // for normal runs
 // var rcpList = ['RCP45']; // for testing
 var epochList = ['2030-2060', '2070-2100','2030-2060', '2070-2100']; // for normal runs
+
+var onlyHiRes = true; // only export layers that want in I res (i.e. for data layers,
+// not actually for maps)
+
 // var epochList = ['2070-2100']
 // dependencies ---------------------------------------------
 
@@ -184,6 +188,13 @@ for(var i = 0; i<rcpList.length; i++) {
 
 // images with bands for each rcp/epoch ------------------------
 // c9 
+
+var outString = function(description, root) {
+  var rootShort = root.replace(/_$/, "");
+  return v + description + '_' + resolutionOut + '_' +  rootShort;
+};
+
+if(!onlyHiRes) {
 Export.image.toDrive({
   image: c9_fireComb,
   description: v + '9ClassTransitionMed_' + resolutionOutC9 + '_' + root_fire1.replace(/_$/, ""),
@@ -194,11 +205,7 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
-  
-var outString = function(description, root) {
-  var rootShort = root.replace(/_$/, "");
-  return v + description + '_' + resolutionOut + '_' +  rootShort;
-};
+}
 // c9 diff fire
 Export.image.toDrive({
   image: c9DiffFireComb,
@@ -247,6 +254,7 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
 
+if(!onlyHiRes) {
 // absolute changes in Q & SEI
 Export.image.toDrive({
   image: diffComb,
@@ -258,7 +266,7 @@ Export.image.toDrive({
   crs: SEI.crs,
   fileFormat: 'GeoTIFF'
 });
-
+}
 
 // q prop (for RGB maps)
 Export.image.toDrive({
@@ -287,9 +295,11 @@ Export.image.toDrive({
 // outputting Fc with results from all iterations of the loop
 var s = d_fire1.get('versionFull').getInfo() + '_20240419';
 
+if(!onlyHiRes) {
 Export.table.toDrive({
   collection: areaComb,
   description: 'area-by-c9-diff_' + resolutionArea + 'm_' + s,
   folder: 'SEI',
   fileFormat: 'CSV'
 });
+}
