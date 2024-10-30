@@ -322,15 +322,34 @@ Export.table.toDrive({
 // are for visualizations, because they're slow to load otherwise
 
 if(exportToAsset) {
+  
+  // first digit is current class (1 = core, 2 grow, 3 other), digits 2 and 3 are
+  // the number of GCMs that agree
+  // 113 means 13 GCMS agree will stay core (class 1)
+  // note some 215s existed in some earlier layers (i.e. grow, 15 GCMs agree on stability/improvement
+  // which isn't possible, this has to do with how the pyramid is being
+  // defined in GEE and disappears when you 'zoom'
+  var gcmAgreeFrom = [115, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 
+    102, 101, 100, 215, 214, 213, 212, 211, 210, 209, 208, 207, 206, 205, 204, 203, 
+    202, 201, 200, 300];
+  
+  var gcmAgreeTo = [1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 5, 5, 5, 5, 6, 6, 
+    6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 9];
+    
   var majorVersion = 'vsw4-3';
   var keys = numGoodC3Comb.keys().getInfo();
   for (var k = 0; k < keys.length; k++) {
     var key = keys[k];
     var root = ee.Dictionary(d.get(key)).get('root').getInfo();
-    var fileName = outString('numGcmGood', root);
+    // mode pyramid policy
+    var fileName = outString('numGcmGood', root) + '_mode';
     
+    var image = ee.Image(numGoodC3Comb.get(key))
+      .remap(gcmAgreeFrom, gcmAgreeTo);
+      
     Export.image.toAsset({ 
-      image: numGoodC3Comb.get(key), //single image with multiple bands
+      image: image, //single image with multiple bands
+      pyramidingPolicy: {'.default': 'mode'},
       assetId: SEI.path + majorVersion + '/products/' + fileName,
       description: fileName,
       maxPixels: 1e13, 
