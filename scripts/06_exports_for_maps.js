@@ -344,8 +344,8 @@ if(exportToAsset) {
     // mode pyramid policy
     var fileName = outString('numGcmGood', root) + '_mode';
     
-    var image = ee.Image(numGoodC3Comb.get(key))
-      .remap(gcmAgreeFrom, gcmAgreeTo);
+    var image = SEI.remapAllBands(ee.Image(numGoodC3Comb.get(key)),
+      gcmAgreeFrom, gcmAgreeTo);
       
     Export.image.toAsset({ 
       image: image, //single image with multiple bands
