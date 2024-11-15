@@ -6,7 +6,7 @@ This is the main branch of the
 repository that has all scripts (including old/defunct scripts). Please
 switch to the 'zenodo' branch to see the cleaner, more curated, and better documented version
 of the repository that only provides the scripts needed for the analyses presented
-in Holdrege et al. 2024 (Rangeland Ecology and Management). Note, the version of this repository in the
+in Holdrege et al. 2024 (Rangeland Ecology and Management, https://doi.org/10.1016/j.rama.2024.08.003). Note, the version of this repository in the
 zenodo branch has also been 
 archived on the zenodo repository
 
