@@ -5,14 +5,11 @@
 Analysis of sagebrush ecological integrity responses to climate change. 
 
 This is the branch of this repository that provides the scripts used for the analyses presented
-in Holdrege et al. (Rangeland Ecology and Management) and used to create the data files
+in Holdrege et al. 2024 (Rangeland Ecology and Management) and used to create the data files
 for the accompanying data-release. 
 
 Manuscript:
-Holdrege, M.C., Palmquist, K.A., Schlaepfer, D.R., Lauenroth, W.K., Boyd, C.S., 
-Creutzburg, M.K., Crist, M.R., Doherty, K.E., Remington, T.E., Tull, J.C., 
-Wiechman, L.A., Bradford, J.B., in press. Climate change amplifies ongoing 
-declines in sagebrush ecological integrity. Rangeland Ecology and Management.
+Holdrege, M.C., K.A. Palmquist, D.R. Schlaepfer, W.K. Lauenroth, C.S. Boyd, M.K. Creutzburg, M.R. Crist, K.E. Doherty, T.E. Remington, J.C. Tull, L.A. Wiechman, J.B. Bradford,  2024. Climate Change Amplifies Ongoing Declines in Sagebrush Ecological Integrity. Rangeland Ecology & Management, 97:25–40 https://doi.org/10.1016/j.rama.2024.08.003
 
 Data release:
 Holdrege, M.C., Schlaepfer, D.R., Palmquist, K.A., Theobald, D.M., and Bradford, J.B., 2024, Current and projected sagebrush ecological integrity across the Western U.S., 2017-2100: U.S. Geological Survey data release,
