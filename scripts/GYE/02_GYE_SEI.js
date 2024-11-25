@@ -56,7 +56,7 @@ Map.addLayer(SEI.tundra.selfMask(), {palette: 'red'}, 'tundra', false);
 
 var wildfires = ee.FeatureCollection('users/DavidTheobald8/WFIGS/Interagency_Fire_Perimeter_History')
 var ones = ee.Image(1)
-var lstWeights = [0.4, 0.3, 0.2, 0.1] // [0.25, 0.25, 0.25, 0.25] // equal weighting, as original model
+var lstWeights = [0.25, 0.25, 0.25, 0.25] // equal weighting, as original model // [0.25, 0.25, 0.25, 0.25] 
 var lstRap = ee.List([])
 for (var y=yearEnd; y>=yearStart; y--) {
   var wildfiresF = wildfires.filter(ee.Filter.rangeContains('FIRE_YEAR_', y, yearEnd))
@@ -136,7 +136,7 @@ for (var e=1; e<=ecoregionNms.length; e++) {
      
   var Q1 = Q1.max(Q1x); // MH combining ecoregions (because values will be 0 if pixel not in the ecoregion of interest)
 
-  var Q2x = SEI.raw2HSI(perennial560m, SEI.lstPerennialG2Q, e)
+  var Q2x = SEI.raw2HSI(rapPerennialG560m, SEI.lstPerennialG2Q, e)
     .max(0.001)
     .multiply(mask)
     .clip(ecoregion)
@@ -144,7 +144,7 @@ for (var e=1; e<=ecoregionNms.length; e++) {
   
   var Q2 = Q2.max(Q2x);
 
-  var Q3x = SEI.raw2HSI(annual560m, SEI.lstAnnualG2Q, e)
+  var Q3x = SEI.raw2HSI(rapAnnualG560m, SEI.lstAnnualG2Q, e)
     .max(0.001)
     .multiply(mask)
     .clip(ecoregion)
@@ -152,11 +152,11 @@ for (var e=1; e<=ecoregionNms.length; e++) {
     
   var Q3 = Q3.max(Q3x);
   
-  var Q4x = raw2HSI(H560m, lstH2Q, e)
+  var Q4x = SEI.raw2HSI(H560m, SEI.lstH2Q, e)
     .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
   var Q4 = Q4.max(Q4x);
 
-  var Q5x = raw2HSI(rapTree560m, lstTree2Q, e)
+  var Q5x = SEI.raw2HSI(rapTree560m, SEI.lstTree2Q, e)
     .max(0.001).multiply(mask).clip(ecoregion).unmask(0.0);
   var Q5 = Q5.max(Q5x);
 }  
@@ -203,15 +203,14 @@ var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
   H560m.multiply(100).byte().rename('H560m')
   ]);
   
-print(WAFWAoutputs)
-/*Export.image.toAsset({ 
+Export.image.toAsset({ 
   image: WAFWAoutputs, //single image with multiple bands
-  assetId: path  + '/v' + version + '/SEI_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_GYE_ecoStateMask_20241126',
+  assetId: path  + 'GYE/v' + version + '/SEI_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_GYE_ecoStateMask_20241126',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326',    // set to WGS84, decimal degrees
   //crsTransform: proj.transform
-});*/
+});
 
 
 
