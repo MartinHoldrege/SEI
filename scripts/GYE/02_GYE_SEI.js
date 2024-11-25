@@ -18,7 +18,7 @@ var yearEnd = 2021;  // this value is changed to make multi-year runs, e.g., 201
 var yearStart = yearEnd - 3; // inclusive
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = 30;
-var resolution = 90;
+var resolution = 30;
 
 // load data -----------------------------------------------------------
 
