@@ -18,7 +18,7 @@ var yearEnd = 2021;  // this value is changed to make multi-year runs, e.g., 201
 var yearStart = yearEnd - 3; // inclusive
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = 30;
-var resolution = 90;
+var resolution = 30;
 
 // load data -----------------------------------------------------------
 
@@ -207,7 +207,7 @@ var WAFWAoutputs = WAFWAoutputs.clip(region);
   
 Export.image.toAsset({ 
   image: WAFWAoutputs, //single image with multiple bands
-  assetId: path  + 'GYE/v' + version + '/SEI_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_GYE_ecoStateMask_20241126',
+  assetId: path  + 'GYE/v' + version + '/SEI_v' + version + '_' + yearStart + '_' + yearEnd + '_' + resolution + '_GYE_ecoStateMask_20241127',
   description: 'SEI' + yearStart + '_' + yearEnd + '_' + resolution,
   maxPixels: 1e13, scale: resolution, region: region,
   crs: 'EPSG:4326',    // set to WGS84, decimal degrees
