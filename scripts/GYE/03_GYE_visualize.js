@@ -34,7 +34,7 @@ var addMap = function(band, vis) {
 // prepare data --------------------------------------------------
 
 var gye = gye.clip(region)
-var v30 = v30.clip(region) // for eesier comparison
+var v30 = v30.clip(region) // for easier comparison
 // maps ---------------------------------------------------------
 
 Map.centerObject(gye)
