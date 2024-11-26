@@ -18,7 +18,7 @@ var yearEnd = 2021;  // this value is changed to make multi-year runs, e.g., 201
 var yearStart = yearEnd - 3; // inclusive
 var radiusCore = 2000;  // defines radius of overall smoothing to get "cores"
 var version = 30;
-var resolution = 30;
+var resolution = 90;
 
 // load data -----------------------------------------------------------
 
@@ -169,7 +169,7 @@ for (var e=1; e<=ecoregionNms.length; e++) {
     var Q2y = Q1.multiply(Q2); 
     var Q3y = Q2y.multiply(Q3);
     var Q4y = Q3y.multiply(Q4);
-    var Q5y = Q4y.multiply(Q5).clip(region)
+    var Q5y = Q4y.multiply(Q5) // not clipping here to avoid edge effect
       .rename('Q5_' + yearStart + '_' + yearEnd);
 
 /**
@@ -202,6 +202,8 @@ var WAFWAoutputs = Q1.float().rename('Q1raw').addBands([
   rapTree560m.multiply(100).byte().rename('tree560m'),
   H560m.multiply(100).byte().rename('H560m')
   ]);
+  
+var WAFWAoutputs = WAFWAoutputs.clip(region);
   
 Export.image.toAsset({ 
   image: WAFWAoutputs, //single image with multiple bands
