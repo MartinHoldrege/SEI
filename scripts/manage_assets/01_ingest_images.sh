@@ -13,14 +13,15 @@ cd
 source ~/.bashrc
 
 # where rasters are located
-dir=/c/Users/mholdrege/OneDrive\ -\ DOI/Documents/projects/grazing_effects/data_processed/interpolated_rasters/biomass/
+# dir=/c/Users/mholdrege/OneDrive\ -\ DOI/Documents/projects/grazing_effects/data_processed/interpolated_rasters/biomass/
+dir=/d/USGS/large_files/SEI_rasters/data_publication2/
 
 # Where rasters will first be uploaded to
 # (a google cloud service bucket)
 gs_folder="gs://usgs-gee-drylandecohydrology/SEI/"
 
 # where assets will be ingested to
-asset_folder="projects/usgs-gee-drylandecohydrology/assets/SEI/stepwat_biomass/"
+asset_folder="projects/usgs-gee-drylandecohydrology/assets/SEI/data_publication2/"
 
 # setup environment
 conda activate ee
@@ -37,7 +38,7 @@ cd "$dir"
 
 # copy files matching this regular expression to cloud bucket:
 # (Note this code will fail if breaks in file names exists)
-files=$(find . | grep -P "fire1_eind1_c4grass0_co20_2311_(Aforb|Sagebrush|Pherb|Cheatgrass)_biomass.*.tif$")
+files=$(find . | grep -P ".*.tif$")
 #files=$(find . | grep -P ".*_climate.*.tif$")
 
 # Split files into an array using newline as the delimiter
