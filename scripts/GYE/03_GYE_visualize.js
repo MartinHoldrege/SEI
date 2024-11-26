@@ -19,7 +19,7 @@ var path = 'projects/usgs-gee-drylandecohydrology/assets/SEI/';
 
 // for comparison purposes
 var v30 = ee.Image('projects/fws-gee-sagebrush/assets/2023_SCD_v30_20230828/SEI_v30_2018_2021_90_20230828')
-var gye = ee.Image(path + 'GYE/v30/SEI_v30_2018_2021_30_GYE_ecoStateMask_20241126')
+var gye = ee.Image(path + 'GYE/v30/SEI_v30_2018_2021_90_GYE_ecoStateMask_20241126')
 var region = ee.FeatureCollection(path + 'GYE/GRYN_GYA_Boundary_AOA_Area');
 
 // print(gye.bandNames())
@@ -33,7 +33,7 @@ var addMap = function(band, vis) {
 
 // prepare data --------------------------------------------------
 
-var gye = gye.clip(region)
+var gye = gye
 var v30 = v30.clip(region) // for easier comparison
 // maps ---------------------------------------------------------
 
