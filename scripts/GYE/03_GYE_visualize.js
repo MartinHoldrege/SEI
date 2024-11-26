@@ -35,10 +35,27 @@ var addMap = function(band, vis) {
 
 var gye = gye
 var v30 = v30.clip(region) // for easier comparison
+
+// places where the gye layers shows core or grow, in a place where
+// the regular layer is masked
+var better = v30.select('Q5sc3')
+  .unmask().eq(0)
+  .and(gye.select('Q5sc3').eq(1)
+      .or(gye.select('Q5sc3').eq(2))
+      );
+   
+// where the gye layer shows a worse category   
+var worse = gye.select('Q5sc3')
+  .unmask().eq(0).or(gye.select('Q5sc3').eq(3)) // masked or other
+  .and(v30.select('Q5sc3').eq(1)
+      .or(v30.select('Q5sc3').eq(2))
+      );
 // maps ---------------------------------------------------------
 
-Map.centerObject(gye)
+Map.centerObject(gye);
 
 // c3
-addMap('Q5sc3', fig.visc3)
+addMap('Q5sc3', fig.visc3);
+Map.addLayer(better.selfMask(), {palette: 'red'}, 'where better', false);
+Map.addLayer(worse.selfMask(), {palette: 'blue'}, 'where worse', false);
 
