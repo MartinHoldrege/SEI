@@ -104,9 +104,10 @@ cols_ng$label = cols_numGcm
 
 agree2 <- map(agree1, function(r) {
   # for science base can't actually use the associated .xml file
+  # so not adding the attributes
   # levels(r) <- labels_ng
   # coltab(r) <- cols_ng
-  names(agree2) <- 'agreement_among_gcms'
+  names(r) <- 'agreement_among_gcms'
   r
 })
 
