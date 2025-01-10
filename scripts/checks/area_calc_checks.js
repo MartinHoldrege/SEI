@@ -78,7 +78,6 @@ Export.table.toDrive({
   fileFormat: 'CSV'
 });
 
-var s = 'c9_area_check_';
 Export.table.toDrive({
   collection: area_gee,
   description: s + 'from-gee-asset',
