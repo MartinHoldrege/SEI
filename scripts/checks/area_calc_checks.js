@@ -45,7 +45,7 @@ var c9_gee = SEI.ic2Image(ee.ImageCollection(m.get('c9Red')), 'GCM')
 
 // visualize -----------------------------------------------------------------------------------
 
-var neq = c9_gee.neq(c9_pub).selfMask();
+var neq = c9_gee.unmask().neq(c9_pub.unmask()).selfMask();
 
 Map.addLayer(c9_pub, figP.visc9, 'c9 pub', false);
 Map.addLayer(c9_gee, figP.visc9, 'c9 gee', false);
@@ -56,6 +56,7 @@ Map.addLayer(c9_gee, figP.visc9, 'c9 gee', false);
 Map.addLayer(neq, {palette: 'orange'}, 'where different', false);
 
 Map.addLayer(c9_pub.eq(3).selfMask(), {palette: 'blue'}, 'pub is 3', false);
+print('Nominal Scale:', c9_pub.projection().nominalScale());
 
 // area calculations ----------------------------------------------------------------------------
 
@@ -66,27 +67,31 @@ var addProperties = function(x) {
     .set('years', ee.String(epoch));
   return out;
 };
-var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', SEI.region, resolution)
+
+// using the image geometry so that trimming at edge isn't causing the discrepency
+// with calculations in R
+var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', c9_pub.geometry(), resolution)
     // adding additional proprties to the feature
       .map(addProperties);
-var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', SEI.region, resolution)
+var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_pub.geometry(), resolution)
     // adding additional proprties to the feature
       .map(addProperties);
 
 // save output ---------------------------------------------------------------------------
 if(saveOutputs) {
   
+  var v = 'v2';
   var s = 'c9_area_check_' + resolution + 'm_';
   Export.table.toDrive({
     collection: area_pub,
-    description: s + 'from-pub-asset',
+    description: s + 'from-pub-asset_' + v,
     folder: 'SEI',
     fileFormat: 'CSV'
   });
   
   Export.table.toDrive({
     collection: area_gee,
-    description: s + 'from-gee-asset',
+    description: s + 'from-gee-asset_' + v,
     folder: 'SEI',
     fileFormat: 'CSV'
   });
