@@ -24,6 +24,8 @@ var path = SEI.path;
 var run = 'fire1_eind1_c4grass1_co20_2311' // this is the 'Default'
 var RCP = 'RCP45';
 var epoch = '2070-2100';
+
+var saveOutputs = false;
 // read in images --------------------------------------------------------------------------
 
 // data release tif ingested into gee
@@ -53,6 +55,8 @@ Map.addLayer(c9_gee, figP.visc9, 'c9 gee', false);
 // b/ pixels don't align
 Map.addLayer(neq, {palette: 'orange'}, 'where different', false);
 
+Map.addLayer(c9_pub.eq(3).selfMask(), {palette: 'blue'}, 'pub is 3', false);
+
 // area calculations ----------------------------------------------------------------------------
 
 var addProperties = function(x) {
@@ -70,18 +74,22 @@ var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', SEI.region, resolution)
       .map(addProperties);
 
 // save output ---------------------------------------------------------------------------
-var s = 'c9_area_check_' + resolution + 'm_';
-Export.table.toDrive({
-  collection: area_pub,
-  description: s + 'from-pub-asset',
-  folder: 'SEI',
-  fileFormat: 'CSV'
-});
+if(saveOutputs) {
+  
+  var s = 'c9_area_check_' + resolution + 'm_';
+  Export.table.toDrive({
+    collection: area_pub,
+    description: s + 'from-pub-asset',
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
+  
+  Export.table.toDrive({
+    collection: area_gee,
+    description: s + 'from-gee-asset',
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
 
-Export.table.toDrive({
-  collection: area_gee,
-  description: s + 'from-gee-asset',
-  folder: 'SEI',
-  fileFormat: 'CSV'
-});
+}
 
