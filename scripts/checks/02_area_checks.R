@@ -1,4 +1,6 @@
-
+# this is a messy, exploratory script, to understand 
+# diffences in areas calculated by R vs in GEE--conclusion:
+# most of it has to do with datasets having different projections/scales
 
 # dependencies ------------------------------------------------------------
 
@@ -23,6 +25,25 @@ c3_sb <- rast("data_publication1/rasters/SEIv11_2017_2020_30_Current_20220717.ti
 area_numGcm3 <- read_csv('data_processed/summary_stats/area-by-agreement_vsw4-3-4.csv')
 c9a <- read_csv("data_processed/summary_stats/area-by-c9_summaries_vsw4-3-4.csv")
 eco1 <- read_csv("data_processed/area/area-by-ecoregionC9Driver_90m_vsw4-3-4_20240426.csv")
+
+
+# created in scripts/checks/01_area_calc_checks.js
+
+# c9 area calculated from two different sources
+
+# from ingested published tif
+c9_pub1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-pub-asset_v2.csv')
+
+# calculated from gee assets (different projections)
+c9_gee1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-gee-asset_v2.csv')
+
+# calculated from gee assets (different projections) then reprojected to match
+# the pub projection and scale, prior to area calculation
+c9_gee_reproj1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-gee-asset-reproj_v2.csv')
+
+#   -----------------------------------------------------------------------
+
+
 
 is_equal <- as.numeric(values(r)) == as.numeric(values(r_gee))
 sum(!is_equal, na.rm = TRUE)/(sum(!is_equal, na.rm = TRUE) +sum(is_equal, na.rm = TRUE))*100 # 0.004% difference--could be b/
@@ -108,3 +129,42 @@ n_cells*0.81
 
 size_sb <- cellSize(c3_sb, unit = 'ha')
 area_sb <- zonal(size_sb, c3_sb)
+
+# compare c9 area calculations --------------------------------------------
+
+c9_areas <- list(pub = c9_pub1, gee = c9_gee1, reproj = c9_gee_reproj1) %>% 
+  map(function(x) {
+    mutate(x,
+           area_ha = area_m2/10000) %>% 
+      select(-`system:index`, -`.geo`)
+  })
+# differences in areas between those published  in appendix
+# those re-calculated from the published tifs is that those
+# published in appendix (the c9_gee1 areas match those in table D.1.)
+# are calculated from the native projection of the data,
+# when the scale and projection are made to match the output
+# this changes areas at the margin ('ragged edges') as well
+# as small (presumably ~30x30 m pixels that are surrounded by masked cells)
+# are removed. Therefore, reprojected and increasing the scale to 90m
+# reduced the total study area. So the area values in the manuscript
+# are accurate, but they can't re-produced from the projection and scale
+# of the data that is provided in the published .tif files
+
+# I'm unsure why there are very small differences in area calculations of the exact same dataset
+# when done in R and GEE. I assume this has to do with how area of each
+# projected (flat) grid-cell is done by the terra vs gee. 
+
+map(c9_areas, \(x) sum(x$area_ha)) 
+c9_areas$pub$area_ha/c9_areas$gee$area_ha
+plot(c9_areas$pub$area_ha, c9_areas$gee$area_ha)
+abline(0, 1)
+
+
+a1 <- area_c9$area # area from R
+a2 <- c9_areas$pub$area_ha # area from GEE
+
+perc_diff <- (a1 - a2)/a2*100 # large % difference for category 3, which has trivial total area
+names(perc_diff) <- as.character(area_c9$c9_median)
+sum(a1); sum(a2)
+(sum(a1) - sum(a2))/sum(a2)*100 # GEE calculates less area, but the difference is small 0.06%
+
