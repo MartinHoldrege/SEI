@@ -127,21 +127,3 @@ map2(agree2, paths_out, function(r, path) {
 
 # testing -----------------------------------------------------------------
 # comparing to file based on directly output from gee
-
-if (FALSE) {
-    r_gee <- rast("C:/Users/mholdrege/OneDrive - DOI/scd_data_for_portal/Level of agreement among GCMs for projected change in SEI class (under RCP4.5 2071-2100).tif")
-  r <- rast(file.path(path_large, 'SEI_rasters/data_publication2/gcmAgree_Default_RCP45_2071-2100.tif'))
-  
-  is_equal <- as.numeric(values(r)) == as.numeric(values(r_gee))
-  sum(!is_equal, na.rm = TRUE)
-  sum(!is_equal, na.rm = TRUE)/sum(is_equal, na.rm = TRUE)*100 # 0.004% difference--could be b/
-  # gee calculations are done at a different projection, prior to creating the final layer?
-  
-  # are the same grid-cells NA and non-NA?
-  same_mask <- is.na(as.numeric(values(r))) == is.na(as.numeric(values(r_gee)))
-  sum(!same_mask)
-  table(r2[!is_equal])
-  table(r_gee2[!is_equal])
-}
-
-
