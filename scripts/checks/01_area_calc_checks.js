@@ -26,7 +26,7 @@ var run = 'fire1_eind1_c4grass1_co20_2311'; // this is the 'Default'
 var RCP = 'RCP45';
 var epoch = '2070-2100';
 
-var saveOutputs = true; // false; // 
+var saveOutputs = false; // true; // 
 // read in images --------------------------------------------------------------------------
 
 // data release tif ingested into gee
