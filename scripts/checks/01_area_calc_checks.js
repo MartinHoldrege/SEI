@@ -25,8 +25,9 @@ var path = SEI.path;
 var run = 'fire1_eind1_c4grass1_co20_2311'; // this is the 'Default'
 var RCP = 'RCP45';
 var epoch = '2070-2100';
+var toDouble = true; // make area calculations using higher precision
 
-var saveOutputs = false; // true; // 
+var saveOutputs = true; //  false; //
 // read in images --------------------------------------------------------------------------
 
 // data release tif ingested into gee
@@ -78,20 +79,42 @@ var addProperties = function(x) {
 
 // using the image geometry so that trimming at edge isn't causing the discrepency
 // with calculations in R
-var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', c9_pub.geometry(), resolution)
+var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', c9_pub.geometry(), resolution, toDouble)
     // adding additional proprties to the feature
       .map(addProperties);
-var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_gee.geometry(), resolution)
+var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_gee.geometry(), resolution, toDouble)
       .map(addProperties);
 // can't use it's own geometry (throws error, maybe b/ it has been reprojected so doesn't have it?)
-var area_gee_reproj = fnsRr.areaByGroup(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution)
+var area_gee_reproj = fnsRr.areaByGroup(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution, toDouble)
       .map(addProperties);      
+      
+// area image -----------------------------------------------------------------------------------
+
+// for comparison with area image created in R from the c9_pub tif (see if area
+// per pixel is exactly the same)
+
+var areaImage0 = ee.Image
+  .pixelArea();
+
+  
+var areaImage1 = scdrrF.matchProjections(c9_pub, areaImage0)
+  .updateMask(c9_pub)
+  .rename('areaPerPixel');
+  
+
+Map.addLayer(areaImage1, {min: 8099, max: 8101, palette: 'red,blue'}, 'area per pixel', false);
 
 // save output ---------------------------------------------------------------------------
 if(saveOutputs) {
   
   var v = 'v2';
+  
+  if (toDouble) {
+    var v = 'v3_toDouble'
+  };
+  
   var s = 'c9_area_check_' + resolution + 'm_';
+
   Export.table.toDrive({
     collection: area_pub,
     description: s + 'from-pub-asset_' + v,
@@ -111,6 +134,17 @@ if(saveOutputs) {
     description: s + 'from-gee-asset-reproj_' + v,
     folder: 'SEI',
     fileFormat: 'CSV'
+  });
+  
+  Export.image.toDrive({
+    image: areaImage1,
+    description: 'area_from_c9_pub',
+    folder: 'gee',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: c9_pub.geometry(),
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF'
   });
 
 }
