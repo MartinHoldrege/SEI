@@ -88,6 +88,50 @@ var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_gee.geometry(), resolut
 var area_gee_reproj = fnsRr.areaByGroup(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution, toDouble)
       .map(addProperties);      
       
+      
+// testing ~~~~~~~~~~
+var image = c9_pub;
+var groupName = 'c9_median';
+var region = c9_pub.geometry();
+var areaImage0 = scdrrF.matchProjections(image, ee.Image.pixelArea());
+
+  if (toDouble === undefined || toDouble === null) {
+    var toDouble = false;
+  }
+  
+  if(toDouble) {
+    var areaImage0 = areaImage0.double()
+  }
+  
+  var areaImage = areaImage0
+   .addBands(image.select(groupName));
+  
+  var areas = areaImage.reduceRegion({
+        reducer: ee.Reducer.sum().group({
+        groupField: 1,
+        groupName: groupName,
+      }),
+      geometry: region,
+      scale: scale,
+      maxPixels: 1e12
+      }); 
+  
+  
+  // converting a feature collection so that it can be output as csv
+    var areasDict = ee.List(areas.get('groups')).map(function (x) {
+    
+    var dict = {area_m2: ee.Dictionary(x).get('sum')};
+    
+    // passing groupName as a variable to become the name in the dictionary
+    dict[groupName] = ee.Number(ee.Dictionary(x).get(groupName)).toInt64();
+    
+    return ee.Feature(null, dict);
+  });
+  
+  var areasFc = ee.FeatureCollection(areasDict);
+  
+var area_pub2 = areasFc;
+// end testing
 // area image -----------------------------------------------------------------------------------
 
 // for comparison with area image created in R from the c9_pub tif (see if area
@@ -118,6 +162,13 @@ if(saveOutputs) {
   Export.table.toDrive({
     collection: area_pub,
     description: s + 'from-pub-asset_' + v,
+    folder: 'SEI',
+    fileFormat: 'CSV'
+  });
+  
+  Export.table.toDrive({
+    collection: area_pub2,
+    description: s + 'from-pub-asset_v4_matchProj',
     folder: 'SEI',
     fileFormat: 'CSV'
   });
