@@ -16,7 +16,6 @@
 var SEI = require('users/MartinHoldrege/SEI:src/SEIModule.js');
 var figP = require('users/MartinHoldrege/SEI:src/fig_params.js');
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
-var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 var scdrrF = require("users/MartinHoldrege/scd_rr:src/general_functions.js"); // for matching projections
 // parameters --------------------------------------------------------------------------------
 
@@ -25,7 +24,7 @@ var path = SEI.path;
 var run = 'fire1_eind1_c4grass1_co20_2311'; // this is the 'Default'
 var RCP = 'RCP45';
 var epoch = '2070-2100';
-var toDouble = true; // make area calculations using higher precision
+var v = 'v4' // v4 uses the new areaByGroup2 function (matches projections), v2 used the old function as is
 
 var saveOutputs = true; //  false; //
 // read in images --------------------------------------------------------------------------
@@ -65,7 +64,6 @@ Map.addLayer(neq, {palette: 'orange'}, 'where different', false);
 Map.addLayer(neq_reproj, {palette: 'orange'}, 'where different after reprojection', false);
 
 Map.addLayer(c9_pub.eq(3).selfMask(), {palette: 'blue'}, 'pub is 3', false);
-print('Nominal Scale:', c9_pub.projection().nominalScale());
 
 // area calculations ----------------------------------------------------------------------------
 
@@ -79,58 +77,17 @@ var addProperties = function(x) {
 
 // using the image geometry so that trimming at edge isn't causing the discrepency
 // with calculations in R
-var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', c9_pub.geometry(), resolution, toDouble)
+var area_pub = scdrrF.areaByGroup2(c9_pub, 'c9_median', c9_pub.geometry(), resolution)
     // adding additional proprties to the feature
       .map(addProperties);
-var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_gee.geometry(), resolution, toDouble)
+var area_gee = scdrrF.areaByGroup2(c9_gee, 'c9_median', c9_gee.geometry(), resolution)
       .map(addProperties);
 // can't use it's own geometry (throws error, maybe b/ it has been reprojected so doesn't have it?)
-var area_gee_reproj = fnsRr.areaByGroup(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution, toDouble)
+var area_gee_reproj = scdrrF.areaByGroup2(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution)
       .map(addProperties);      
       
       
-// testing ~~~~~~~~~~
-var image = c9_pub;
-var groupName = 'c9_median';
-var region = c9_pub.geometry();
-var areaImage0 = scdrrF.matchProjections(image, ee.Image.pixelArea());
 
-  if (toDouble === undefined || toDouble === null) {
-    var toDouble = false;
-  }
-  
-  if(toDouble) {
-    var areaImage0 = areaImage0.double()
-  }
-  
-  var areaImage = areaImage0
-   .addBands(image.select(groupName));
-  
-  var areas = areaImage.reduceRegion({
-        reducer: ee.Reducer.sum().group({
-        groupField: 1,
-        groupName: groupName,
-      }),
-      geometry: region,
-      scale: scale,
-      maxPixels: 1e12
-      }); 
-  
-  
-  // converting a feature collection so that it can be output as csv
-    var areasDict = ee.List(areas.get('groups')).map(function (x) {
-    
-    var dict = {area_m2: ee.Dictionary(x).get('sum')};
-    
-    // passing groupName as a variable to become the name in the dictionary
-    dict[groupName] = ee.Number(ee.Dictionary(x).get(groupName)).toInt64();
-    
-    return ee.Feature(null, dict);
-  });
-  
-  var areasFc = ee.FeatureCollection(areasDict);
-  
-var area_pub2 = areasFc;
 // end testing
 // area image -----------------------------------------------------------------------------------
 
@@ -151,24 +108,11 @@ Map.addLayer(areaImage1, {min: 8099, max: 8101, palette: 'red,blue'}, 'area per 
 // save output ---------------------------------------------------------------------------
 if(saveOutputs) {
   
-  var v = 'v2';
-  
-  if (toDouble) {
-    var v = 'v3_toDouble'
-  };
-  
   var s = 'c9_area_check_' + resolution + 'm_';
 
   Export.table.toDrive({
     collection: area_pub,
     description: s + 'from-pub-asset_' + v,
-    folder: 'SEI',
-    fileFormat: 'CSV'
-  });
-  
-  Export.table.toDrive({
-    collection: area_pub2,
-    description: s + 'from-pub-asset_v4_matchProj',
     folder: 'SEI',
     fileFormat: 'CSV'
   });
