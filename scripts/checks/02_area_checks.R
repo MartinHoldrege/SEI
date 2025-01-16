@@ -2,6 +2,9 @@
 # diffences in areas calculated by R vs in GEE--conclusion:
 # most of it has to do with datasets having different projections/scales
 
+# see the /scripts/checks/02_area_check_c9_pub.R for a more self
+# contained comparison between GEE calculated (published areas) and areas
+# calculated from the publisehd tif
 # dependencies ------------------------------------------------------------
 
 library(tidyverse)
@@ -34,6 +37,8 @@ eco1 <- read_csv("data_processed/area/area-by-ecoregionC9Driver_90m_vsw4-3-4_202
 # from ingested published tif
 c9_pub1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-pub-asset_v2.csv')
 
+# same area calculation, but with area image casted to a double (higher precision, default is float)
+c9_pub_v4<- read_csv('data_processed/area/checks/c9_area_check_90m_from-pub-asset_v4_matchProj.csv')
 # calculated from gee assets (different projections)
 c9_gee1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-gee-asset_v2.csv')
 
@@ -41,12 +46,14 @@ c9_gee1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-gee-asset
 # the pub projection and scale, prior to area calculation
 c9_gee_reproj1 <- read_csv('data_processed/area/checks/c9_area_check_90m_from-gee-asset-reproj_v2.csv')
 
+# tif where each pixel is contains the area of the pixel, as calculated
+# by gee
+r_area_gee <- rast('data_processed/area/checks/area_from_c9_pub.tif')
+
 #   -----------------------------------------------------------------------
-
-
-
 is_equal <- as.numeric(values(r)) == as.numeric(values(r_gee))
 sum(!is_equal, na.rm = TRUE)/(sum(!is_equal, na.rm = TRUE) +sum(is_equal, na.rm = TRUE))*100 # 0.004% difference--could be b/
+
 # gee calculations are done at a different projection, prior to creating the final layer?
 
 # are the same grid-cells NA and non-NA?
@@ -69,8 +76,9 @@ plot(r2) # should look very similar fig E.2 (note
 # comparing to area calculations made in GEE that appear
 # in appendix D
 # (values should be very similar)
-size <- cellSize(r_gee, unit = 'ha')
-
+size <- cellSize(r_gee, unit = 'ha',
+                 transform = FALSE # truly equal ara when transform is false, and how it is treated in GEE
+                 )
 area_l <- map(r_l, function(r) {
   zonal(size, r, fun = 'sum')
 })
@@ -122,7 +130,13 @@ ha_to_ac(sum(df1$area_ha[9])) # this also matches doherty
 # making sure the zonal approach is working, and estimating area by
 # cell count and approximate cell size
 n_cells <- sum(freq(r_c9[[1]])$count)
-n_cells*0.81
+
+# three ways of calculating area, should be the same
+# (they are)
+n_cells*0.81 # cell count in R
+sum(area_c9$area) # area of pixels in R # different because how transformation is done, we understand, rerun w/ transform set to false to double check
+sum(c9_pub_v4$area_m2)/10000 # area of pixels in GEE
+sum(as.numeric(values(r_area_gee)), na.rm = TRUE)/10000 # area of area pixels output by GEE
 
 
 # Doherty data publication ------------------------------------------------
