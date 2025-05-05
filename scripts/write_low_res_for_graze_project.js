@@ -1,3 +1,6 @@
+// write low resolution version of the tifs for the grazing effects study
+// which is working at 1km scale
+
 var resolution = 1000
 
 var SEI = require("users/MartinHoldrege/SEI:src/SEIModule.js");
