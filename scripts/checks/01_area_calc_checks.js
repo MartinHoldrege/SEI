@@ -16,7 +16,6 @@
 var SEI = require('users/MartinHoldrege/SEI:src/SEIModule.js');
 var figP = require('users/MartinHoldrege/SEI:src/fig_params.js');
 var lyrMod = require("users/MartinHoldrege/SEI:scripts/05_lyrs_for_apps.js");
-var fnsRr = require("users/mholdrege/newRR_metrics:src/functions.js"); // has areaByGroup function
 var scdrrF = require("users/MartinHoldrege/scd_rr:src/general_functions.js"); // for matching projections
 // parameters --------------------------------------------------------------------------------
 
@@ -25,8 +24,9 @@ var path = SEI.path;
 var run = 'fire1_eind1_c4grass1_co20_2311'; // this is the 'Default'
 var RCP = 'RCP45';
 var epoch = '2070-2100';
+var v = 'v4' // v4 uses the new areaByGroup2 function (matches projections), v2 used the old function as is
 
-var saveOutputs = true; // false; // 
+var saveOutputs = true; //  false; //
 // read in images --------------------------------------------------------------------------
 
 // data release tif ingested into gee
@@ -64,7 +64,6 @@ Map.addLayer(neq, {palette: 'orange'}, 'where different', false);
 Map.addLayer(neq_reproj, {palette: 'orange'}, 'where different after reprojection', false);
 
 Map.addLayer(c9_pub.eq(3).selfMask(), {palette: 'blue'}, 'pub is 3', false);
-print('Nominal Scale:', c9_pub.projection().nominalScale());
 
 // area calculations ----------------------------------------------------------------------------
 
@@ -78,20 +77,39 @@ var addProperties = function(x) {
 
 // using the image geometry so that trimming at edge isn't causing the discrepency
 // with calculations in R
-var area_pub = fnsRr.areaByGroup(c9_pub, 'c9_median', c9_pub.geometry(), resolution)
+var area_pub = scdrrF.areaByGroup2(c9_pub, 'c9_median', c9_pub.geometry(), resolution)
     // adding additional proprties to the feature
       .map(addProperties);
-var area_gee = fnsRr.areaByGroup(c9_gee, 'c9_median', c9_gee.geometry(), resolution)
+var area_gee = scdrrF.areaByGroup2(c9_gee, 'c9_median', c9_gee.geometry(), resolution)
       .map(addProperties);
 // can't use it's own geometry (throws error, maybe b/ it has been reprojected so doesn't have it?)
-var area_gee_reproj = fnsRr.areaByGroup(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution)
+var area_gee_reproj = scdrrF.areaByGroup2(c9_gee_reproj, 'c9_median', c9_pub.geometry(), resolution)
       .map(addProperties);      
+      
+      
+
+// end testing
+// area image -----------------------------------------------------------------------------------
+
+// for comparison with area image created in R from the c9_pub tif (see if area
+// per pixel is exactly the same)
+
+var areaImage0 = ee.Image
+  .pixelArea();
+
+  
+var areaImage1 = scdrrF.matchProjections(c9_pub, areaImage0)
+  .updateMask(c9_pub)
+  .rename('areaPerPixel');
+  
+
+Map.addLayer(areaImage1, {min: 8099, max: 8101, palette: 'red,blue'}, 'area per pixel', false);
 
 // save output ---------------------------------------------------------------------------
 if(saveOutputs) {
   
-  var v = 'v2';
   var s = 'c9_area_check_' + resolution + 'm_';
+
   Export.table.toDrive({
     collection: area_pub,
     description: s + 'from-pub-asset_' + v,
@@ -111,6 +129,17 @@ if(saveOutputs) {
     description: s + 'from-gee-asset-reproj_' + v,
     folder: 'SEI',
     fileFormat: 'CSV'
+  });
+  
+  Export.image.toDrive({
+    image: areaImage1,
+    description: 'area_from_c9_pub',
+    folder: 'gee',
+    maxPixels: 1e13, 
+    scale: resolution,
+    region: c9_pub.geometry(),
+    crs: SEI.crs,
+    fileFormat: 'GeoTIFF'
   });
 
 }
