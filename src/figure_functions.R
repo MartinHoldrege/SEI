@@ -288,7 +288,7 @@ color_matrix <- function() {
 
 if(FALSE){
 png("figures/c9_color_matrix.png",
-    width = 3.5, height = 2.5, units = 'in',
+    width = 3.5/1.8, height = 2.5/1.8, units = 'in',
     res = 600)
 color_matrix()
 dev.off()
