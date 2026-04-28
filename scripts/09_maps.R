@@ -261,7 +261,37 @@ jpeg(paste0(paste('figures/transition_maps/c9_with-barplot', version, root_c9, r
 comb
 dev.off()
 
-
+if(FALSE) {
+  # version of figure 1 map, but w/ a north arrow and scale bar added
+  # and panel tag removed
+  library(ggspatial)
+  
+  g <- r_c9[["RCP45_2070-2100"]] %>% 
+    spatSample(c(6000, 6000), method = 'regular', as.raster = TRUE) %>% 
+    as.factor() %>% 
+    plot_map2(panel_tag = NULL) +
+    scale_fill_c9() +
+    annotation_scale(
+      location = "br",         # bottom-left
+      width_hint = 0.25,
+      style = "bar"
+    ) +
+    annotation_north_arrow(
+      location = "tr",         # top-right
+      which_north = "true",    # true north, not grid north
+      style = north_arrow_fancy_orienteering(),
+      height = unit(1, "cm"),
+      width = unit(1, "cm")
+    ) +
+    theme(legend.position = 'none', plot.margin = margin()) +
+    inset_color_matrix()
+  
+  jpeg(paste0(paste('figures/transition_maps/c9_with-north-arrow', version, root_c9, rcp_c9, years_c9, sep = "_"), '_v2.jpg'), 
+       width = 5.5, height = 5.5, units = 'in',
+       res = 600)
+  g
+  dev.off()
+}
 # * 4 panel ---------------------------------------------------------------
 # 4 panel c9 map, 1 panel for each scenario (for appendix)
 
